@@ -1,3 +1,5 @@
+import { VerifyOtpResponse } from "../types/auth.types";
+
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
 
@@ -21,7 +23,7 @@ export const getOSVersion = () => {
   } else if (userAgent.includes("Android")) {
     osVersionArr = userAgent.match(/Android (\d+\.\d+)/);
   } else if (userAgent.includes("Mac OS X")) {
-    osVersionArr = userAgent.match(/Mac OS X (\d+[\._\d]*)/);
+    osVersionArr = userAgent.match(/Mac OS X (\d+[._\d]*)/);
   }
 
   if (osVersionArr?.[1]) {
@@ -31,13 +33,14 @@ export const getOSVersion = () => {
   return osVersion;
 };
 
-export function formatSeconds(seconds: number): string {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
+export function formatSeconds(milliseconds: number): string {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
 
   const hh = hrs > 0 ? `${hrs}:` : "";
-  const mm = `${hrs > 0 ? mins.toString().padStart(2, "0") : mins}`;
+  const mm = hrs > 0 ? mins.toString().padStart(2, "0") : `${mins}`;
   const ss = secs.toString().padStart(2, "0");
 
   return `${hh}${mm}:${ss}`;
@@ -57,3 +60,18 @@ export function formatLocaleDateToDMY(dateString: string | Date) {
 
   return `${day}-${month}-${year}`;
 }
+
+export const decryptAndParseTokenFromStorage = (): VerifyOtpResponse | null => {
+  try {
+    const encryptedInfo = localStorage.getItem("@user");
+    if (!encryptedInfo) throw "";
+    const decryptedInfo = atob(encryptedInfo);
+    const userInfo = JSON.parse(decryptedInfo);
+    if (userInfo.token && userInfo.refreshToken && userInfo.user) {
+      return userInfo;
+    }
+    throw "";
+  } catch {
+    return null;
+  }
+};

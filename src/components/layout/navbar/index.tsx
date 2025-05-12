@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useAppDispatch } from "../../../store/store";
+import { logOut } from "../../../features/auth.slice";
 
 export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [navbarCollapsed, setNavbarCollapsed] = useState(true);
+  const dispatch = useAppDispatch();
 
   const toggleNavbar = () => {
     setNavbarCollapsed(!navbarCollapsed);
@@ -102,8 +105,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
                   <button
                     className="dropdown-item text-danger"
                     onClick={() => {
-                      localStorage.removeItem("@user");
-                      window.location.reload();
+                      dispatch(logOut());
                     }}
                   >
                     <i className="bi bi-box-arrow-right me-2"></i> Logout

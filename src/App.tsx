@@ -7,9 +7,24 @@ import Layout from "./components/layout";
 import VideoSearchPage from "./pages/search";
 import SocialMediaManagement from "./pages/social-media";
 import Logs from "./pages/logs";
+import { useAppDispatch, useAppSelector } from "./store/store";
+import { useEffect } from "react";
+import { checkAuth } from "./features/auth.slice";
 
 function App() {
-  const loggedIn = !!localStorage.getItem("@user");
+  const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);
+  const isVerifying = useAppSelector((s) => s.auth.isVerifying);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, []);
+
+  if (isVerifying) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>Loading...</div>
+    );
+  }
 
   return (
     <Routes>

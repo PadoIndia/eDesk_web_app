@@ -5,10 +5,14 @@ import "./styles/index.scss";
 import "./styles/theme.scss";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <App />
-    <ToastContainer />
-  </BrowserRouter>
+  <Provider store={store()}>
+    <BrowserRouter>
+      <App />
+      <ToastContainer />
+    </BrowserRouter>
+  </Provider>
 );

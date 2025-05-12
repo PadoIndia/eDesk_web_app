@@ -86,4 +86,12 @@ export type SingleVideoResponse = VideoPayload & {
     videoId: number;
     tagId: number;
   }[];
+  videoViewDurations: {
+    durationInSec: number;
+    createdOn: string;
+    user: {
+      name: string;
+      id: number;
+    };
+  }[];
 };

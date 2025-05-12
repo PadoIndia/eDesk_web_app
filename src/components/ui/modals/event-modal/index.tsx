@@ -90,6 +90,7 @@ const EventModal: React.FC<EventModalProps> = ({
       addedGroups.forEach((groupId) => {
         eventService.addToGroup(initialData!.id, groupId).then((res) => {
           if (res.status !== "success") {
+            console.log(res.message);
           } else toast.error(res.message);
         });
       });
@@ -97,6 +98,7 @@ const EventModal: React.FC<EventModalProps> = ({
       removedGroups.forEach((groupId) => {
         eventService.removeFromGroup(initialData!.id, groupId).then((res) => {
           if (res.status !== "success") {
+            console.log(res.message);
           } else toast.error(res.message);
         });
       });
@@ -127,7 +129,8 @@ const EventModal: React.FC<EventModalProps> = ({
 
     const request = isEdit
       ? eventService.updateEvent(initialData!.id, payload)
-      : eventService.createEvent(payload as any);
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        eventService.createEvent(payload as any);
 
     request.then((res) => {
       if (res.status === "success") {

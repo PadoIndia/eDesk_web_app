@@ -1,22 +1,36 @@
 import { LuShare2, LuPencil, LuClock } from "react-icons/lu";
 import { SingleVideoResponse } from "../../../types/video.types";
-import ViewersButton from "./viewers-button";
 import { formatSeconds } from "../../../utils/helper";
+import { GrView } from "react-icons/gr";
+import DurationsModal from "./durations-modal";
+import { useState } from "react";
 
 type Props = {
   videoInfo: SingleVideoResponse;
 };
 
 export default function VideoInfo({ videoInfo }: Props) {
+  const [showModal, setShowModal] = useState(false);
   return (
     <div className="video-info">
+      <DurationsModal
+        data={videoInfo.videoViewDurations}
+        onClose={() => setShowModal(false)}
+        show={showModal}
+      />
       <h1 className="video-title">{videoInfo?.name}</h1>
       <div className="video-meta">
         <span className="d-flex align-items-center">
           <LuClock className="icon" />
           {formatSeconds(videoInfo?.durationInSec)}
         </span>
-        <ViewersButton videoId={videoInfo.id} viewCount={245} />
+        <span
+          className="d-flex align-items-center gap-2"
+          onClick={() => setShowModal(true)}
+        >
+          <GrView />
+          See views
+        </span>
         <span>Conference</span>
         <span>{new Date(videoInfo?.createdOn).getDate()}</span>
       </div>

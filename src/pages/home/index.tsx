@@ -35,7 +35,6 @@ const Home: React.FC = () => {
     <Layout showSideBar>
       <div className="d-flex justify-content-between p-2">
         <Search value={query} onChange={setQuery} />
-        {videos.length}
         <div>
           <button className="btn btn-primary ">
             <IoAddOutline />

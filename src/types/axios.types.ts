@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ApiResp<T = any> {
   data: T;
   status: "success" | "failure" | "error";

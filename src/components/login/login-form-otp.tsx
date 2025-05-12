@@ -10,8 +10,9 @@ import authService from "../../services/api-services/auth.service";
 
 type Props = {
   otp: string;
-  setOtp: (e: any) => void;
+  setOtp: (e: string) => void;
   number: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   resendOtp: (e: any) => void;
 };
 
@@ -40,9 +41,10 @@ function LoginFormOtp({ otp, setOtp, number, resendOtp }: Props) {
 
   const handleOtpChange = (otp: string) => {
     if (otp.length < 4) {
-      const OtpBoxes = document.getElementsByClassName("Otp_Box");
+      const OtpBoxes = document.getElementsByClassName(
+        "Otp_Box"
+      ) as unknown as HTMLElement[];
       for (let i = 0; i < OtpBoxes.length; i++) {
-        // @ts-ignore
         OtpBoxes[i].style.border = "";
       }
     }
@@ -114,7 +116,7 @@ function LoginFormOtp({ otp, setOtp, number, resendOtp }: Props) {
             <OTPInput
               value={otp}
               onChange={(otp) => {
-                setOtp(() => otp);
+                setOtp(otp);
                 handleOtpChange(otp);
               }}
               numInputs={4}
