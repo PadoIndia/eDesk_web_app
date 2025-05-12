@@ -1,0 +1,94 @@
+.login-coursal-indicator {
+    background-color: red;
+    height: 6px;
+    width: 6px;
+    border-radius: 50%;
+}
+
+.login-coursal-indicator-active {
+    background-color: #0d1015;
+    height: 7px;
+    width: 7px;
+    border-radius: 50%;
+}
+
+.login-coursal-heading {
+
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 36px;
+    letter-spacing: 0px;
+    color: #0d1015;
+}
+
+.login-coursal-subheading {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 28px;
+    letter-spacing: 0px;
+    color: #0d1015;
+}
+
+
+.form-control:focus {
+    // box-shadow: 4px 1px 8px -2px #5f46e3 !important;
+    border-color: #5f46e3
+    
+}
+
+.form-control-focus {
+    // box-shadow: -3px 2px 8px -2px #5f46e3 !important;
+    border-color: #5f46e3;
+    background-color: white;
+}
+
+
+
+
+.otp-box-but {
+    color: #5f46e3;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
+    text-decoration-line: underline;
+}
+
+
+
+.Otp_Box {
+    border: 0px solid #5f46e3;
+    background-color: #f8f8f8;
+    border-radius: 7px;
+    flex: 1 1;
+    aspect-ratio: 1;
+    margin: 5%;
+    margin-left: 0%;
+}
+
+.Otp_Box:focus {
+    background-color: #f8f8f8;
+    border: 2px solid #5f46e3;
+    outline: none;
+}
+
+.LoginFormNumber {
+    width: 60%;
+    height: 90%;
+    margin-left: 10%;
+    justify-content: center;
+  }
+  .phone-input-group {
+    .flag {
+      transition: box-shadow 0.2s ease;
+    }
+  
+ 
+    &:focus-within {
+      .flag {
+        box-shadow: 4px 1px 8px -2px #5f46e3;
+        border-color: #5f46e3;
+      }
+    }
+  }
+  

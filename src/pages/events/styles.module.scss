@@ -1,0 +1,202 @@
+/* EventsPage.module.scss */
+@import 'bootstrap/scss/bootstrap';
+
+/* Variables - ShadCN UI inspired */
+$background-color: #ffffff;
+$text-color: #0f172a;
+$muted-text-color: #64748b;
+$border-color: #e2e8f0;
+$primary-color: #0ea5e9;
+$primary-hover-color: #0284c7;
+$success-color: #10b981;
+$success-hover-color: #059669;
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$border-radius: 0.5rem;
+$input-bg: #f8fafc;
+
+/* Page Container */
+.pageContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Page Header */
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  color: $text-color;
+  font-weight: 600;
+  font-size: 1.875rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 2.5rem;
+  background-color: $background-color;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  padding: 1.5rem;
+  box-shadow: $shadow-sm;
+}
+
+.sectionHeader {
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $text-color;
+  margin-bottom: 0.5rem;
+}
+
+.sectionDescription {
+  color: $muted-text-color;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Input Fields */
+.inputGroup {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  
+  @include media-breakpoint-down(md) {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+.inputField {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  background-color: $input-bg;
+  color: $text-color;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  
+  &:focus {
+    border-color: $primary-color;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.25);
+  }
+  
+  &::placeholder {
+    color: lighten($muted-text-color, 15%);
+  }
+}
+
+/* Buttons */
+.btnPrimary, .btnSecondary, .btnView, .btnEdit {
+  border-radius: $border-radius;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  min-width: 120px;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btnPrimary {
+  background-color: $primary-color;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: $primary-hover-color;
+  }
+}
+
+.btnSecondary {
+  background-color: white;
+  color: $text-color;
+  border: 1px solid $border-color;
+  
+  &:hover:not(:disabled) {
+    background-color: $input-bg;
+    border-color: darken($border-color, 10%);
+  }
+}
+
+.btnView {
+  background-color: $success-color;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  min-width: auto;
+  
+  &:hover:not(:disabled) {
+    background-color: $success-hover-color;
+  }
+}
+
+.btnEdit {
+  background-color: $primary-color;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  min-width: auto;
+  
+  &:hover:not(:disabled) {
+    background-color: $primary-hover-color;
+  }
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Edit Form */
+.editForm {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: $input-bg;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+}
+
+/* Table Actions */
+.tableActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@include media-breakpoint-down(md) {
+  .pageContainer {
+    padding: 1rem;
+  }
+  
+  .section {
+    padding: 1rem;
+  }
+  
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+}

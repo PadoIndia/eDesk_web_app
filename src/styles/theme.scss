@@ -1,0 +1,30 @@
+$primary: #5F46E3; 
+$secondary: #6b7280; 
+$success: #008444; 
+$danger: #CC2C2C; 
+$warning: #f59e0b; 
+$info: #3b82f6; 
+$light: #f9fafb; 
+$dark: #111827; 
+
+$body-bg: #ffffff;
+$body-color: #111827;
+$border-radius: 0.5rem; 
+$border-color: #e5e7eb; 
+$box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+$input-bg: #ffffff;
+$input-color: #111827;
+$input-border-radius: 0.5rem;
+
+$font-family-sans-serif: 'Inter', system-ui, sans-serif;
+$font-size-base: 1rem;
+$line-height-base: 1.5;
+$btn-padding-y: 0.35rem;
+$btn-padding-x: 0.75rem;
+$btn-border-radius: 0.5rem;
+
+@import "../../node_modules/bootstrap/scss/bootstrap";
+
+::-webkit-scrollbar {
+  height: 6px; 
+}
