@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import "./styles.scss";
 import SocialMediaTable from "./components/social-media-table";
 import CreateAssetModal from "./components/create-asset-modal";
 import EditAssetModal from "./components/edit-asset-modal";
 import { SmAssetResponse, SmAssetPayload } from "../../types/sm-asset.types";
-import Layout from "../../components/layout";
 import smAssetService from "../../services/api-services/sm-asset.service";
 import userService from "../../services/api-services/user.service";
 import { toast } from "react-toastify";
@@ -81,7 +79,7 @@ export default function SocialMediaManagement() {
       if (response.status === "success") {
         setShowCreateModal(false);
         toast.success(response.message);
-        fetchUsers();
+        fetchAssets();
       } else toast.error(response.message);
     } catch (err) {
       console.error("Error creating social media asset:", err);
@@ -154,7 +152,7 @@ export default function SocialMediaManagement() {
   };
 
   return (
-    <Layout showSideBar={false}>
+    <div>
       <div className="container-fluid card social-media-management p-4">
         <div className="row mb-4">
           <div className="col">
@@ -273,6 +271,6 @@ export default function SocialMediaManagement() {
           />
         )}
       </div>
-    </Layout>
+    </div>
   );
 }

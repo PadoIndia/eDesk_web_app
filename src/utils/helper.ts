@@ -1,4 +1,7 @@
 import { VerifyOtpResponse } from "../types/auth.types";
+import { EventResponse } from "../types/event.types";
+import { GroupedOutput } from "../types/sidebar.types";
+import { VideoViewDuration } from "../types/video.types";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -33,8 +36,19 @@ export const getOSVersion = () => {
   return osVersion;
 };
 
-export function formatSeconds(milliseconds: number): string {
+export function formatMiliSeconds(milliseconds: number): string {
   const totalSeconds = Math.floor(milliseconds / 1000);
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  const hh = hrs > 0 ? `${hrs}:` : "";
+  const mm = hrs > 0 ? mins.toString().padStart(2, "0") : `${mins}`;
+  const ss = secs.toString().padStart(2, "0");
+
+  return `${hh}${mm}:${ss}`;
+}
+export function formatSeconds(totalSeconds: number): string {
   const hrs = Math.floor(totalSeconds / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
   const secs = totalSeconds % 60;
@@ -75,3 +89,60 @@ export const decryptAndParseTokenFromStorage = (): VerifyOtpResponse | null => {
     return null;
   }
 };
+
+export function groupByDateAndUser(
+  durations: VideoViewDuration[]
+): VideoViewDuration[] {
+  const map = new Map<string, VideoViewDuration>();
+
+  durations.forEach((item) => {
+    const date = item.createdOn.slice(0, 10);
+    const key = `${date}-${item.user.id}`;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        durationInSec: item.durationInSec,
+        createdOn: date,
+        user: {
+          id: item.user.id,
+          name: item.user.name,
+        },
+      });
+    } else {
+      const existing = map.get(key)!;
+      existing.durationInSec += item.durationInSec;
+    }
+  });
+
+  return Array.from(map.values());
+}
+
+export function transformEvents(events: EventResponse[]): GroupedOutput[] {
+  const groupMap = new Map<number, GroupedOutput>();
+  const ungrouped: GroupedOutput[] = [];
+
+  for (const event of events) {
+    if (event.eventGroupMap.length > 0) {
+      for (const map of event.eventGroupMap) {
+        const { groupId, group } = map;
+        if (!groupMap.has(groupId)) {
+          groupMap.set(groupId, {
+            id: groupId,
+            label: group.groupName,
+            children: [],
+            count: 0,
+          });
+        }
+        groupMap.get(groupId)!.children!.push(event);
+      }
+    } else {
+      ungrouped.push({
+        id: event.id,
+        label: event.eventName,
+        count: event.ecVideos.length,
+      });
+    }
+  }
+
+  return [...Array.from(groupMap.values()), ...ungrouped];
+}

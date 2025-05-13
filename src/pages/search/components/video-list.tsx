@@ -1,5 +1,5 @@
+import VideoCard from "../../../components/ui/cards/video-card";
 import { VideoResponse } from "../../../types/video.types";
-import VideoCard from "./video-card";
 
 interface VideoListProps {
   videos: VideoResponse[];
@@ -16,9 +16,9 @@ export default function VideoList({ videos }: VideoListProps) {
   }
 
   return (
-    <div className="video-list">
+    <div className="row gap-4 mx-auto">
       {videos.map((video) => (
-        <VideoCard key={video.id} video={video} />
+        <VideoCard key={video.id} {...video} />
       ))}
     </div>
   );

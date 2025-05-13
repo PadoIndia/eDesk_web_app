@@ -117,3 +117,29 @@ button:focus-visible {
 .font-lg {
   font-size: 1.429rem !important;
 }
+
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f9f9f9 25%, #f0f0f0 50%, #f9f9f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite linear;
+  border-radius: 0.5rem;
+}
+
+.skeleton-inner {
+  background: linear-gradient(90deg, #e3e3e3 25%, #c0c0c0 50%, #e3e3e3 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite linear;
+}
+
+.bg {
+  background-color: #f0f0f0;
+}

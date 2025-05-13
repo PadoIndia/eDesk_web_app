@@ -1,16 +1,18 @@
 import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./navbar";
 import Sidebar from "./sidebar";
 import "./styles.scss";
 
-const Layout = ({
-  children,
-  showSideBar = true,
-}: {
-  children: React.ReactNode;
-  showSideBar?: boolean;
-}) => {
+const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  const pathname = location.pathname;
+  const isHome = pathname === "/";
+  const isEventPage = /^\/events\/[^/]+$/.test(pathname);
+
+  const shouldShowSidebar = isHome || isEventPage;
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -20,12 +22,11 @@ const Layout = ({
       <Navbar onMenuClick={toggleSidebar} />
 
       <div className="layout-body">
-        {showSideBar && (
+        {shouldShowSidebar && (
           <>
             <div className={`mobile-sidebar ${isSidebarOpen ? "open" : ""}`}>
               <Sidebar />
             </div>
-
             <aside className="desktop-sidebar">
               <Sidebar />
             </aside>
@@ -33,11 +34,13 @@ const Layout = ({
         )}
 
         {isSidebarOpen && (
-          <div className="sidebar-overlay" onClick={closeSidebar}></div>
+          <div className="sidebar-overlay" onClick={closeSidebar} />
         )}
 
-        <main className={`main-content ${showSideBar ? "with-sidebar" : ""}`}>
-          {children}
+        <main
+          className={`main-content ${shouldShowSidebar ? "with-sidebar" : ""}`}
+        >
+          <Outlet />
         </main>
       </div>
     </div>

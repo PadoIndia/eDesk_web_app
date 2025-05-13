@@ -1,6 +1,6 @@
 import { LuShare2, LuPencil, LuClock } from "react-icons/lu";
 import { SingleVideoResponse } from "../../../types/video.types";
-import { formatSeconds } from "../../../utils/helper";
+import { formatMiliSeconds } from "../../../utils/helper";
 import { GrView } from "react-icons/gr";
 import DurationsModal from "./durations-modal";
 import { useState } from "react";
@@ -22,7 +22,7 @@ export default function VideoInfo({ videoInfo }: Props) {
       <div className="video-meta">
         <span className="d-flex align-items-center">
           <LuClock className="icon" />
-          {formatSeconds(videoInfo?.durationInSec)}
+          {formatMiliSeconds(videoInfo?.durationInSec)}
         </span>
         <span
           className="d-flex align-items-center gap-2"
@@ -43,16 +43,6 @@ export default function VideoInfo({ videoInfo }: Props) {
           <LuPencil className="icon" />
           Edit Metadata
         </button>
-      </div>
-      <div className="mb-3">
-        <h3 className="metadata-label">Timestamps</h3>
-        <div className="timestamp-buttons">
-          {videoInfo?.timestamps.map((timestamp) => (
-            <button className="btn btn-sm btn-light">
-              {timestamp.timeInSec} - {timestamp.comment}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div>

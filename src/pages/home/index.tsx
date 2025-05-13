@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Layout from "../../components/layout";
 import VideoCard from "../../components/ui/cards/video-card";
 import Search from "../../components/ui/search";
 import { VideoResponse } from "../../types/video.types";
@@ -27,12 +26,13 @@ const Home: React.FC = () => {
         });
     }
   }, [eventId]);
+
   const filtered = videos.filter((v) =>
     v.name.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
-    <Layout showSideBar>
+    <div>
       <div className="d-flex justify-content-between p-2">
         <Search value={query} onChange={setQuery} />
         <div>
@@ -42,12 +42,12 @@ const Home: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="video-list">
+      <div className="row gap-4 mx-auto">
         {filtered.map((video) => (
           <VideoCard key={video.videoId} {...video} />
         ))}
       </div>
-    </Layout>
+    </div>
   );
 };
 

@@ -64,3 +64,13 @@
   background-color: rgb(95, 70, 227,0.7);
   border-radius: 10px;
 }
+
+
+
+
+.group-toggle.active,
+.group-inner .active {
+  background-color: #e8f0fe !important;
+  font-weight: 600;
+  border-radius: 4px;
+}

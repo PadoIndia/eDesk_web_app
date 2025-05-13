@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import SearchBar from "./components/search-bar";
-import FilterOptions from "./components/filter-options";
+import FilterOptions, { Filters } from "./components/filter-options";
 import VideoList from "./components/video-list";
 import Pagination from "./components/pagination";
-import "./styles.scss";
-import Layout from "../../components/layout";
 import { VideoResponse } from "../../types/video.types";
 import videoService from "../../services/api-services/video.service";
 
@@ -13,11 +11,7 @@ export default function SearchPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<{
-    uploadDate: string;
-    platform: string;
-    tagId: number | null;
-  }>({
+  const [filters, setFilters] = useState<Filters>({
     uploadDate: "",
     platform: "",
     tagId: null,
@@ -30,7 +24,7 @@ export default function SearchPage() {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (newFilters: any) => {
+  const handleFilterChange = (newFilters: Filters) => {
     setFilters(newFilters);
     setCurrentPage(1);
   };
@@ -62,7 +56,7 @@ export default function SearchPage() {
   }, [searchQuery, filters]);
 
   return (
-    <Layout showSideBar={false}>
+    <div>
       <div className="container search-page my-4">
         <SearchBar onSearch={handleSearch} />
 
@@ -94,6 +88,6 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }
