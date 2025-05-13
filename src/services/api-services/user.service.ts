@@ -9,6 +9,9 @@ class UserService extends ApiService {
   getAllUsers(): ApiResponse<User[]> {
     return this.getData(``);
   }
+    getUserById(id:number): ApiResponse<User> {
+    return this.getData(`/${id}`);
+  }
 }
 
 export default new UserService();

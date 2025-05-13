@@ -6,10 +6,11 @@ import EventsPage from "./pages/events";
 import Layout from "./components/layout";
 import VideoSearchPage from "./pages/search";
 import SocialMediaManagement from "./pages/social-media";
-import Logs from "./pages/logs";
+// import Logs from "./pages/logs";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
+import HrmApp from "./hrm-app";
 
 function App() {
   const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);
@@ -60,8 +61,8 @@ function App() {
       />
 
       <Route
-        path="/logs"
-        element={loggedIn ? <Logs /> : <Navigate to="/login" replace />}
+        path="/hrm"
+        element={loggedIn ? <HrmApp /> : <Navigate to="/login" replace />}
       />
       <Route
         path="/search"

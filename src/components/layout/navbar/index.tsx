@@ -75,6 +75,11 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
                   <i className="bi bi-journal-text me-1"></i> Logs
                 </Link>
               </li>
+              <li className="nav-item">
+                <Link className="nav-link px-3" to="/hrm">
+                  <i className="bi bi-person-lines-fill me-1"></i> HRM
+                </Link>
+                </li>
             </ul>
 
             {/* Profile dropdown - always visible but adjusts based on screen size */}
