@@ -76,10 +76,10 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link px-3" to="/hrm">
+                <Link className="nav-link px-3" to="/hrm/dashboard">
                   <i className="bi bi-person-lines-fill me-1"></i> HRM
                 </Link>
-                </li>
+              </li>
             </ul>
 
             {/* Profile dropdown - always visible but adjusts based on screen size */}

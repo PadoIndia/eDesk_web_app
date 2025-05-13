@@ -32,7 +32,12 @@ function App() {
       <Route
         path="/login"
         element={loggedIn ? <Navigate to="/" replace /> : <Login />}
+      />      
+     <Route
+        path="/hrm/*"
+        element={loggedIn ? <HrmApp /> : <Navigate to="/login" replace />}
       />
+ 
       <Route
         path="/"
         element={
@@ -61,7 +66,7 @@ function App() {
       />
 
       <Route
-        path="/hrm"
+        path="/hrm-dashboard"
         element={loggedIn ? <HrmApp /> : <Navigate to="/login" replace />}
       />
       <Route

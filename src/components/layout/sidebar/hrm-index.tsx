@@ -1,3 +1,4 @@
+// hrm-index.tsx sidebar to be used in the hrm-app.tsx file
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaCalendarAlt, FaClock, FaBars, FaTimes, FaUsers } from "react-icons/fa";
@@ -40,7 +41,7 @@ const Sidebar = () => {
       <div className="p-2">
         <nav className="d-flex flex-column gap-2">
           <NavLink
-            to="/leave"
+            to="/hrm/leave"
             className="btn shadow-none border-0 text-dark py-3 d-flex align-items-center"
             style={{
               justifyContent: isOpen ? "flex-start" : "center",
@@ -65,7 +66,7 @@ const Sidebar = () => {
           </NavLink>
 
           <NavLink
-            to="/attendance"
+            to="/hrm/attendance"
             className="btn shadow-none border-0 text-dark py-3 d-flex align-items-center"
             style={{
               justifyContent: isOpen ? "flex-start" : "center",
@@ -89,7 +90,7 @@ const Sidebar = () => {
             </span>
           </NavLink>
           <NavLink
-            to="/department-management"
+            to="/hrm/department-management"
             className="text-decoration-none text-dark"
             onClick={handleNavClick}  // Added onClick handler
           >

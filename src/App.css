@@ -5,3 +5,38 @@
   text-align: left;
   overflow-x: hidden;
 }
+
+.badge-approved {
+  background-color: #E1F9E3;
+  color: #008444 !important;
+}
+
+.badge-pending {
+  background-color: #ECE9FF !important;
+  color: #5F46E3 !important;
+}
+
+.badge-rejected {
+  background-color: #FFEAF4 !important;
+  color: #C91E5C !important;
+}
+
+.badge-cancelled {
+  background-color: #FFF3DC !important;
+  color: #FFB023 !important;
+}
+
+.badge-default {
+  background-color: #E0F6FF;
+  color: #3090E8 !important;
+}
+.profile-img-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Edit button hover effect */
+.btn-edit:hover {
+  transform: translate(25%, 25%) scale(1.1);
+  transition: all 0.2s ease;
+}

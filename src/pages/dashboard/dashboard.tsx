@@ -171,7 +171,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="card-footer bg-light">
-          <Link to="/users/2" className="btn btn-outline-primary">
+          <Link to="/hrm/users/2" className="btn btn-outline-primary">
             <FaInfoCircle className="me-2" />
             View Full Details
           </Link>
