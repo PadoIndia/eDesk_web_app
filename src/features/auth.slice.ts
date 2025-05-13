@@ -61,10 +61,9 @@ const authSlice = createSlice({
   reducers: {
     checkAuth(state) {
       const data = decryptAndParseTokenFromStorage();
-      if (data) {
-        state.userData = data;
-        state.isLoggedIn = true;
-      } else state.isLoggedIn = false;
+
+      if(data){ state.isLoggedIn = true; state.userData = data; }
+      else state.isLoggedIn = false;
       state.isVerifying = false;
     },
   },
@@ -78,6 +77,7 @@ const authSlice = createSlice({
       })
       .addCase(logIn.fulfilled, (state, action) => {
         state.userData = action.payload;
+        console.log("action", action.payload);
         state.isLoggedIn = true;
         state.isLoading = false;
       });

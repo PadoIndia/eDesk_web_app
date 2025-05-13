@@ -30,7 +30,7 @@
 //     if (!draft.name.trim() || !/^\S+@\S+\.\S+$/.test(draft.username) || !/^\+?\d{10,15}$/.test(draft.contact)) {
 //       toast.error("Please enter valid Name, Email, and Contact");
 //       return;
-//     }     
+//     }
 //     setUser({ ...user, ...draft, updatedOn: new Date().toISOString().split('T')[0] });
 //     setIsEditing(false);
 //     toast.success("Changes saved successfully");
@@ -203,22 +203,88 @@
 
 // export default UserDetails;
 
-
-
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { 
-  FaEdit, FaUser, FaCalendarAlt, FaPhone, FaTransgender, FaBusinessTime, 
-  FaSave, FaTimes, FaMapMarkerAlt, FaAddressCard, FaIdCard, FaPlus, 
-  FaTrash, FaStar, FaEnvelope, FaWhatsapp, FaFileAlt
+import {
+  FaEdit,
+  FaUser,
+  FaCalendarAlt,
+  FaPhone,
+  FaTransgender,
+  FaBusinessTime,
+  FaSave,
+  FaTimes,
+  FaMapMarkerAlt,
+  FaAddressCard,
+  FaIdCard,
+  FaPlus,
+  FaTrash,
+  FaStar,
+  FaEnvelope,
+  FaWhatsapp,
+  FaFileAlt,
 } from "react-icons/fa";
+import userApi from "../../services/api-services/user.service";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+type User = {
+  profileImg: {
+    id: bigint | undefined;
+    url: string | null;
+  };
+  id: number;
+  name: string | null;
+  username: string;
+  status: string | null;
+  isActive: boolean;
+  lastSeen: Date | null;
+  contact: string;
+};
+
+type UserDataDetails = {
+  id: number;
+  gender: string;
+  dob:string;
+  joiningDate: string;
+  createdOn:string;
+  leaveSchemeId?: number;
+  updatedOn: string;
+  userId: number;
+  weekoff: string;
+};
+
+
 const UserDetails = () => {
+  
+  const defaultUser: User = {
+    profileImg: {
+      id: undefined,
+      url: null,
+    },
+    id: 0,
+    name: null,
+    username: "",
+    status: null,
+    isActive: false,
+    lastSeen: null,
+    contact: "",
+  };
+  
+  const defaultUserDataDetails: UserDataDetails = {
+    id: 0,
+    gender: "",
+    dob:"",
+    joiningDate: "",
+    createdOn:"",
+    leaveSchemeId: undefined,
+    updatedOn: "",
+    userId: 0,
+    weekoff: ""
+  };
+  
   const { userId } = useParams();
-  const [isEditing, setIsEditing] = useState(false);
+  
   const [user, setUser] = useState({
     id: userId,
     name: "Saksham Jain",
@@ -235,7 +301,47 @@ const UserDetails = () => {
     weekoff: "Saturday, Sunday",
     leaveScheme: "Annual Leave (20 days)",
   });
-  const [draft, setDraft] = useState({ name: user.name, username: user.username, contact: user.contact });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [userData, setUserData] = useState<User>(defaultUser);
+  const [userDataDetails, setUserDataDetails] = useState<UserDataDetails>(defaultUserDataDetails);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        if (!userId) return;
+
+        const userResponse = await userApi.getUserById(Number(userId));
+        const userDataDetailsResponse = await userApi.getUserDetailsById(Number(userId));
+        
+        // console.log("User Details:", userDetailsResponse.data);
+        setUserData(userResponse.data);
+        setUserDataDetails(userDataDetailsResponse.data);                
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUser();
+  }, [userId]); // Add userId as dependency
+
+  const [draft, setDraft] = useState({
+    name: "",
+    username: "",
+    contact: "",
+  });
+
+  useEffect(() => {
+    setDraft({
+      name: userData.name || "",
+      username: userData.username || "",
+      contact: userData.contact || "",
+    });
+  }, [userData]);
+
+
+
+
 
   // User Contacts Section
   interface Contact {
@@ -243,59 +349,89 @@ const UserDetails = () => {
     relation: string;
     name: string;
     value: string;
-    contactType: 'email' | 'whatsapp' | 'phone';
+    contactType: "email" | "whatsapp" | "phone";
   }
 
   const [contacts, setContacts] = useState<Contact[]>([
-    { id: 1, relation: "Self", name: "Primary Phone", value: "+91 9999999999", contactType: "phone" },
-    { id: 2, relation: "Self", name: "Work Email", value: "saksham.work@gmail.com", contactType: "email" },
-    { id: 3, relation: "Father", name: "Father's Phone", value: "+91 8888888888", contactType: "phone" },
-    { id: 4, relation: "Mother", name: "Mother's Phone", value: "+91 7777777777", contactType: "whatsapp" },
-    { id: 5, relation: "Brother", name: "Brother's Email", value: "brother@gmail.com", contactType: "email" },
+    {
+      id: 1,
+      relation: "Self",
+      name: "Primary Phone",
+      value: "+91 9999999999",
+      contactType: "phone",
+    },
+    {
+      id: 2,
+      relation: "Self",
+      name: "Work Email",
+      value: "saksham.work@gmail.com",
+      contactType: "email",
+    },
+    {
+      id: 3,
+      relation: "Father",
+      name: "Father's Phone",
+      value: "+91 8888888888",
+      contactType: "phone",
+    },
+    {
+      id: 4,
+      relation: "Mother",
+      name: "Mother's Phone",
+      value: "+91 7777777777",
+      contactType: "whatsapp",
+    },
+    {
+      id: 5,
+      relation: "Brother",
+      name: "Brother's Email",
+      value: "brother@gmail.com",
+      contactType: "email",
+    },
   ]);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [newContact, setNewContact] = useState<Omit<Contact, 'id'>>({
+  const [newContact, setNewContact] = useState<Omit<Contact, "id">>({
     relation: "Self",
     name: "",
     value: "",
-    contactType: "phone" as const
+    contactType: "phone" as const,
   });
 
   // User Addresses Section
   const [addresses, setAddresses] = useState([
-    { 
-      id: 1, 
-      addressType: "Home", 
-      address: "123 Main Street, Apartment 4B", 
-      landmark: "Near Central Park", 
-      pincode: "400001", 
-      state: "Maharashtra", 
-      city: "Mumbai", 
-      isPrimary: true, 
-      isActive: true 
+    {
+      id: 1,
+      addressType: "Home",
+      address: "123 Main Street, Apartment 4B",
+      landmark: "Near Central Park",
+      pincode: "400001",
+      state: "Maharashtra",
+      city: "Mumbai",
+      isPrimary: true,
+      isActive: true,
     },
-    { 
-      id: 2, 
-      addressType: "Work", 
-      address: "456 Business Avenue, Tower C", 
-      landmark: "Bandra Kurla Complex", 
-      pincode: "400051", 
-      state: "Maharashtra", 
-      city: "Mumbai", 
-      isPrimary: false, 
-      isActive: true 
+    {
+      id: 2,
+      addressType: "Work",
+      address: "456 Business Avenue, Tower C",
+      landmark: "Bandra Kurla Complex",
+      pincode: "400051",
+      state: "Maharashtra",
+      city: "Mumbai",
+      isPrimary: false,
+      isActive: true,
     },
-    { 
-      id: 3, 
-      addressType: "Permanent", 
-      address: "789 Village Road", 
-      landmark: "Near Old Temple", 
-      pincode: "302001", 
-      state: "Rajasthan", 
-      city: "Jaipur", 
-      isPrimary: false, 
-      isActive: true 
-    }
+    {
+      id: 3,
+      addressType: "Permanent",
+      address: "789 Village Road",
+      landmark: "Near Old Temple",
+      pincode: "302001",
+      state: "Rajasthan",
+      city: "Jaipur",
+      isPrimary: false,
+      isActive: true,
+    },
   ]);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({
@@ -306,44 +442,79 @@ const UserDetails = () => {
     state: "",
     city: "",
     isPrimary: false,
-    isActive: true
+    isActive: true,
   });
 
   // User Documents Section
-  const [documents, setDocuments] = useState<Array<{
-    id: number;
-    title: string;
-    fileUrl: string;
-    documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
-  }>>([
-    { id: 1, title: "Aadhar Card", fileUrl: "/documents/aadhar.pdf", documentType: "AADHAR" },
-    { id: 2, title: "PAN Card", fileUrl: "/documents/pan.pdf", documentType: "PAN" },
-    { id: 3, title: "Passport", fileUrl: "/documents/passport.pdf", documentType: "PASSPORT" }
+  const [documents, setDocuments] = useState<
+    Array<{
+      id: number;
+      title: string;
+      fileUrl: string;
+      documentType:
+        | "AADHAR"
+        | "PAN"
+        | "PASSPORT"
+        | "VOTER_ID"
+        | "DRIVING_LICENCE";
+    }>
+  >([
+    {
+      id: 1,
+      title: "Aadhar Card",
+      fileUrl: "/documents/aadhar.pdf",
+      documentType: "AADHAR",
+    },
+    {
+      id: 2,
+      title: "PAN Card",
+      fileUrl: "/documents/pan.pdf",
+      documentType: "PAN",
+    },
+    {
+      id: 3,
+      title: "Passport",
+      fileUrl: "/documents/passport.pdf",
+      documentType: "PASSPORT",
+    },
   ]);
   const [isAddingDocument, setIsAddingDocument] = useState(false);
   const [newDocument, setNewDocument] = useState<{
     title: string;
     fileUrl: string;
-    documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
+    documentType:
+      | "AADHAR"
+      | "PAN"
+      | "PASSPORT"
+      | "VOTER_ID"
+      | "DRIVING_LICENCE";
   }>({
     title: "",
     fileUrl: "",
-    documentType: "AADHAR"
+    documentType: "AADHAR",
   });
 
   const handleSave = () => {
     // validate simple
-    if (!draft.name.trim() || !/^\S+@\S+\.\S+$/.test(draft.username) || !/^\+?\d{10,15}$/.test(draft.contact)) {
+    if (
+      !draft.name?.trim() ||
+      !/^\S+@\S+\.\S+$/.test(draft.username) ||
+      !/^\+?\d{10,15}$/.test(draft.contact)
+    ) {
       toast.error("Please enter valid Name, Email, and Contact");
       return;
-    }     
-    setUser({ ...user, ...draft, updatedOn: new Date().toISOString().split('T')[0] });
+    }
+    setUserData({ ...userData, ...draft });
     setIsEditing(false);
     toast.success("Changes saved successfully");
   };
 
   const handleCancel = () => {
-    setDraft({ name: user.name, username: user.username, contact: user.contact });
+    setDraft({
+      name: userData.name ?? "",
+      username: userData.username,
+      contact: userData.contact,
+    });
     setIsEditing(false);
   };
 
@@ -355,32 +526,49 @@ const UserDetails = () => {
     }
 
     // Basic validation
-    if (newContact.contactType === "email" && !/^\S+@\S+\.\S+$/.test(newContact.value)) {
+    if (
+      newContact.contactType === "email" &&
+      !/^\S+@\S+\.\S+$/.test(newContact.value)
+    ) {
       toast.error("Please enter a valid email address");
       return;
     }
-    
-    if ((newContact.contactType === "phone" || newContact.contactType === "whatsapp") && 
-        !/^\+?\d{10,15}$/.test(newContact.value)) {
+
+    if (
+      (newContact.contactType === "phone" ||
+        newContact.contactType === "whatsapp") &&
+      !/^\+?\d{10,15}$/.test(newContact.value)
+    ) {
       toast.error("Please enter a valid phone number");
       return;
     }
 
-    const newId = contacts.length > 0 ? Math.max(...contacts.map(c => c.id)) + 1 : 1;
+    const newId =
+      contacts.length > 0 ? Math.max(...contacts.map((c) => c.id)) + 1 : 1;
     setContacts([...contacts, { ...newContact, id: newId }]);
-    setNewContact({ relation: "Self", name: "", value: "", contactType: "phone" });
+    setNewContact({
+      relation: "Self",
+      name: "",
+      value: "",
+      contactType: "phone",
+    });
     setIsAddingContact(false);
     toast.success("Contact added successfully");
   };
 
   const handleDeleteContact = (id: number): void => {
-    setContacts(contacts.filter(contact => contact.id !== id));
+    setContacts(contacts.filter((contact) => contact.id !== id));
     toast.success("Contact deleted successfully");
   };
 
   // Address handlers
   const handleAddAddress = () => {
-    if (!newAddress.address.trim() || !newAddress.pincode.trim() || !newAddress.state.trim() || !newAddress.city.trim()) {
+    if (
+      !newAddress.address.trim() ||
+      !newAddress.pincode.trim() ||
+      !newAddress.state.trim() ||
+      !newAddress.city.trim()
+    ) {
       toast.error("Please fill all required address fields");
       return;
     }
@@ -391,17 +579,18 @@ const UserDetails = () => {
       return;
     }
 
-    const newId = addresses.length > 0 ? Math.max(...addresses.map(a => a.id)) + 1 : 1;
-    
+    const newId =
+      addresses.length > 0 ? Math.max(...addresses.map((a) => a.id)) + 1 : 1;
+
     // If this is marked as primary, update other addresses
     let updatedAddresses = [...addresses];
     if (newAddress.isPrimary) {
-      updatedAddresses = updatedAddresses.map(addr => ({
+      updatedAddresses = updatedAddresses.map((addr) => ({
         ...addr,
-        isPrimary: false
+        isPrimary: false,
       }));
     }
-    
+
     setAddresses([...updatedAddresses, { ...newAddress, id: newId }]);
     setNewAddress({
       addressType: "Home",
@@ -411,7 +600,7 @@ const UserDetails = () => {
       state: "",
       city: "",
       isPrimary: false,
-      isActive: true
+      isActive: true,
     });
     setIsAddingAddress(false);
     toast.success("Address added successfully");
@@ -430,7 +619,7 @@ const UserDetails = () => {
   }
 
   const handleDeleteAddress = (id: number): void => {
-    setAddresses(addresses.filter(address => address.id !== id));
+    setAddresses(addresses.filter((address) => address.id !== id));
     toast.success("Address deleted successfully");
   };
 
@@ -447,10 +636,12 @@ const UserDetails = () => {
   }
 
   const handleSetPrimary = (id: number): void => {
-    setAddresses(addresses.map((address: Address) => ({
-      ...address,
-      isPrimary: address.id === id
-    })));
+    setAddresses(
+      addresses.map((address: Address) => ({
+        ...address,
+        isPrimary: address.id === id,
+      }))
+    );
     toast.success("Primary address updated");
   };
 
@@ -461,7 +652,8 @@ const UserDetails = () => {
       return;
     }
 
-    const newId = documents.length > 0 ? Math.max(...documents.map(d => d.id)) + 1 : 1;
+    const newId =
+      documents.length > 0 ? Math.max(...documents.map((d) => d.id)) + 1 : 1;
     setDocuments([...documents, { ...newDocument, id: newId }]);
     setNewDocument({ title: "", fileUrl: "", documentType: "AADHAR" });
     setIsAddingDocument(false);
@@ -472,7 +664,12 @@ const UserDetails = () => {
     id: number;
     title: string;
     fileUrl: string;
-    documentType: 'AADHAR' | 'PAN' | 'PASSPORT' | 'VOTER_ID' | 'DRIVING_LICENCE';
+    documentType:
+      | "AADHAR"
+      | "PAN"
+      | "PASSPORT"
+      | "VOTER_ID"
+      | "DRIVING_LICENCE";
   }
 
   const handleDeleteDocument = (id: number): void => {
@@ -482,11 +679,13 @@ const UserDetails = () => {
 
   // Helper for Contact Type Icon
   interface ContactType {
-    type: 'email' | 'whatsapp' | 'phone';
+    type: "email" | "whatsapp" | "phone";
   }
 
-  const getContactTypeIcon = (type: ContactType['type']): React.ReactElement => {
-    switch(type) {
+  const getContactTypeIcon = (
+    type: ContactType["type"]
+  ): React.ReactElement => {
+    switch (type) {
       case "email":
         return <FaEnvelope className="text-primary" />;
       case "whatsapp":
@@ -499,11 +698,13 @@ const UserDetails = () => {
 
   // Helper for Document Type Icon
   interface DocumentType {
-    type: 'AADHAR' | 'PAN' | 'PASSPORT' | 'VOTER_ID' | 'DRIVING_LICENCE';
+    type: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
   }
 
-  const getDocumentTypeIcon = (type: DocumentType['type']): React.ReactElement => {
-    switch(type) {
+  const getDocumentTypeIcon = (
+    type: DocumentType["type"]
+  ): React.ReactElement => {
+    switch (type) {
       case "AADHAR":
       case "PAN":
       case "PASSPORT":
@@ -517,7 +718,7 @@ const UserDetails = () => {
   return (
     <div className="container py-10 p-5">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-      
+
       {/* User Details Card */}
       <div className="card shadow mb-4">
         <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
@@ -532,31 +733,46 @@ const UserDetails = () => {
             {/* Profile Image Section */}
             <div className="col-12 col-md-4 mb-4 mb-md-0 text-center">
               <div className="text-center">
-                {user.profileImg ? (
+                {userData.profileImg ? (
                   <img
-                    src={user.profileImg}
+                    src={userData.profileImg.url || undefined}
                     alt="Profile"
                     className="rounded-circle mb-3"
-                    style={{ width: "200px", height: "200px", objectFit: "cover" }}
+                    style={{
+                      width: "200px",
+                      height: "200px",
+                      objectFit: "cover",
+                    }}
                   />
                 ) : (
                   <div
                     className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                    style={{ width: "200px", height: "200px",  backgroundColor: '#FFF3DC', color: '#333',  fontSize: '3rem',
-                        fontWeight: 'bold' }}
+                    style={{
+                      width: "200px",
+                      height: "200px",
+                      backgroundColor: "#FFF3DC",
+                      color: "#333",
+                      fontSize: "3rem",
+                      fontWeight: "bold",
+                    }}
                   >
                     <span className=" display-4">
-                      {user.name.split(" ").map((n) => n[0]).join("")}
+                      {(userData.name || "User")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </span>
                   </div>
                 )}
               </div>
-              <h5 className="text-center">{user.name}</h5>
+              <h5 className="text-center">{userData.name}</h5>
 
               {/* Edit toggle button */}
               <button
                 className="btn btn-primary w-50 mt-2"
-                onClick={() => (isEditing ? handleCancel() : setIsEditing(true))}
+                onClick={() =>
+                  isEditing ? handleCancel() : setIsEditing(true)
+                }
                 disabled={isEditing}
               >
                 <FaEdit className="me-2" /> Edit Details
@@ -570,15 +786,15 @@ const UserDetails = () => {
                 <DetailItem
                   icon={<FaUser />}
                   label="Full Name"
-                  value={isEditing ? undefined : user.name}
-                  editValue={draft.name}
+                  value={isEditing ? undefined : userData.name ?? undefined}
+                  editValue={draft.name ?? undefined}
                   onChange={(val) => setDraft({ ...draft, name: val })}
                   isEditing={isEditing}
                 />
                 <DetailItem
                   icon={<FaUser />}
                   label="Email"
-                  value={isEditing ? undefined : user.username}
+                  value={isEditing ? undefined : userData.username}
                   editValue={draft.username}
                   onChange={(val) => setDraft({ ...draft, username: val })}
                   isEditing={isEditing}
@@ -586,7 +802,7 @@ const UserDetails = () => {
                 <DetailItem
                   icon={<FaPhone />}
                   label="Contact"
-                  value={isEditing ? undefined : user.contact}
+                  value={isEditing ? undefined : userData.contact.slice(-10)}
                   editValue={draft.contact}
                   onChange={(val) => setDraft({ ...draft, contact: val })}
                   isEditing={isEditing}
@@ -595,33 +811,35 @@ const UserDetails = () => {
                 <DetailItem
                   icon={<FaCalendarAlt />}
                   label="Date of Birth"
-                  value={new Date(user.dob).toLocaleDateString()}
+                  value={new Date(userDataDetails.dob).toLocaleDateString()}
                 />
                 <DetailItem
                   icon={<FaTransgender />}
                   label="Gender"
-                  value={user.gender}
+                  value={userDataDetails.gender}
                 />
                 <DetailItem
                   icon={<FaBusinessTime />}
                   label="Joining Date"
-                  value={new Date(user.joiningDate).toLocaleDateString()}
+                  value={new Date(userDataDetails.joiningDate).toLocaleDateString()}
                 />
                 <DetailItem
                   label="Status"
-                  value={user.status}
-                  badgeClass={user.status === "Active" ? "bg-success" : "bg-danger"}
+                  value={userData.status ?? undefined}
+                  badgeClass={
+                    userData.status === "Active" ? "bg-success" : "bg-danger"
+                  }
                 />
                 <DetailItem
                   label="Created On"
-                  value={new Date(user.createdOn).toLocaleDateString()}
+                  value={new Date(userDataDetails.createdOn).toLocaleDateString()}
                 />
                 <DetailItem
                   label="Last Updated"
-                  value={new Date(user.updatedOn).toLocaleDateString()}
+                  value={new Date(userDataDetails.updatedOn).toLocaleDateString()}
                 />
-                <DetailItem label="Weekly Off" value={user.weekoff} />
-                <DetailItem label="Leave Scheme" value={user.leaveScheme} />
+                <DetailItem label="Weekly Off" value={userDataDetails.weekoff} />
+                <DetailItem label="Leave Scheme" value={userDataDetails.leaveSchemeId?.toString()} />
               </div>
 
               {/* Save/Cancel buttons */}
@@ -647,11 +865,12 @@ const UserDetails = () => {
             <FaPhone className="me-2" />
             User Contacts
           </h3>
-          <button 
-            className="btn btn-light" 
+          <button
+            className="btn btn-light"
             onClick={() => setIsAddingContact(!isAddingContact)}
           >
-            {isAddingContact ? <FaTimes /> : <FaPlus />} {isAddingContact ? "Cancel" : "Add Contact"}
+            {isAddingContact ? <FaTimes /> : <FaPlus />}{" "}
+            {isAddingContact ? "Cancel" : "Add Contact"}
           </button>
         </div>
 
@@ -663,10 +882,15 @@ const UserDetails = () => {
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">Relation</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={newContact.relation}
-                      onChange={(e) => setNewContact({...newContact, relation: e.target.value})}
+                      onChange={(e) =>
+                        setNewContact({
+                          ...newContact,
+                          relation: e.target.value,
+                        })
+                      }
                     >
                       <option value="Self">Self</option>
                       <option value="Father">Father</option>
@@ -679,10 +903,18 @@ const UserDetails = () => {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Contact Type</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={newContact.contactType}
-                      onChange={(e) => setNewContact({...newContact, contactType: e.target.value as 'email' | 'whatsapp' | 'phone'})}
+                      onChange={(e) =>
+                        setNewContact({
+                          ...newContact,
+                          contactType: e.target.value as
+                            | "email"
+                            | "whatsapp"
+                            | "phone",
+                        })
+                      }
                     >
                       <option value="phone">Phone</option>
                       <option value="email">Email</option>
@@ -691,27 +923,40 @@ const UserDetails = () => {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       placeholder="E.g., Work Phone, Personal Email"
                       value={newContact.name}
-                      onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+                      onChange={(e) =>
+                        setNewContact({ ...newContact, name: e.target.value })
+                      }
                     />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Value</label>
-                    <input 
-                      type={newContact.contactType === "email" ? "email" : "text"}
+                    <input
+                      type={
+                        newContact.contactType === "email" ? "email" : "text"
+                      }
                       className="form-control"
-                      placeholder={newContact.contactType === "email" ? "email@example.com" : "+91 9999999999"}
+                      placeholder={
+                        newContact.contactType === "email"
+                          ? "email@example.com"
+                          : "+91 9999999999"
+                      }
                       value={newContact.value}
-                      onChange={(e) => setNewContact({...newContact, value: e.target.value})}
+                      onChange={(e) =>
+                        setNewContact({ ...newContact, value: e.target.value })
+                      }
                     />
                   </div>
                 </div>
                 <div className="mt-3">
-                  <button className="btn btn-success" onClick={handleAddContact}>
+                  <button
+                    className="btn btn-success"
+                    onClick={handleAddContact}
+                  >
                     <FaSave /> Save Contact
                   </button>
                 </div>
@@ -721,7 +966,7 @@ const UserDetails = () => {
 
           {/* Contacts List */}
           <div className="row g-3">
-            {contacts.map(contact => (
+            {contacts.map((contact) => (
               <div key={contact.id} className="col-12 col-md-6">
                 <div className="card h-100">
                   <div className="card-body">
@@ -730,11 +975,13 @@ const UserDetails = () => {
                         {getContactTypeIcon(contact.contactType)}
                         <div>
                           <h5 className="mb-0">{contact.name}</h5>
-                          <div className="text-muted small">{contact.relation}</div>
+                          <div className="text-muted small">
+                            {contact.relation}
+                          </div>
                         </div>
                       </div>
-                      <button 
-                        className="btn btn-sm btn-outline-danger" 
+                      <button
+                        className="btn btn-sm btn-outline-danger"
                         onClick={() => handleDeleteContact(contact.id)}
                       >
                         <FaTrash />
@@ -761,11 +1008,12 @@ const UserDetails = () => {
             <FaMapMarkerAlt className="me-2" />
             User Addresses
           </h3>
-          <button 
-            className="btn btn-light" 
+          <button
+            className="btn btn-light"
             onClick={() => setIsAddingAddress(!isAddingAddress)}
           >
-            {isAddingAddress ? <FaTimes /> : <FaPlus />} {isAddingAddress ? "Cancel" : "Add Address"}
+            {isAddingAddress ? <FaTimes /> : <FaPlus />}{" "}
+            {isAddingAddress ? "Cancel" : "Add Address"}
           </button>
         </div>
 
@@ -777,10 +1025,15 @@ const UserDetails = () => {
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">Address Type</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={newAddress.addressType}
-                      onChange={(e) => setNewAddress({...newAddress, addressType: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          addressType: e.target.value,
+                        })
+                      }
                     >
                       <option value="Home">Home</option>
                       <option value="Work">Work</option>
@@ -791,76 +1044,112 @@ const UserDetails = () => {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">City</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       value={newAddress.city}
-                      onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, city: e.target.value })
+                      }
                     />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">State</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       value={newAddress.state}
-                      onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({ ...newAddress, state: e.target.value })
+                      }
                     />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Pincode</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       value={newAddress.pincode}
-                      onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          pincode: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="col-md-12">
                     <label className="form-label">Address</label>
-                    <textarea 
+                    <textarea
                       className="form-control"
                       rows={2}
                       value={newAddress.address}
-                      onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          address: e.target.value,
+                        })
+                      }
                     ></textarea>
                   </div>
                   <div className="col-md-12">
                     <label className="form-label">Landmark</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       value={newAddress.landmark}
-                      onChange={(e) => setNewAddress({...newAddress, landmark: e.target.value})}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          landmark: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="col-md-6">
                     <div className="form-check">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="form-check-input"
                         id="isPrimary"
                         checked={newAddress.isPrimary}
-                        onChange={(e) => setNewAddress({...newAddress, isPrimary: e.target.checked})}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            isPrimary: e.target.checked,
+                          })
+                        }
                       />
-                      <label className="form-check-label" htmlFor="isPrimary">Set as Primary Address</label>
+                      <label className="form-check-label" htmlFor="isPrimary">
+                        Set as Primary Address
+                      </label>
                     </div>
                   </div>
                   <div className="col-md-6">
                     <div className="form-check">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="form-check-input"
                         id="isActive"
                         checked={newAddress.isActive}
-                        onChange={(e) => setNewAddress({...newAddress, isActive: e.target.checked})}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            isActive: e.target.checked,
+                          })
+                        }
                       />
-                      <label className="form-check-label" htmlFor="isActive">Active Address</label>
+                      <label className="form-check-label" htmlFor="isActive">
+                        Active Address
+                      </label>
                     </div>
                   </div>
                 </div>
                 <div className="mt-3">
-                  <button className="btn btn-success" onClick={handleAddAddress}>
+                  <button
+                    className="btn btn-success"
+                    onClick={handleAddAddress}
+                  >
                     <FaSave /> Save Address
                   </button>
                 </div>
@@ -870,9 +1159,13 @@ const UserDetails = () => {
 
           {/* Addresses List */}
           <div className="row g-3">
-            {addresses.map(address => (
+            {addresses.map((address) => (
               <div key={address.id} className="col-12">
-                <div className={`card h-100 ${address.isPrimary ? 'border-primary' : ''}`}>
+                <div
+                  className={`card h-100 ${
+                    address.isPrimary ? "border-primary" : ""
+                  }`}
+                >
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start">
                       <div>
@@ -880,26 +1173,45 @@ const UserDetails = () => {
                           <FaAddressCard className="text-primary" />
                           <h5 className="mb-0">
                             {address.addressType} Address
-                            {address.isPrimary && <span className="badge bg-primary ms-2">Primary</span>}
-                            {!address.isActive && <span className="badge bg-warning ms-2">Inactive</span>}
+                            {address.isPrimary && (
+                              <span className="badge bg-primary ms-2">
+                                Primary
+                              </span>
+                            )}
+                            {!address.isActive && (
+                              <span className="badge bg-warning ms-2">
+                                Inactive
+                              </span>
+                            )}
                           </h5>
                         </div>
-                        <p className="mb-1"><strong>Address:</strong> {address.address}</p>
-                        {address.landmark && <p className="mb-1"><strong>Landmark:</strong> {address.landmark}</p>}
-                        <p className="mb-1"><strong>City:</strong> {address.city}, <strong>State:</strong> {address.state}</p>
-                        <p className="mb-0"><strong>Pincode:</strong> {address.pincode}</p>
+                        <p className="mb-1">
+                          <strong>Address:</strong> {address.address}
+                        </p>
+                        {address.landmark && (
+                          <p className="mb-1">
+                            <strong>Landmark:</strong> {address.landmark}
+                          </p>
+                        )}
+                        <p className="mb-1">
+                          <strong>City:</strong> {address.city},{" "}
+                          <strong>State:</strong> {address.state}
+                        </p>
+                        <p className="mb-0">
+                          <strong>Pincode:</strong> {address.pincode}
+                        </p>
                       </div>
                       <div>
                         {!address.isPrimary && (
-                          <button 
-                            className="btn btn-sm btn-outline-primary me-2" 
+                          <button
+                            className="btn btn-sm btn-outline-primary me-2"
                             onClick={() => handleSetPrimary(address.id)}
                           >
                             <FaStar /> Set Primary
                           </button>
                         )}
-                        <button 
-                          className="btn btn-sm btn-outline-danger" 
+                        <button
+                          className="btn btn-sm btn-outline-danger"
                           onClick={() => handleDeleteAddress(address.id)}
                         >
                           <FaTrash />
@@ -926,11 +1238,12 @@ const UserDetails = () => {
             <FaFileAlt className="me-2" />
             User Documents
           </h3>
-          <button 
-            className="btn btn-light" 
+          <button
+            className="btn btn-light"
             onClick={() => setIsAddingDocument(!isAddingDocument)}
           >
-            {isAddingDocument ? <FaTimes /> : <FaPlus />} {isAddingDocument ? "Cancel" : "Add Document"}
+            {isAddingDocument ? <FaTimes /> : <FaPlus />}{" "}
+            {isAddingDocument ? "Cancel" : "Add Document"}
           </button>
         </div>
 
@@ -942,10 +1255,20 @@ const UserDetails = () => {
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">Document Type</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={newDocument.documentType}
-                      onChange={(e) => setNewDocument({...newDocument, documentType: e.target.value as "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE"})}
+                      onChange={(e) =>
+                        setNewDocument({
+                          ...newDocument,
+                          documentType: e.target.value as
+                            | "AADHAR"
+                            | "PAN"
+                            | "PASSPORT"
+                            | "VOTER_ID"
+                            | "DRIVING_LICENCE",
+                        })
+                      }
                     >
                       <option value="AADHAR">Aadhar Card</option>
                       <option value="PAN">PAN Card</option>
@@ -956,27 +1279,40 @@ const UserDetails = () => {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Title</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       placeholder="E.g., Aadhar Card"
                       value={newDocument.title}
-                      onChange={(e) => setNewDocument({...newDocument, title: e.target.value})}
+                      onChange={(e) =>
+                        setNewDocument({
+                          ...newDocument,
+                          title: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="col-md-12">
                     <label className="form-label">File URL</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       placeholder="E.g., /documents/aadhar.pdf"
                       value={newDocument.fileUrl}
-                      onChange={(e) => setNewDocument({...newDocument, fileUrl: e.target.value})}
+                      onChange={(e) =>
+                        setNewDocument({
+                          ...newDocument,
+                          fileUrl: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
                 <div className="mt-3">
-                  <button className="btn btn-success" onClick={handleAddDocument}>
+                  <button
+                    className="btn btn-success"
+                    onClick={handleAddDocument}
+                  >
                     <FaSave /> Save Document
                   </button>
                 </div>
@@ -986,7 +1322,7 @@ const UserDetails = () => {
 
           {/* Documents List */}
           <div className="row g-3">
-            {documents.map(document => (
+            {documents.map((document) => (
               <div key={document.id} className="col-12 col-md-6 col-lg-4">
                 <div className="card h-100">
                   <div className="card-body">
@@ -995,18 +1331,25 @@ const UserDetails = () => {
                         {getDocumentTypeIcon(document.documentType)}
                         <div>
                           <h5 className="mb-0">{document.title}</h5>
-                          <div className="text-muted small">{document.documentType}</div>
+                          <div className="text-muted small">
+                            {document.documentType}
+                          </div>
                         </div>
                       </div>
-                      <button 
-                        className="btn btn-sm btn-outline-danger" 
+                      <button
+                        className="btn btn-sm btn-outline-danger"
                         onClick={() => handleDeleteDocument(document.id)}
                       >
                         <FaTrash />
                       </button>
                     </div>
                     <div className="mt-3">
-                      <a href={document.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">
+                      <a
+                        href={document.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline-primary"
+                      >
                         View Document
                       </a>
                     </div>
@@ -1036,7 +1379,15 @@ interface DetailItemProps {
   badgeClass?: string;
 }
 
-const DetailItem: React.FC<DetailItemProps> = ({ icon, label, value, editValue, onChange, isEditing, badgeClass }) => (
+const DetailItem: React.FC<DetailItemProps> = ({
+  icon,
+  label,
+  value,
+  editValue,
+  onChange,
+  isEditing,
+  badgeClass,
+}) => (
   <div className="col-12 col-md-6 py-1 px-3">
     <div className="d-flex align-items-center gap-3 p-2 bg-light rounded">
       {icon && <span className="text-primary">{icon}</span>}

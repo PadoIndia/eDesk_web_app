@@ -11,3 +11,15 @@ export type User = {
   lastSeen: Date | null;
   contact: string;
 };
+
+export type UserDataDetails = {
+  id: number;
+  gender: string;
+  dob:string;
+  joiningDate: string;
+  createdOn:string;
+  leaveSchemeId?: number;
+  updatedOn: string;
+  userId: number;
+  weekoff: string;
+};

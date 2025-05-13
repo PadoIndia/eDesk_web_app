@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FaUser, FaInfoCircle } from "react-icons/fa";
 import { ChangeEvent, useEffect, useState } from "react";
 import userApi from "../../services/api-services/user.service";
+import { useAppSelector } from "../../store/store";
 
 // Add the User type
 type User = {
@@ -34,17 +35,13 @@ const Dashboard = () => {
     contact: "",
   };
   const [userData, setUserData] = useState<User>(defaultUser);
-
+  const userId = useAppSelector(s=>s.auth.userData?.user.id);
+ console.log(useAppSelector(s=>s.auth.userData));
+  
   useEffect(() => {
-    const encoded = localStorage.getItem("@user");
-    if (!encoded) return;
-
+   
     try {
-      const decoded = JSON.parse(atob(encoded)); // decode base64 and parse JSON
-      const userId = decoded?.user?.id; // adjust this path based on actual object
       if (!userId) return;
-
-      console.log("userId", userId);
 
       userApi
         .getUserById(userId)
@@ -171,7 +168,7 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="card-footer bg-light">
-          <Link to="/hrm/users/2" className="btn btn-outline-primary">
+          <Link to={`/hrm/users/${userId}`} className="btn btn-outline-primary">
             <FaInfoCircle className="me-2" />
             View Full Details
           </Link>
