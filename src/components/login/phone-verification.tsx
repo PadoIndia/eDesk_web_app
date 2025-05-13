@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import { FiAlertCircle } from "react-icons/fi";
 import { AiOutlineArrowRight } from "react-icons/ai";

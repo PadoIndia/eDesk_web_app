@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { TagResponse } from "../../../types/tag.types";
 import tagService from "../../../services/api-services/tag.service";
 
+export type Filters = {
+  uploadDate: string;
+  platform: string;
+  tagId: number | null;
+};
+
 interface FilterOptionsProps {
-  filters: {
-    uploadDate: string;
-    platform: string;
-    tagId: number | null;
-  };
-  onFilterChange: (filters: FilterOptionsProps["filters"]) => void;
+  filters: Filters;
+  onFilterChange: (filters: Filters) => void;
   uploaders: string[];
 }
 

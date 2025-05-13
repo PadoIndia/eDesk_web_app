@@ -3,7 +3,7 @@ import "./styles.css";
 import { IoShareSocialOutline } from "react-icons/io5";
 import { HiOutlineDocumentText } from "react-icons/hi";
 import { VideoResponse } from "../../../../types/video.types";
-import { formatSeconds } from "../../../../utils/helper";
+import { formatMiliSeconds } from "../../../../utils/helper";
 
 const VideoCard: React.FC<VideoResponse> = ({
   id,
@@ -12,12 +12,15 @@ const VideoCard: React.FC<VideoResponse> = ({
   thumbnailLr,
 }) => {
   return (
-    <div className="video-card">
+    <div
+      className="video-card col-xl-2 col-md-4 col-lg-3 col-12 p-0"
+      style={{ minWidth: "20rem" }}
+    >
       <a href={`/videos/${id}`} className="video-card-link">
         <div className="video-card-image">
           <img src={thumbnailLr} alt={name} />
           <div className="video-card-duration">
-            {formatSeconds(durationInSec)}
+            {formatMiliSeconds(durationInSec)}
           </div>
         </div>
       </a>

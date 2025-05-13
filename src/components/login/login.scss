@@ -31,16 +31,10 @@
 
 
 .form-control:focus {
-    // box-shadow: 4px 1px 8px -2px #5f46e3 !important;
-    border-color: #5f46e3
-    
+    box-shadow: 4px 1px 8px -2px #5f46e3 !important;
+    border-color: #5f46e3 !important;
 }
 
-.form-control-focus {
-    // box-shadow: -3px 2px 8px -2px #5f46e3 !important;
-    border-color: #5f46e3;
-    background-color: white;
-}
 
 
 
@@ -77,18 +71,18 @@
     height: 90%;
     margin-left: 10%;
     justify-content: center;
-  }
-  .phone-input-group {
+}
+
+.phone-input-group {
     .flag {
-      transition: box-shadow 0.2s ease;
+        transition: box-shadow 0.2s ease;
     }
-  
- 
+
+
     &:focus-within {
-      .flag {
-        box-shadow: 4px 1px 8px -2px #5f46e3;
-        border-color: #5f46e3;
-      }
+        .flag {
+            box-shadow: 4px 1px 8px -2px #5f46e3;
+            border-color: #5f46e3;
+        }
     }
-  }
-  
+}

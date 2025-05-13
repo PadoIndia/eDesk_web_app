@@ -1,5 +1,3 @@
-"use client";
-
 import { memo, useEffect, useState } from "react";
 import OTPInput from "react-otp-input";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";

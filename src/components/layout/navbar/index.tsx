@@ -13,7 +13,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+      <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
         <div className="container-fluid">
           {/* Logo and hamburger section */}
           <div className="d-flex align-items-center">
@@ -24,9 +24,16 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
             >
               <i className="bi bi-list fs-5"></i>
             </button>
-            <Link className="navbar-brand d-flex align-items-center" to="/">
-              <img src="/logo.png" alt="Logo" height="30" className="me-2" />
-              <span className="fw-bold">VideoRepo</span>
+            <Link
+              className="navbar-brand d-flex align-items-center"
+              to="/"
+              style={{
+                height: "40px",
+                borderRadius: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <img src="/logo.png" alt="Logo" height="100" className="ms-2" />
             </Link>
           </div>
 
@@ -70,11 +77,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
                   <i className="bi bi-share me-1"></i> Socials
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link className="nav-link px-3" to="/logs">
-                  <i className="bi bi-journal-text me-1"></i> Logs
-                </Link>
-              </li>
+
               <li className="nav-item">
                 <Link className="nav-link px-3" to="/hrm/dashboard">
                   <i className="bi bi-person-lines-fill me-1"></i> HRM

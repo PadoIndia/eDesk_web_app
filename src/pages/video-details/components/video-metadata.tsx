@@ -56,7 +56,7 @@ export default function VideoSidebar({ vidDetails }: Props) {
 
       setTagInput("");
       setCategoryInput("");
-    } catch (err) {
+    } catch {
       setTagError("Failed to add tag");
     }
   };

@@ -4,7 +4,6 @@ import eventService from "../../services/api-services/event.service";
 import { EventResponse, EventGroupResponse } from "../../types/event.types";
 import { toast } from "react-toastify";
 import EventModal from "../../components/ui/modals/event-modal";
-import Layout from "../../components/layout";
 
 type TabType = "events" | "event-groups";
 
@@ -110,7 +109,7 @@ const EventsPage: React.FC = () => {
   };
 
   return (
-    <Layout showSideBar={false}>
+    <div>
       <div className="container py-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h1 className="mb-0">Events Management</h1>
@@ -322,7 +321,7 @@ const EventsPage: React.FC = () => {
           initialData={selectedEvent}
         />
       )}
-    </Layout>
+    </div>
   );
 };
 

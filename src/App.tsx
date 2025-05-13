@@ -3,13 +3,12 @@ import VideoPage from "./pages/video-details";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import EventsPage from "./pages/events";
-import Layout from "./components/layout";
 import VideoSearchPage from "./pages/search";
 import SocialMediaManagement from "./pages/social-media";
-// import Logs from "./pages/logs";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
+import Layout from "./components/layout";
 import HrmApp from "./hrm-app";
 
 function App() {
@@ -32,61 +31,24 @@ function App() {
       <Route
         path="/login"
         element={loggedIn ? <Navigate to="/" replace /> : <Login />}
-      />      
-     <Route
+      />
+      <Route
         path="/hrm/*"
         element={loggedIn ? <HrmApp /> : <Navigate to="/login" replace />}
       />
- 
-      <Route
-        path="/"
-        element={
-          loggedIn ? (
-            <Layout>
-              <></>
-            </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route
-        path="/social-media"
-        element={
-          loggedIn ? (
-            <SocialMediaManagement />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route
-        path="/events/:eventId"
-        element={loggedIn ? <Home /> : <Navigate to="/login" replace />}
-      />
 
       <Route
-        path="/hrm-dashboard"
-        element={loggedIn ? <HrmApp /> : <Navigate to="/login" replace />}
-      />
-      <Route
-        path="/search"
-        element={
-          loggedIn ? <VideoSearchPage /> : <Navigate to="/login" replace />
-        }
-      />
-      <Route
-        path="/videos/:id"
-        element={loggedIn ? <VideoPage /> : <Navigate to="/login" replace />}
-      />
-      <Route
-        path="/events"
-        element={loggedIn ? <EventsPage /> : <Navigate to="/login" replace />}
-      />
-      <Route
-        path="*"
-        element={<Navigate to={loggedIn ? "/" : "/login"} replace />}
-      />
+        path="/"
+        element={loggedIn ? <Layout /> : <Navigate to="/login" replace />}
+      >
+        <Route index element={<Home />} />
+        <Route path="events/:eventId" element={<Home />} />
+        <Route path="events" element={<EventsPage />} />
+        <Route path="videos/:id" element={<VideoPage />} />
+        <Route path="search" element={<VideoSearchPage />} />
+        <Route path="social-media" element={<SocialMediaManagement />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
     </Routes>
   );
 }

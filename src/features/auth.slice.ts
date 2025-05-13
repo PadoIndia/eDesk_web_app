@@ -61,8 +61,10 @@ const authSlice = createSlice({
   reducers: {
     checkAuth(state) {
       const data = decryptAndParseTokenFromStorage();
-      if (data) state.isLoggedIn = true;
-      else state.isLoggedIn = false;
+      if (data) {
+        state.userData = data;
+        state.isLoggedIn = true;
+      } else state.isLoggedIn = false;
       state.isVerifying = false;
     },
   },
