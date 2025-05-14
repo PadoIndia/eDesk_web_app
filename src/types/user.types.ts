@@ -41,15 +41,15 @@ export type CreateContact = {
 }
 
 export type Address = {
-  id: number;
-  addressType: string;
+  id?: number;
+  addressType: "PERMANENT" | "CURRENT";
   address: string;
-  landmark: string;
+  landmark?: string|null;
   pincode: string;
   state: string;
   city: string;
-  isPrimary: boolean;
-  isActive: boolean;
+  isPrimary?: boolean;
+  isActive?: boolean;
 };
 
 export type Document = {

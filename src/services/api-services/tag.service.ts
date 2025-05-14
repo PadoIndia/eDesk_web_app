@@ -4,7 +4,7 @@ import ApiService from "./api-service";
 
 class TagService extends ApiService {
   constructor() {
-    super("/tags");
+    super("/admin/tags");
   }
   getAllTags(): ApiResponse<TagResponse[]> {
     return this.getData(``);

@@ -4,7 +4,7 @@ import ApiService from "./api-service";
 
 class EventService extends ApiService {
   constructor() {
-    super("/events");
+    super("/admin/events");
   }
   getAllEvents(): ApiResponse<EventResponse[]> {
     return this.getData("");

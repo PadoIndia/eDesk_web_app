@@ -1,10 +1,16 @@
 import { ApiResponse } from "../../types/axios.types";
-import { Contact, CreateContact, User, UserDataDetails } from "../../types/user.types";
+import {
+  Address,
+  Contact,
+  CreateContact,
+  User,
+  UserDataDetails,
+} from "../../types/user.types";
 import ApiService from "./api-service";
 
 class UserService extends ApiService {
   constructor() {
-    super("admin/users");
+    super("/admin/users");
   }
   getAllUsers(): ApiResponse<User[]> {
     return this.getData(``);
@@ -25,15 +31,23 @@ class UserService extends ApiService {
   }
 
   /////////////////////// User Contacts ///////////////////////
-  getUserContactsById(id:number):ApiResponse<Contact>{
+  getUserContactsById(id: number): ApiResponse<Contact> {
     return this.getData(`/contacts/${id}`);
   }
 
-  createUserContact(conatct:CreateContact): ApiResponse<CreateContact>{
-    return this.postData(`/contacts`,conatct);
+  createUserContact(conatct: CreateContact): ApiResponse<CreateContact> {
+    return this.postData(`/contacts`, conatct);
   }
 
+  //////////////////////// User Address ///////////////////////
 
+  getUserAddressById(id: number): ApiResponse<Address> {
+    return this.getData(`/address/${id}`);
+  }
+
+  createUserAddress(address: Address): ApiResponse<Address> {
+    return this.postData(`/address`, address);
+  }
 }
 
 export default new UserService();
