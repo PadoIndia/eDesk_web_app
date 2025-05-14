@@ -1,7 +1,7 @@
 const isDev = import.meta.env.DEV;
 
 export const BASE_URL = isDev
-  ? "http://localhost:3000/v1/"
+  ? "http://localhost:3000/v1"
   : "https://edesk.esaral.com/v1/admin";
 
 export const mediaBaseUrl =
