@@ -8,7 +8,7 @@ import ApiService from "./api-service";
 
 class AuthService extends ApiService {
   constructor() {
-    super("/auth");
+    super("/admin/auth");
   }
 
   sendOtp(data: SendOtpPayload) {

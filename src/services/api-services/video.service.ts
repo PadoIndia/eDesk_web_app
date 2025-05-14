@@ -15,7 +15,7 @@ import ApiService from "./api-service";
 
 class VideoService extends ApiService {
   constructor() {
-    super("/videos");
+    super("/admin/videos");
   }
   getAllVideos(options?: AxiosRequestConfig): ApiResponse<VideoResponse[]> {
     return this.getData("", options);

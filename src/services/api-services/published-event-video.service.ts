@@ -7,7 +7,7 @@ import ApiService from "./api-service";
 
 class PublishedEventVideoService extends ApiService {
   constructor() {
-    super("/published-event-videos");
+    super("/admin/published-event-videos");
   }
 
   getAllPublishedVideos(): ApiResponse<PublishedEventVidResponse[]> {

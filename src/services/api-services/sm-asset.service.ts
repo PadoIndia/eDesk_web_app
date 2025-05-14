@@ -4,7 +4,7 @@ import ApiService from "./api-service";
 
 class SmAssetService extends ApiService {
   constructor() {
-    super("/sm-assets");
+    super("/admin/sm-assets");
   }
 
   getAllAccounts(): ApiResponse<SmAssetResponse[]> {
