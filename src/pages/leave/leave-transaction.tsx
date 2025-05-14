@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   FaSearch,
-  FaFilter,
-  FaCalendarAlt,
   FaUser,
   FaInfoCircle,
   FaPlus,
-  FaDownload,
   FaTrash,
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
@@ -319,7 +316,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
   onCancel,
 }) => {
   const [userId, setUserId] = useState<number | "">("");
-  const [userName, setUserName] = useState("");
+  // const [userName, setUserName] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [date, setDate] = useState<Date | null>(new Date());
   const [leaveType, setLeaveType] = useState("");
@@ -394,10 +391,10 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
               const user = mockUsers.find((u) => u.email === value);
               if (user) {
                 setUserId(user.id);
-                setUserName(user.name);
+                // setUserName(user.name);
               } else {
                 setUserId("");
-                setUserName("");
+                // setUserName("");
               }
             }}
             placeholder="Search by email"

@@ -53,7 +53,7 @@ const UserDetails = () => {
     });
   };
 
-  const handleFetchError = (error: unknown) => {
+const handleFetchError = (error: unknown) => {
     console.error("Error fetching user data:", error);
     toast.error("Failed to load user data");
   };

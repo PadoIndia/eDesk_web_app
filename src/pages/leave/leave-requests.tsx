@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaSearch,
   FaFilter,
@@ -6,7 +6,6 @@ import {
   FaUser,
   FaCheck,
   FaTimes,
-  FaClock,
   FaInfoCircle,
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";

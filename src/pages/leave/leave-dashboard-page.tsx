@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaCalendarAlt,
   FaClipboardList,
   FaChartBar,
-  FaUserClock,
   FaPlus,
   FaSearch,
   FaCircle,
@@ -35,12 +34,12 @@ const LeaveDashboard = () => {
   // State for dashboard data
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [recentRequests, setRecentRequests] = useState<LeaveRequest[]>([]);
-  const [leaveStats, setLeaveStats] = useState({
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    total: 0,
-  });
+  // const [leaveStats, setLeaveStats] = useState({
+  //   pending: 0,
+  //   approved: 0,
+  //   rejected: 0,
+  //   total: 0,
+  // });
   const [loading, setLoading] = useState(true);
 
   // Mock data for demonstration
@@ -112,24 +111,24 @@ const LeaveDashboard = () => {
         },
       ]);
 
-      setLeaveStats({
-        pending: 2,
-        approved: 5,
-        rejected: 1,
-        total: 8,
-      });
+      // setLeaveStats({
+      //   pending: 2,
+      //   approved: 5,
+      //   rejected: 1,
+      //   total: 8,
+      // });
 
       setLoading(false);
     }, 1000);
   }, []);
 
-  // Helper function for status badge color
-  interface LeaveStatus {
-    APPROVED: "success";
-    PENDING: "warning";
-    REJECTED: "danger";
-    CANCELLED: "secondary";
-  }
+  // // Helper function for status badge color
+  // interface LeaveStatus {
+  //   APPROVED: "success";
+  //   PENDING: "warning";
+  //   REJECTED: "danger";
+  //   CANCELLED: "secondary";
+  // }
 
   const getStatusColor = (status: string) => {
     switch (status) {

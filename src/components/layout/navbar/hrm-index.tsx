@@ -1,9 +1,7 @@
 // hrm-index.tsx navbar to be used in the hrm-app.tsx file
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
 
   return (
     <nav className="navbar navbar-expand-md bg-white shadow-sm sticky-top px-3 w-100">

@@ -88,7 +88,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   user,
   selectedMonth,
   selectedYear,
-  selectedDate,
+  // selectedDate,
   calendarEvents = [],
   onMissPunchRequest,
   isCurrentUser,
@@ -166,7 +166,8 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     return "A"; // Default to absent
   };
 
-  const getManualStatusForDate = (date: string): string => {
+  // const getManualStatusForDate = (date: string): string => {
+  const getManualStatusForDate = (): string => {
     // In a real app, this would come from your database
     return "";
   };
@@ -306,7 +307,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
               const callDetails = getCallDetailsForDate(date);
               const classDetails = getClassDetailsForDate(date);
               const status = getStatusForDate(date);
-              const manualStatus = getManualStatusForDate(date);
+              const manualStatus = getManualStatusForDate();
               const calendarEvent = getCalendarEventForDate(date);
 
               return (

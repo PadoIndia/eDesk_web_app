@@ -30,8 +30,15 @@ export type Contact = {
   relation: string;
   name: string;
   value: string;
-  contactType: "email" | "whatsapp" | "phone";
+  contactType: "EMAIL" | "WHATSAPP" | "PHONE" | "OTHER";
 };
+
+export type CreateContact = {
+  relation: string;
+  name: string;
+  value: string;
+  contactType: "EMAIL" | "WHATSAPP" | "PHONE" | "OTHER";
+}
 
 export type Address = {
   id: number;

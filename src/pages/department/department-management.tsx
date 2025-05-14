@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaUsers, FaPlus, FaTrash, FaEdit, FaSearch } from "react-icons/fa";
+import { FaUsers, FaPlus, FaTrash, FaSearch } from "react-icons/fa";
 
 interface User {
   id: string;

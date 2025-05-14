@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 export type User = {
   profileImg: {
-    id: bigint | undefined;
+    id?: bigint | undefined;
     url: string | null;
   };
   id: number;

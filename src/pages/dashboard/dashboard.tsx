@@ -7,8 +7,8 @@ import { useAppSelector } from "../../store/store";
 
 // Add the User type
 type User = {
-  profileImg: {
-    id: bigint | undefined;
+  profileImg?: {
+    id?: bigint | undefined;
     url: string | null;
   };
   id: number;
@@ -106,7 +106,7 @@ const Dashboard = () => {
             <div className="col-12 col-md-6 d-flex flex-column align-items-center">
               <div className="position-relative mb-3">
                 {/* Profile image with fallback to default avatar */}
-                {userData.profileImg.url ? (
+                {userData.profileImg?.url ? (
                   <img
                     src={userData.profileImg.url}
                     alt="Profile"

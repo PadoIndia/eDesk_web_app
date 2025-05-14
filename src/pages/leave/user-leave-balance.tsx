@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaSearch,
   FaUser,
-  FaCalendarAlt,
   FaInfoCircle,
   FaFilter,
   FaDownload,
