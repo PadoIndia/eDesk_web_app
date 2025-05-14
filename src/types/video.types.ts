@@ -97,3 +97,9 @@ export type VideoViewDuration = {
     id: number;
   };
 };
+
+export interface VideoDownloadOptions {
+  name: string;
+  url: string;
+  resolution: string;
+}

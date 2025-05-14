@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaSearch,
   FaUser,
-  FaCalendarAlt,
   FaInfoCircle,
   FaFilter,
   FaDownload,
@@ -231,7 +230,6 @@ const UserLeaveBalances = () => {
                                 <span className="fw-semibold">
                                   {balance.leaveType}
                                 </span>
-                               
                               </div>
                               <div className="d-flex justify-content-between mt-1">
                                 <small>Total:</small>
