@@ -230,7 +230,6 @@ const UserLeaveBalances = () => {
                                 <span className="fw-semibold">
                                   {balance.leaveType}
                                 </span>
-                               
                               </div>
                               <div className="d-flex justify-content-between mt-1">
                                 <small>Total:</small>

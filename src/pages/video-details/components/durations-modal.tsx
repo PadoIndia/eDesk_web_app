@@ -1,7 +1,7 @@
 import React from "react";
 import { SingleVideoResponse } from "../../../types/video.types";
 import Modal from "../../../components/ui/modals";
-import { groupByDateAndUser } from "../../../utils/helper";
+import { formatSeconds, groupByDateAndUser } from "../../../utils/helper";
 
 type DatasetModalProps = {
   data: SingleVideoResponse["videoViewDurations"];
@@ -33,7 +33,7 @@ const DurationsModal: React.FC<DatasetModalProps> = ({
                 <tr key={index}>
                   <td>{index + 1}</td>
                   <td>{item.user.name}</td>
-                  <td>{item.durationInSec}</td>
+                  <td>{formatSeconds(item.durationInSec)}</td>
                   <td>{new Date(item.createdOn).toLocaleDateString()}</td>
                 </tr>
               ))

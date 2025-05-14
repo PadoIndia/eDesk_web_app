@@ -28,7 +28,7 @@ type Props = {
 };
 
 const VideoPlayer = forwardRef<VideoPlayerRef, Props>(
-  ({ id, poster, src, addTimeStamp }, ref) => {
+  ({ id, poster, src, timestamps, addTimeStamp }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
@@ -69,7 +69,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, Props>(
       const updateTime = () => setCurrentTime(video.currentTime);
       const updateDuration = () => setDuration(video.duration);
       const startSync = () => {
-        intervalId = setInterval(syncVideoWatch, 30 * 1000);
+        intervalId = setInterval(syncVideoWatch, 12 * 1000);
       };
       const stopSync = () => {
         if (intervalId) {
@@ -103,7 +103,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, Props>(
 
     const syncVideoWatch = () => {
       videoService
-        .addViewDuration(id, [{ durationInSec: 30 }])
+        .addViewDuration(id, [{ durationInSec: 12 }])
         .then((res) => {
           if (res.status === "success") {
             console.log("Added");
@@ -113,7 +113,10 @@ const VideoPlayer = forwardRef<VideoPlayerRef, Props>(
     };
 
     const handleSave = () => {
-      addTimeStamp({ timeInSec: currentTime, comment: labelInput });
+      addTimeStamp({
+        timeInSec: currentTime,
+        comment: labelInput || `Timestamp-${timestamps.length}`,
+      });
       setShowTooltip(false);
       setLabelInput("");
     };

@@ -333,7 +333,7 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log(userName,"??")
     if (!userId) {
       alert("Please select an employee");
       return;
