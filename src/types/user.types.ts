@@ -1,25 +1,63 @@
+// types.ts
 export type User = {
-  profileImg: {
-    id: bigint | undefined;
-    url: string | null;
-  };
   id: number;
   name: string | null;
   username: string;
+  contact: string;
+  profileImg: {
+    id?: bigint;
+    url: string | null;
+  };
   status: string | null;
   isActive: boolean;
   lastSeen: Date | null;
-  contact: string;
 };
 
 export type UserDataDetails = {
   id: number;
   gender: string;
-  dob:string;
+  dob: string;
   joiningDate: string;
-  createdOn:string;
+  createdOn: string;
   leaveSchemeId?: number;
   updatedOn: string;
   userId: number;
   weekoff: string;
+};
+
+export type Contact = {
+  id: number;
+  relation: string;
+  name: string;
+  value: string;
+  contactType: "email" | "whatsapp" | "phone";
+};
+
+export type Address = {
+  id: number;
+  addressType: string;
+  address: string;
+  landmark: string;
+  pincode: string;
+  state: string;
+  city: string;
+  isPrimary: boolean;
+  isActive: boolean;
+};
+
+export type Document = {
+  id: number;
+  title: string;
+  fileUrl: string;
+  documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
+};
+
+export type DetailItemProps = {
+  icon?: React.ReactNode;
+  label: string;
+  value?: string;
+  editValue?: string;
+  onChange?: (val: string) => void;
+  isEditing?: boolean;
+  badgeClass?: string;
 };

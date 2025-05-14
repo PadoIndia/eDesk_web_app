@@ -3,6 +3,7 @@ import { EventResponse } from "../types/event.types";
 import { GroupedOutput } from "../types/sidebar.types";
 import { VideoViewDuration } from "../types/video.types";
 
+
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
 
@@ -146,3 +147,4 @@ export function transformEvents(events: EventResponse[]): GroupedOutput[] {
 
   return [...Array.from(groupMap.values()), ...ungrouped];
 }
+
