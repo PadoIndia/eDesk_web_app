@@ -1,5 +1,5 @@
 import { ApiResponse } from "../../types/axios.types";
-import { Contact, CreateContact, User, UserDataDetails } from "../../types/user.types";
+import { Address, Contact, CreateContact, User, UserDataDetails } from "../../types/user.types";
 import ApiService from "./api-service";
 
 class UserService extends ApiService {
@@ -35,7 +35,13 @@ class UserService extends ApiService {
 
   //////////////////////// User Address ///////////////////////
 
-  
+  getUserAddressById(id:number): ApiResponse<Address> {
+    return this.getData(`/address/${id}`);
+  }
+
+  createUserAddress(address:Address): ApiResponse<Address>{
+    return this.postData(`/address`,address);
+  }
 
 
 }

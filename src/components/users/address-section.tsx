@@ -1,19 +1,21 @@
 // components/AddressesSection.tsx
+import userApi from "../../services/api-services/user.service.ts";
 import React, { useEffect, useState } from "react";
 import { Address } from "../../types/user.types";
-import { FaPlus, FaTimes, FaTrash, FaSave, FaStar } from "react-icons/fa";
+import { FaPlus, FaTimes, FaSave, FaStar } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 interface AddressesSectionProps {
   userId: number;
 }
 
-export const AddressesSection: React.FC<AddressesSectionProps> = () => {
+export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newAddress, setNewAddress] = useState<Omit<Address, "id">>({
-    addressType: "Home",
+    addressType: "CURRENT",
     address: "",
-    landmark: "",
+    landmark: undefined,
     pincode: "",
     state: "",
     city: "",
@@ -22,27 +24,64 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
   });
 
   useEffect(()=>{
+    const fetchAddress = async()=>{
+      try {
+        const response = await userApi.getUserAddressById(Number(userId));        
+        setAddresses(
+          Array.isArray(response.data)? response.data : [response.data]
+        );
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load user data");
+      }
+    }
+    fetchAddress();
 
-  });
+  },[userId]);
 
-  const handleAddAddress = () => {
-    if (!newAddress.address || !newAddress.pincode || !newAddress.city) {
-      alert("Please fill required fields");
-      return;
+
+  const createNewAddress = async(addressData: typeof newAddress)=>{
+    try {
+     const response = await userApi.createUserAddress(addressData);
+     
+     return response.data;
+    } catch (error) {
+    console.error("Error creating new address", error);
+    throw error;
+    }
+  }
+
+  const handleAddAddress = async () => {
+    try {
+      
+      if (!newAddress.address || !newAddress.pincode || !newAddress.city) {
+        alert("Please fill required fields");
+        return;
+      }
+  
+      const createdAddress = await createNewAddress(newAddress);
+      
+
+      if('id' in createdAddress){
+        setAddresses([...addresses, createdAddress]);
+      }
+      // setAddresses([...addresses, { ...newAddress, id: addresses.length + 1 }]);
+      setIsAdding(false);
+      setNewAddress({
+        addressType: "PERMANENT",
+        address: "",
+        landmark: undefined,
+        pincode: "",
+        state: "",
+        city: "",
+        isPrimary: false,
+        isActive: true,
+      });
+    } catch (error) {
+    console.error("Error saving address:", error);
+    toast.error("Failed to save address. Please try again.");
     }
 
-    setAddresses([...addresses, { ...newAddress, id: addresses.length + 1 }]);
-    setIsAdding(false);
-    setNewAddress({
-      addressType: "Home",
-      address: "",
-      landmark: "",
-      pincode: "",
-      state: "",
-      city: "",
-      isPrimary: false,
-      isActive: true,
-    });
   };
 
   return (
@@ -71,15 +110,12 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
                     onChange={(e) =>
                       setNewAddress({
                         ...newAddress,
-                        addressType: e.target.value,
+                        addressType: e.target.value as "PERMANENT" | "CURRENT",
                       })
                     }
                   >
-                    <option value="Home">Home</option>
-                    <option value="Work">Work</option>
-                    <option value="Permanent">Permanent</option>
-                    <option value="Temporary">Temporary</option>
-                    <option value="Other">Other</option>
+                    <option value="PERMANENT">Permanent</option>
+                    <option value="CURRENT">Current</option>
                   </select>
                 </div>
                 <div className="col-md-6">
@@ -137,7 +173,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
                   <input
                     type="text"
                     className="form-control"
-                    value={newAddress.landmark}
+                    value={newAddress.landmark ?? ''}
                     onChange={(e) =>
                       setNewAddress({
                         ...newAddress,
@@ -228,7 +264,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
                           <FaStar /> Set Primary
                         </button>
                       )}
-                      <button
+                      {/* <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() =>
                           setAddresses(
@@ -237,7 +273,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
                         }
                       >
                         <FaTrash />
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
