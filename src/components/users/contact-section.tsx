@@ -2,7 +2,7 @@
 import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
 import { Contact } from "../../types/user.types";
-import { FaPlus, FaTimes, FaTrash, FaSave } from "react-icons/fa";
+import { FaPlus, FaTimes, FaSave } from "react-icons/fa";
 import {
   getContactTypeIcon,
   validateEmail,
@@ -28,46 +28,50 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({ userId }) => {
     const fetchContacts = async () => {
       try {
         const response = await userApi.getUserContactsById(Number(userId));
-        
-        setContacts(Array.isArray(response.data) ? response.data : [response.data])
+
+        setContacts(
+          Array.isArray(response.data) ? response.data : [response.data]
+        );
       } catch (error) {
         console.error("Error fetching user data:", error);
         toast.error("Failed to load user data");
       }
     };
     fetchContacts();
-  },[userId]);
+  }, [userId]);
 
-  const createNewContact = async()=>{
-    try {
-      const response = await userApi.createUserContact(newContact);
-      console.log(response);
-      
-    } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Failed to load user data");
-    }
+const createNewContact = async (contactData: typeof newContact) => {
+  try {
+    const response = await userApi.createUserContact(contactData);
+    return response.data; 
+  } catch (error) {
+    console.error("Error creating contact:", error);
+    throw error;
   }
+};
 
-  const handleAddContact = () => {
-    if (!newContact.name || !newContact.value) {
-      alert("Please fill all fields");
+const handleAddContact = async () => {
+  try {
+    if (!newContact.name?.trim() || !newContact.value?.trim()) {
+      toast.error("Please fill all contact fields");
       return;
     }
 
     if (
-      (newContact.contactType === "EMAIL" &&
-        !validateEmail(newContact.value)) ||
-      ((newContact.contactType === "PHONE" ||
-        newContact.contactType === "WHATSAPP") &&
+      (newContact.contactType === "EMAIL" && !validateEmail(newContact.value)) ||
+      ((newContact.contactType === "PHONE" || newContact.contactType === "WHATSAPP") &&
         !validatePhone(newContact.value))
     ) {
-      alert("Invalid contact value");
+      toast.error("Please enter a valid contact value");
       return;
     }
 
-    createNewContact();
-    setContacts([...contacts, { ...newContact, id: contacts.length + 1 }]);
+    const createdContact = await createNewContact(newContact);
+
+    if ('id' in createdContact) {
+      setContacts([...contacts, createdContact as Contact]);
+    }
+    
     setIsAdding(false);
     setNewContact({
       relation: "SELF",
@@ -75,7 +79,14 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({ userId }) => {
       value: "",
       contactType: "PHONE",
     });
-  };
+
+    toast.success("Contact added successfully");
+
+  } catch (error) {
+    console.error("Error saving contact:", error);
+    toast.error("Failed to save contact. Please try again.");
+  }
+};
 
   return (
     <div className="card shadow mb-4">
@@ -184,14 +195,14 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({ userId }) => {
                         <small className="text-muted">{contact.relation}</small>
                       </div>
                     </div>
-                    <button
+                    {/* <button
                       className="btn btn-sm btn-outline-danger"
                       onClick={() =>
                         setContacts(contacts.filter((c) => c.id !== contact.id))
                       }
                     >
                       <FaTrash />
-                    </button>
+                    </button> */}
                   </div>
                   <div className="mt-2 fw-bold">{contact.value}</div>
                 </div>

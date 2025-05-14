@@ -1,5 +1,5 @@
 // components/AddressesSection.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Address } from "../../types/user.types";
 import { FaPlus, FaTimes, FaTrash, FaSave, FaStar } from "react-icons/fa";
 
@@ -19,6 +19,10 @@ export const AddressesSection: React.FC<AddressesSectionProps> = () => {
     city: "",
     isPrimary: false,
     isActive: true,
+  });
+
+  useEffect(()=>{
+
   });
 
   const handleAddAddress = () => {
