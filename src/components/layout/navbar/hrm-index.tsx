@@ -1,8 +1,6 @@
-// hrm-index.tsx navbar to be used in the hrm-app.tsx file
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
-
   return (
     <nav className="navbar navbar-expand-md bg-white shadow-sm sticky-top px-3 w-100">
       <button
@@ -20,10 +18,10 @@ const Navbar = () => {
       </Link>
 
       <div className="d-flex gap-2">
-          <Link className="btn btn-primary" to="/hrm/dashboard">
-            Dashboard
-          </Link>
-        
+        <Link className="btn btn-primary" to="/hrm/dashboard">
+          Dashboard
+        </Link>
+
         <Link className="btn btn-outline-primary" to="/login">
           Login
         </Link>

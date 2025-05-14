@@ -5,6 +5,7 @@ import {
   SingleVideoResponse,
   TimestampPayload,
   TimestampResponse,
+  VideoDownloadOptions,
   VideoPayload,
   VideoResponse,
   VideoViewDurationPayload,
@@ -66,6 +67,10 @@ class VideoService extends ApiService {
     data: VideoViewDurationPayload[]
   ): ApiResponse<{ count: number }> {
     return this.postData(`/${id}/view-duration`, data);
+  }
+
+  getDownloadOptions(videoId: string): ApiResponse<VideoDownloadOptions[]> {
+    return this.getData(`/downloads`, { params: { videoId } });
   }
 }
 
