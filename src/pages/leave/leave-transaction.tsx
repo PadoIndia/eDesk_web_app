@@ -325,15 +325,14 @@ const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
 
   // In a real app, you would fetch users and leave types from your API
   const mockUsers = [
-    { id: 101, name: "John Doe", email:"john@gmial.com" },
-    { id: 102, name: "Jane Smith", email:"Jane@gmail.com" },
+    { id: 101, name: "John Doe", email: "john@gmial.com" },
+    { id: 102, name: "Jane Smith", email: "Jane@gmail.com" },
   ];
 
   const mockLeaveTypes = ["Annual Leave", "Sick Leave", "Unpaid Leave"];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(userName,"??")
     if (!userId) {
       alert("Please select an employee");
       return;
