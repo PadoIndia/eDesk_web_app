@@ -10,7 +10,7 @@ import ApiService from "./api-service";
 
 class UserService extends ApiService {
   constructor() {
-    super("/users");
+    super("/admin/users");
   }
   getAllUsers(): ApiResponse<User[]> {
     return this.getData(``);
