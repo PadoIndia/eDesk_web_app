@@ -3,6 +3,7 @@ import {
   Address,
   Contact,
   CreateContact,
+  UpdateUser,
   User,
   UserDataDetails,
 } from "../../types/user.types";
@@ -18,8 +19,8 @@ class UserService extends ApiService {
   getUserById(id: number): ApiResponse<User> {
     return this.getData(`/${id}`);
   }
-  updateUser(user: User): ApiResponse<User> {
-    return this.putData(``, user);
+  updateUser(id:number,user: UpdateUser): ApiResponse<UpdateUser> {
+    return this.putData(`/${id}`, user);
   }
   createUser(user: User): ApiResponse<User> {
     return this.postData(``, user);
@@ -49,5 +50,9 @@ class UserService extends ApiService {
     return this.postData(`/address`, address);
   }
 }
+
+/////////////////////// User Document ///////////////////////
+
+// uploadUserDocument
 
 export default new UserService();

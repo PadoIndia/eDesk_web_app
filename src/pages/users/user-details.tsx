@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import userApi from "../../services/api-services/user.service";
-import { User, UserDataDetails } from "../../types/user.types";
+import { UpdateUser, User, UserDataDetails } from "../../types/user.types";
 import {ProfileSection} from "../../components/users/profile-section";
 import { ContactsSection } from "../../components/users/contact-section";
 import { AddressesSection } from "../../components/users/address-section";
@@ -58,13 +58,42 @@ const handleFetchError = (error: unknown) => {
     toast.error("Failed to load user data");
   };
 
-  const handleSave = () => {
-    if (!validateForm()) return;
+  // const handleSave = () => {
+  //   if (!validateForm()) return;
+  //   setUserData({ ...userData, ...draft });
+  //   const response = userApi.updateUser(userId , {...userData,...draft});
+  //   setIsEditing(false);
+  //   toast.success("Changes saved successfully");
+  // };
 
-    setUserData({ ...userData, ...draft });
-    setIsEditing(false);
-    toast.success("Changes saved successfully");
+  const handleSave = async () => {
+  if (!validateForm()) return;
+
+  const updatedUser: UpdateUser = {
+    ...draft, // override name, username, contact
   };
+
+  try {
+    const response = await userApi.updateUser(userData.id, updatedUser);
+    
+    if (response.status === "success") {
+      setUserData(prev => ({
+        ...prev,
+        ...updatedUser
+      }));
+      setIsEditing(false);
+      toast.success("Changes saved successfully");
+    } else {
+      toast.error(response?.message || "Failed to save changes");
+    }
+  } catch (error) {
+    console.error("Update error:", error);
+    toast.error("An error occurred while saving changes");
+  }
+};
+
+
+
 
   const validateForm = () => {
     const isValid =
