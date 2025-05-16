@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
 import HrmApp from "./hrm-app";
+import Uploads from "./pages/uploads";
 
 function App() {
   const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);
@@ -47,6 +48,7 @@ function App() {
         <Route path="videos/:id" element={<VideoPage />} />
         <Route path="search" element={<VideoSearchPage />} />
         <Route path="social-media" element={<SocialMediaManagement />} />
+        <Route path="uploads" element={<Uploads />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

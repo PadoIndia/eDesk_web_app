@@ -2,6 +2,8 @@ import { AxiosRequestConfig } from "axios";
 import { ApiResponse } from "../../types/axios.types";
 import { TagPayload } from "../../types/tag.types";
 import {
+  ICreateVideoOnServerRequest,
+  ICreateVideoOnServerResponse,
   SingleVideoResponse,
   TimestampPayload,
   TimestampResponse,
@@ -23,9 +25,19 @@ class VideoService extends ApiService {
   getVideoById(id: number): ApiResponse<SingleVideoResponse> {
     return this.getData(`/${id}`);
   }
-  createVideo(data: VideoPayload): ApiResponse<number> {
-    return this.postData(``, data);
+  createVideo({
+    name,
+    eventId,
+    fileName,
+  }: ICreateVideoOnServerRequest): ApiResponse<ICreateVideoOnServerResponse> {
+    return this.postData(``, {
+      name,
+      eventId,
+      source: "GCORE",
+      fileName,
+    });
   }
+
   updateVideo(
     id: number,
     data: Partial<VideoPayload>
@@ -71,6 +83,18 @@ class VideoService extends ApiService {
 
   getDownloadOptions(videoId: string): ApiResponse<VideoDownloadOptions[]> {
     return this.getData(`/downloads`, { params: { videoId } });
+  }
+
+  updateGCoreVideo(videoId: string, status: "error" | "success"): ApiResponse {
+    return this.postData(
+      `/gcore`,
+      { status },
+      {
+        params: {
+          videoId,
+        },
+      }
+    );
   }
 }
 

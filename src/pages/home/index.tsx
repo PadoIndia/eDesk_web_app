@@ -35,12 +35,17 @@ const Home: React.FC = () => {
     <div>
       <div className="d-flex justify-content-between p-2">
         <Search value={query} onChange={setQuery} />
-        <div>
-          <button className="btn btn-primary ">
-            <IoAddOutline />
-            Add Video
-          </button>
-        </div>
+        {eventId && (
+          <div>
+            <a
+              className="btn btn-primary "
+              href={`/uploads?eventId=${eventId}`}
+            >
+              <IoAddOutline />
+              Add Video
+            </a>
+          </div>
+        )}
       </div>
       <div className="row gap-4 mx-auto">
         {filtered.map((video) => (

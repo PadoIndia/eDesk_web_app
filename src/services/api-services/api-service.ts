@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { BASE_URL } from "../../store/config";
 import { ApiResponse } from "../../types/axios.types";
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: BASE_URL,
 });
 
