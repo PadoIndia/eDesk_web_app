@@ -11,7 +11,7 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // import Badge from "../../components/badge";
-import AttendanceTables from "./attendance-table";
+import AttendanceTables from "./components/attendance-table";
 
 interface Punch {
   id: number;

@@ -49,10 +49,12 @@ class UserService extends ApiService {
   createUserAddress(address: Address): ApiResponse<Address> {
     return this.postData(`/address`, address);
   }
+  
+  /////////////////////// User Document ///////////////////////
+  
+  createUserDocument(document:Document): ApiResponse<Document>{
+    return this.postData(`/documents`, document);
+  }
 }
-
-/////////////////////// User Document ///////////////////////
-
-// uploadUserDocument
 
 export default new UserService();

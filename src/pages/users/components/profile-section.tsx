@@ -1,9 +1,9 @@
 // components/ProfileSection.tsx
 import React from "react";
-import { User, UserDataDetails } from "../../types/user.types.ts";
+import { User, UserDataDetails } from "../../../types/user.types.ts";
 import { DetailItem } from "./details-items.tsx";
 import {FaUser, FaEdit, FaSave, FaTimes } from "react-icons/fa";
-import { formatDate, getDetailIcon } from "../../utils/helper.tsx";
+import { formatDate, getDetailIcon } from "../../../utils/helper.tsx";
 
 interface ProfileSectionProps {
   userData: User;
@@ -96,7 +96,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             <DetailItem
               icon={getDetailIcon("Contact")}
               label="Contact"
-              value={isEditing ? undefined : userData.contact}
+              value={isEditing ? undefined : (userData.contact ? userData.contact.slice(-10) : undefined)}
               editValue={draft.contact}
               onChange={(val) => onDraftChange({ ...draft, contact: val })}
               isEditing={isEditing}

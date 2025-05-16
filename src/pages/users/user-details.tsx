@@ -4,10 +4,10 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import userApi from "../../services/api-services/user.service";
 import { UpdateUser, User, UserDataDetails } from "../../types/user.types";
-import {ProfileSection} from "../../components/users/profile-section";
-import { ContactsSection } from "../../components/users/contact-section";
-import { AddressesSection } from "../../components/users/address-section";
-import { DocumentsSection } from "../../components/users/document-section";
+import {ProfileSection} from "./components/profile-section";
+import { ContactsSection } from "./components/contact-section";
+import { AddressesSection } from "./components/address-section";
+import { DocumentsSection } from "./components/document-section";
 
 
 
@@ -57,14 +57,6 @@ const handleFetchError = (error: unknown) => {
     console.error("Error fetching user data:", error);
     toast.error("Failed to load user data");
   };
-
-  // const handleSave = () => {
-  //   if (!validateForm()) return;
-  //   setUserData({ ...userData, ...draft });
-  //   const response = userApi.updateUser(userId , {...userData,...draft});
-  //   setIsEditing(false);
-  //   toast.success("Changes saved successfully");
-  // };
 
   const handleSave = async () => {
   if (!validateForm()) return;

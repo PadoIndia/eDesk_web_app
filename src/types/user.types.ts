@@ -61,7 +61,7 @@ export type Address = {
 export type Document = {
   id: number;
   title: string;
-  fileUrl: string;
+  fileId: number;
   documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
 };
 

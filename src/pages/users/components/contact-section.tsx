@@ -1,14 +1,14 @@
 // components/ContactsSection.tsx
 import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
-import { Contact } from "../../types/user.types";
+import { Contact } from "../../../types/user.types";
 import { FaPlus, FaTimes, FaSave } from "react-icons/fa";
 import {
   getContactTypeIcon,
   validateEmail,
   validatePhone,
-} from "../../utils/helper.tsx";
-import userApi from "../../services/api-services/user.service.ts";
+} from "../../../utils/helper.tsx";
+import userApi from "../../../services/api-services/user.service.ts";
 
 interface ContactsSectionProps {
   userId: number;

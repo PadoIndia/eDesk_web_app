@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import UserAttendanceTable from "./user-attendance-table";
-import { FaFilter, FaSearch, FaCalendarAlt, FaRegCalendarAlt as FaCalendarYear } from "react-icons/fa";
+import {
+  FaFilter,
+  FaSearch,
+  FaCalendarAlt,
+  FaRegCalendarAlt as FaCalendarYear,
+} from "react-icons/fa";
 
 // Define interfaces
 interface Punch {
@@ -147,7 +152,7 @@ const AttendanceTables: React.FC<AttendanceTablesProps> = ({
   return (
     <>
       {/* Search and filter - Only in department view */}
-      { currentUser.isAdmin && (
+      {currentUser.isAdmin && (
         <div className="row mb-4">
           <div className="col-md-4">
             <div className="input-group">

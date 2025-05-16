@@ -7,7 +7,7 @@ import {
   FaHourglassHalf,
   FaCalendarAlt,
 } from "react-icons/fa";
-import Badge from "../../components/badge";
+import Badge from "../../../components/badge";
 
 // Define interfaces
 interface Punch {

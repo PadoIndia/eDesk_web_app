@@ -1,8 +1,8 @@
 // components/AddressesSection.tsx
-import userApi from "../../services/api-services/user.service.ts";
+import userApi from "../../../services/api-services/user.service.ts";
 import React, { useEffect, useState } from "react";
-import { Address } from "../../types/user.types";
-import { FaPlus, FaTimes, FaSave, FaStar } from "react-icons/fa";
+import { Address } from "../../../types/user.types";
+import { FaPlus, FaTimes, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 interface AddressesSectionProps {
@@ -201,7 +201,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
                     </label>
                   </div>
                 </div>
-                <div className="col-md-6">
+                {/* <div className="col-md-6">
                   <div className="form-check">
                     <input
                       type="checkbox"
@@ -219,7 +219,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
                       Active Address
                     </label>
                   </div>
-                </div>
+                </div> */}
               </div>
               <div className="mt-3">
                 <button className="btn btn-success" onClick={handleAddAddress}>
@@ -247,7 +247,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
                         {address.city}, {address.state} {address.pincode}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       {!address.isPrimary && (
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
@@ -264,7 +264,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
                           <FaStar /> Set Primary
                         </button>
                       )}
-                      {/* <button
+                      <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() =>
                           setAddresses(
@@ -273,8 +273,8 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({userId}) => {
                         }
                       >
                         <FaTrash />
-                      </button> */}
-                    </div>
+                      </button>
+                    </div> */}
                   </div>
                 </div>
               </div>

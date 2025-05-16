@@ -1,6 +1,6 @@
 // components/DetailItem.tsx
 import React from "react";
-import { DetailItemProps } from "../../types/user.types";
+import { DetailItemProps } from "../../../types/user.types";
 
 export const DetailItem: React.FC<DetailItemProps> = ({
   icon,
