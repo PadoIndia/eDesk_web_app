@@ -1,8 +1,9 @@
+// pages/department-management.tsx
 import { useState } from "react";
 import { FaUsers } from "react-icons/fa";
 import DepartmentSidebar from "./components/department-sidebar";
 import DepartmentList from "./components/department-list";
-import { Department, User} from "../../types/department-team.types";
+import { Department, User } from "../../types/department-team.types";
 
 const DepartmentManagement = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -12,20 +13,21 @@ const DepartmentManagement = () => {
     { id: "3", name: "Bob Johnson", email: "bob@example.com" },
   ]);
 
-  const handleAddDepartment = (name: string) => {
+  const handleAddDepartment = (name: string, responsibilities: string) => {
     if (!departments.some((d) => d.name === name)) {
       setDepartments([
         ...departments,
         {
           id: Date.now().toString(),
           name,
+          responsibilities,
           teams: [],
         },
       ]);
     }
   };
 
-  const handleAddTeam = (departmentId: string, teamName: string) => {
+  const handleAddTeam = (departmentId: string, teamName: string, responsibilities: string) => {
     setDepartments(
       departments.map((dept) => {
         if (dept.id === departmentId) {
@@ -36,6 +38,7 @@ const DepartmentManagement = () => {
               {
                 id: Date.now().toString(),
                 name: teamName,
+                responsibilities,
                 members: [],
               },
             ],
@@ -44,10 +47,6 @@ const DepartmentManagement = () => {
         return dept;
       })
     );
-  };
-
-  const handleDeleteDepartment = (id: string) => {
-    setDepartments(departments.filter((d) => d.id !== id));
   };
 
   const handleDeleteTeam = (deptId: string, teamId: string) => {
@@ -64,7 +63,7 @@ const DepartmentManagement = () => {
     );
   };
 
-  const handleAddMember = (deptId: string, teamId: string, user: User) => {
+    const handleAddMember = (deptId: string, teamId: string, user: User) => {
     setDepartments(
       departments.map((dept) => {
         if (dept.id === deptId) {
@@ -86,24 +85,29 @@ const DepartmentManagement = () => {
     );
   };
 
+  const handleDeleteDepartment = (id: string) => {
+    setDepartments(departments.filter((d) => d.id !== id));
+  };
+  // Keep other handlers (deleteDepartment, deleteTeam, addMember) the same
+
   return (
     <div className="container p-4">
-      <div className="row">
+      <div className="row g-4">
         <DepartmentSidebar
           departments={departments}
           onAddDepartment={handleAddDepartment}
           onAddTeam={handleAddTeam}
         />
         
-        <div className="col-md-9">
+        <div className="col-lg-9">
           <div className="card shadow">
-            <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">
-                <FaUsers className="me-2" />
+            <div className="card-header bg-primary text-white py-3">
+              <h5 className="mb-0 d-flex align-items-center">
+                <FaUsers className="me-2 fs-4" />
                 Departments & Teams
               </h5>
             </div>
-            <div className="card-body">
+            <div className="card-body p-0">
               <DepartmentList
                 departments={departments}
                 onDeleteDepartment={handleDeleteDepartment}

@@ -5,8 +5,8 @@ import { Department } from "../../../types/department-team.types";
 
 interface DepartmentSidebarProps {
   departments: Department[];
-  onAddDepartment: (name: string) => void;
-  onAddTeam: (departmentId: string, teamName: string) => void;
+  onAddDepartment: (name: string, responsibilities:string) => void;
+  onAddTeam: (departmentId: string, teamName: string, responsibilities:string ) => void;
 }
 
 const DepartmentSidebar = ({ departments, onAddDepartment, onAddTeam }: DepartmentSidebarProps) => (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaInfoCircle, FaPlus, FaTrash } from "react-icons/fa";
 import AddMemberModal from "./add-member-modal";
 import { Department, Team, User } from "../../../types/department-team.types";
 
@@ -15,39 +15,65 @@ const TeamItem = ({ department, team, onDeleteTeam, onAddMember, users }: TeamIt
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="col">
-      <div className="card h-100">
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="card-title mb-0">{team.name}</h5>
-            <button
-              className="btn btn-danger btn-sm rounded-circle"
-              onClick={() => onDeleteTeam(department.id, team.id)}
-            >
-              <FaTrash />
-            </button>
-          </div>
-          <div className="mt-2">
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="text-muted">{team.members.length} members</span>
-              <button
-                className="btn btn-sm btn-primary"
-                onClick={() => setShowModal(true)}
-              >
-                <FaPlus /> Add Member
-              </button>
-            </div>
-            {team.members.length > 0 && (
-              <ul className="list-group mt-2">
-                {team.members.map((member) => (
-                  <li key={member.id} className="list-group-item py-2">
-                    <div>{member.name}</div>
-                    <small className="text-muted">{member.email}</small>
-                  </li>
-                ))}
-              </ul>
+    <div className="col mb-4">
+      <div className="card h-100 shadow-sm border-0">
+        <div className="card-header bg-light d-flex justify-content-between align-items-center py-3">
+          <div className="d-flex flex-column">
+            <h5 className="mb-0 fw-semibold text-primary">{team.name}</h5>
+            {team.responsibilities && (
+              <div className="mt-1 d-flex align-items-center">
+                <div className="position-relative" title={team.responsibilities}>
+                  <FaInfoCircle className="text-muted me-1 fs-6" />
+                </div>
+                <small className="text-muted" style={{ 
+                  maxWidth: "100px", 
+                  overflow: "hidden", 
+                  textOverflow: "ellipsis", 
+                  whiteSpace: "nowrap" 
+                }}>
+                  {team.responsibilities}
+                </small>
+              </div>
             )}
           </div>
+          <button
+            className="btn btn-link text-danger p-1"
+            onClick={() => onDeleteTeam(department.id, team.id)}
+          >
+            <FaTrash className="fs-5" />
+          </button>
+        </div>
+
+        <div className="card-body pb-2">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <span className="badge bg-primary bg-opacity-10 text-primary">
+              {team.members.length} member{team.members.length !== 1 ? 's' : ''}
+            </span>
+            <button
+              className="btn btn-sm btn-outline-primary d-flex align-items-center"
+              onClick={() => setShowModal(true)}
+            >
+              <FaPlus className="me-1" /> Add Member
+            </button>
+          </div>
+
+          {team.members.length > 0 && (
+            <div className="border-top pt-3">
+              <div className="list-group list-group-flush">
+                {team.members.map((member) => (
+                  <div 
+                    key={member.id} 
+                    className="list-group-item border-0 px-0 py-2 d-flex justify-content-between align-items-center hover-bg"
+                  >
+                    <div>
+                      <div className="fw-medium text-dark">{member.name}</div>
+                      <small className="text-muted">{member.email}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
