@@ -11,6 +11,7 @@ import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
 import HrmApp from "./hrm-app";
 import Uploads from "./pages/uploads";
+import UsersList from "./pages/users/components/user-list";
 
 function App() {
   const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);
@@ -49,6 +50,7 @@ function App() {
         <Route path="search" element={<VideoSearchPage />} />
         <Route path="social-media" element={<SocialMediaManagement />} />
         <Route path="uploads" element={<Uploads />} />
+        <Route path="users/list" element={<UsersList />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

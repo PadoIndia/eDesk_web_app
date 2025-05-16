@@ -176,14 +176,14 @@ const UploadVideoTile: React.FC<VideoTileProps> = ({
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-outline-secondary"
                   onClick={() => setShowDeleteDialog(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn btn-outline-danger"
                   onClick={onRemoveVideo}
                 >
                   Delete

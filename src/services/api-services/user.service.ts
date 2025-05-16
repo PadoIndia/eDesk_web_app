@@ -19,10 +19,10 @@ class UserService extends ApiService {
   getUserById(id: number): ApiResponse<User> {
     return this.getData(`/${id}`);
   }
-  updateUser(id:number,user: UpdateUser): ApiResponse<UpdateUser> {
+  updateUser(id: number, user: UpdateUser): ApiResponse<UpdateUser> {
     return this.putData(`/${id}`, user);
   }
-  createUser(user: User): ApiResponse<User> {
+  createUser(user: Partial<User>): ApiResponse<User> {
     return this.postData(``, user);
   }
 

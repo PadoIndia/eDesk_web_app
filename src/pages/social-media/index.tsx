@@ -6,20 +6,7 @@ import { SmAssetResponse, SmAssetPayload } from "../../types/sm-asset.types";
 import smAssetService from "../../services/api-services/sm-asset.service";
 import userService from "../../services/api-services/user.service";
 import { toast } from "react-toastify";
-
-export type User = {
-  profileImg: {
-    id?: bigint | undefined;
-    url: string | null;
-  };
-  id: number;
-  name: string | null;
-  username: string;
-  status: string | null;
-  isActive: boolean;
-  lastSeen: Date | null;
-  contact: string;
-};
+import { User } from "../../types/user.types";
 
 export default function SocialMediaManagement() {
   const [assets, setAssets] = useState<SmAssetResponse[]>([]);

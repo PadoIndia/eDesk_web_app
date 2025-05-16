@@ -57,7 +57,10 @@ const VideoUploadList = () => {
       </ul>
 
       <div className="text-end mb-3">
-        <button className="btn btn-danger" onClick={() => setShowModal(true)}>
+        <button
+          className="btn btn-outline-danger"
+          onClick={() => setShowModal(true)}
+        >
           Clear Uploaded
         </button>
       </div>
@@ -97,13 +100,13 @@ const VideoUploadList = () => {
               </div>
               <div className="modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-outline-secondary"
                   onClick={() => setShowModal(false)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="btn btn-danger"
+                  className="btn btn-outline-danger"
                   onClick={() => {
                     dispatch(removeCompleted());
                     setShowModal(false);
