@@ -13,6 +13,12 @@ export type User = {
   lastSeen: Date | null;
 };
 
+export type UpdateUser = {
+  name?: string;
+  username?: string;
+  contact?: string;
+}
+
 export type UserDataDetails = {
   id: number;
   gender: string;
