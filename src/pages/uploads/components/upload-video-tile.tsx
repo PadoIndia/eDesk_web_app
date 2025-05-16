@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { VideoFile } from "../../../types/video.types";
 import { LuCirclePlay, LuRotateCcw, LuTrash2 } from "react-icons/lu";
-import gcoreService from "../../../services/gcore/gcore.service";
 import { useAppDispatch } from "../../../store/store";
-import { removeVideo, updateThumbnail } from "../../../features/video.slice";
+import { removeVideo } from "../../../features/video.slice";
 
 interface VideoTileProps {
   video: VideoFile;
@@ -50,22 +49,6 @@ const UploadVideoTile: React.FC<VideoTileProps> = ({
   const showProgress = ["uploading", "paused", "processing"].includes(
     video.status
   );
-
-  useEffect(() => {
-    if (
-      video.status === "uploaded" &&
-      video.video_id > 0 &&
-      !video.thumbnailUrl
-    ) {
-      gcoreService.getVideoStatus(video.video_id.toString()).then((res) => {
-        if (res.screenshot) {
-          dispatch(
-            updateThumbnail({ id: video.id, thumbnailUrl: res.screenshot })
-          );
-        }
-      });
-    }
-  }, [video, dispatch]);
 
   const onRemoveVideo = () => {
     URL.revokeObjectURL(video.thumbnailUrl);
