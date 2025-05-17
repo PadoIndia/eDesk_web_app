@@ -8,6 +8,7 @@ export interface Department {
   id: string;
   name: string;
   responsibilities:string;
+  slug:string;
   teams: Team[];
 }
 

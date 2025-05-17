@@ -22,7 +22,7 @@ const DepartmentItem = ({
       <div>
         <h4 className="mb-1">
           {department.name}
-          <span className="badge bg-secondary ms-2">{department.teams.length} teams</span>
+          <span className="badge bg-secondary ms-2">  {(department.teams || []).length} teams </span>
         </h4>
         {department.responsibilities && (
           <div className="mt-2 mx-5">
@@ -48,7 +48,7 @@ const DepartmentItem = ({
         )}
       </div>
       <button
-        className="btn btn-danger btn-sm rounded-circle h-25"
+        className="btn btn-sm rounded-circle badge-rejected"
         onClick={() => onDeleteDepartment(department.id)}
       >
         <FaTrash />

@@ -12,6 +12,7 @@ import LeaveConfiguration from "./pages/leave/leave-configuration";
 import UserLeaveBalances from "./pages/leave/user-leave-balance";
 import UserDetails from "./pages/users/user-details";
 import UserEditForm from "./pages/users/user-edit-form";
+import AssignUsersToDepartment from "./pages/department/components/assign-user-department";
 
 function HrmApp() {
   return (
@@ -33,6 +34,7 @@ function HrmApp() {
           path="/department-management"
           element={<DepartmentManagement />}
         />
+        <Route path="/user-department" element={<AssignUsersToDepartment/>} />
       </Routes>
     </div>
   );

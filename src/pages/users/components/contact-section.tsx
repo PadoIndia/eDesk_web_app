@@ -18,7 +18,7 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({ userId }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newContact, setNewContact] = useState<Omit<Contact, "id">>({
-    relation: "Self",
+    relation: "SELF",
     name: "",
     value: "",
     contactType: "PHONE",

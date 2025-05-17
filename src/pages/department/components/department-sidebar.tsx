@@ -5,7 +5,11 @@ import { Department } from "../../../types/department-team.types";
 
 interface DepartmentSidebarProps {
   departments: Department[];
-  onAddDepartment: (name: string, responsibilities:string) => void;
+  onAddDepartment: (department: {
+    name: string;
+    slug: string;
+    responsibilities: string;
+  }) => void;
   onAddTeam: (departmentId: string, teamName: string, responsibilities:string ) => void;
 }
 

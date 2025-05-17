@@ -37,10 +37,10 @@ const TeamItem = ({ department, team, onDeleteTeam, onAddMember, users }: TeamIt
             )}
           </div>
           <button
-            className="btn btn-link text-danger p-1"
+            className="btn btn-sm rounded-circle badge-rejected"
             onClick={() => onDeleteTeam(department.id, team.id)}
           >
-            <FaTrash className="fs-5" />
+            <FaTrash />
           </button>
         </div>
 

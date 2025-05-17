@@ -37,6 +37,8 @@ class UserService extends ApiService {
   }
 
   createUserContact(conatct: CreateContact): ApiResponse<CreateContact> {
+      console.log("contact details",conatct);
+      
     return this.postData(`/contacts`, conatct);
   }
 

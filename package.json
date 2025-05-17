@@ -12,10 +12,12 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@reduxjs/toolkit": "^2.8.1",
+    "@types/next": "^9.0.0",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.5",
     "framer-motion": "^12.10.0",
     "hls.js": "^1.6.2",
+    "next": "^15.3.2",
     "react": "^19.0.0",
     "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
