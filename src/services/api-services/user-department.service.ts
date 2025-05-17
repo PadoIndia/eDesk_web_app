@@ -9,6 +9,12 @@ class UserDepartmentService extends ApiService {
   createUserDepartment(userDepartment:{userId:number, departmentId:number, isAdmin:boolean}):ApiResponse{
       return this.postData("/", userDepartment);
   }
+
+  updateUserDepartment(userDepartment:{userId:number, departmentId:number, isAdmin:boolean}):ApiResponse{
+    return this.putData("/", userDepartment);
+    }
+
+
 }
 
 export default new UserDepartmentService();
