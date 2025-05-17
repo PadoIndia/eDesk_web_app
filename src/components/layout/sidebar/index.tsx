@@ -3,10 +3,10 @@ import { VideoResponse } from "../../../types/video.types";
 import eventService from "../../../services/api-services/event.service";
 import videoService from "../../../services/api-services/video.service";
 import { useNavigate, useParams } from "react-router-dom";
-import { GoVideo } from "react-icons/go";
 import { formatLocaleDateToDMY, transformEvents } from "../../../utils/helper";
 import { GroupedOutput } from "../../../types/sidebar.types";
 import SidebarGroup from "./sidebar-group";
+import { MdOutlineSlowMotionVideo } from "react-icons/md";
 import "./styles.scss";
 
 const Sidebar = () => {
@@ -50,23 +50,40 @@ const Sidebar = () => {
 
   return (
     <div className="custom-sidebar">
-      <ul className="nav nav-underline">
-        <li className="nav-item">
+      <ul className="row p-0 m-1 my-2 position-relative">
+        <li className="col-6  text-center" style={{ listStyle: "none" }}>
           <button
-            className={`nav-link ${activeTab === "events" ? "active" : ""}`}
+            className={`btn btn-body border-0 fw-bold transition  px-4 ${
+              activeTab === "events" ? "text-primary " : "border-0"
+            }`}
             onClick={() => handleTabChange("events")}
           >
             Events
           </button>
         </li>
-        <li className="nav-item">
+        <li className="col-6 text-center" style={{ listStyle: "none" }}>
           <button
-            className={`nav-link ${activeTab === "recents" ? "active" : ""}`}
+            className={`btn btn-body border-0 transition  fw-bold px-4 ${
+              activeTab === "recents" ? "text-primary " : "border-0"
+            }`}
             onClick={() => handleTabChange("recents")}
           >
             Recents
           </button>
         </li>
+        <div
+          className="transition rounded-pill"
+          style={{
+            position: "absolute",
+            top: 0,
+            transform: `translateX(${
+              activeTab === "recents" ? "105%" : "0px"
+            })`,
+            bottom: 0,
+            width: "50%",
+            backgroundColor: "rgba(210,210,210,0.3)",
+          }}
+        />
       </ul>
 
       <div className="tab-content">
@@ -86,17 +103,22 @@ const Sidebar = () => {
 
         {activeTab === "recents" && (
           <div className="tab-pane fade show active">
-            <div className="recent-videos">
+            <div className="recent-videos mt-3">
               {videoItems.map((video) => (
                 <div
                   key={video.id}
-                  className="d-flex gap-2 m-1 my-3"
+                  style={{
+                    gap: "0.5em",
+                    marginBottom: "0.5rem",
+                    padding: "0.5rem 0",
+                  }}
+                  className="d-flex align-items-center"
                   onClick={() => navigate(`/videos/${video.id}`)}
                 >
                   <div>
-                    <GoVideo />
+                    <MdOutlineSlowMotionVideo size={17} />
                   </div>
-                  <span className="text-truncate h6 col-7">{video.name}</span>
+                  <span className="text-truncate col-7">{video.name}</span>
                   <span className="font-sm">
                     {formatLocaleDateToDMY(video.createdOn)}
                   </span>

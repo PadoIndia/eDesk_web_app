@@ -26,8 +26,8 @@ const Uploads: React.FC = () => {
   }, []);
 
   return (
-    <div className="container-fluid vh-100 bg-light d-flex p-3">
-      <div className="border-end pe-3">
+    <div className="vh-100 bg-white d-flex w-100 flex-md-row flex-column">
+      <div className="border-end m-3 pe-3 pt-3">
         <FilePicker />
       </div>
       <div className="flex-grow-1 ps-3 d-flex flex-column align-items-start">

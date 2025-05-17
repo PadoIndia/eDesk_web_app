@@ -42,12 +42,12 @@ const VideoUploadList = () => {
     activeTab === "all" ? videos : videos.filter((v) => v.status === activeTab);
 
   return (
-    <div>
-      <ul className="nav nav-tabs mb-3">
+    <div className="w-100 bg-white p-3 rounded">
+      <ul className="d-flex gap-2">
         {Object.entries(statusCounts).map(([status, count]) => (
           <li className="nav-item" key={status}>
             <button
-              className={`nav-link ${activeTab === status ? "active" : ""}`}
+              className={`nav-link  ${activeTab === status ? "active" : ""}`}
               onClick={() => setActiveTab(status as VideoStatus)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
@@ -56,7 +56,7 @@ const VideoUploadList = () => {
         ))}
       </ul>
 
-      <div className="text-end mb-3">
+      <div className="text-end my-3">
         <button
           className="btn btn-outline-danger"
           onClick={() => setShowModal(true)}

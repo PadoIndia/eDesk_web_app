@@ -1,0 +1,34 @@
+.videoTile {
+  max-width: 100%;
+  margin-bottom: 0.7rem;
+}
+
+.thumbnail {
+  width: 120px;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    height: auto;
+    border-radius: 8px;
+  }
+}
+
+.duration {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+}
+
+.videoDetails {
+  flex-grow: 1;
+}
+
+.title {
+  font-weight: 600;
+  color: #000;
+  line-height: 1.2;
+}
