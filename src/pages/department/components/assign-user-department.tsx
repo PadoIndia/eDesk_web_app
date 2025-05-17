@@ -14,6 +14,7 @@ const AssignUsersToDepartment = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [adminUsers, setAdminUsers] = useState<number[]>([]);
+  const [existingAssignments, setExistingAssignments] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,9 +31,36 @@ const AssignUsersToDepartment = () => {
         setLoading(false);
       }
     };
-    
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchExistingAssignments = async () => {
+      if (!selectedDepartment) return;
+      try {
+        const { data } = await userDepartmentService.getByDepartment(
+          parseInt(selectedDepartment)
+        );
+        interface UserDepartmentResponse {
+          userId: number;
+          isAdmin: boolean;
+        }
+
+        interface AssignmentRecord {
+          [key: number]: boolean;
+        }
+
+        const assignments = data.reduce((acc: AssignmentRecord, curr: UserDepartmentResponse) => {
+          acc[curr.userId] = curr.isAdmin;
+          return acc;
+        }, {});
+        setExistingAssignments(assignments);
+      } catch (error) {
+        console.error("Error loading existing assignments:", error);
+      }
+    };
+    fetchExistingAssignments();
+  }, [selectedDepartment]);
 
   const handleUserSelect = (userId: number) => {
     setSelectedUsers(prev => 
@@ -50,39 +78,88 @@ const AssignUsersToDepartment = () => {
     );
   };
 
-
   const handleAssignUsers = async () => {
     if (!selectedDepartment || selectedUsers.length === 0) return;
+    const departmentId = parseInt(selectedDepartment);
     
     try {
-      // Create an array of promises for each user assignment
-      const assignments = selectedUsers.map(userId => 
-        userDepartmentService.createUserDepartment({
-          departmentId: parseInt(selectedDepartment),
-          userId: userId,
-          isAdmin: adminUsers.includes(userId)
+      const results = await Promise.allSettled(
+        selectedUsers.map(async userId => {
+          const isAdmin = adminUsers.includes(userId);
+          const exists = existingAssignments[userId] !== undefined;
+
+          try {
+            const response = exists
+              ? await userDepartmentService.updateUserDepartment(
+                  userId, 
+                  departmentId, 
+                  isAdmin
+                )
+              : await userDepartmentService.createUserDepartment({ 
+                  departmentId, 
+                  userId, 
+                  isAdmin 
+                });
+
+            if (response.status !== "success") {
+              throw new Error(response.message || "Operation failed");
+            }
+            return { userId, success: true };
+          } catch (error) {
+            console.error(`Failed for user ${userId}:`, error);
+            return { userId, success: false, error };
+          }
         })
       );
-      console.log("asssssss",assignments);
+
+      // Process results
+      const successful = results.filter(
+        (result): result is PromiseFulfilledResult<{ userId: number, success: true }> => 
+          result.status === "fulfilled" && result.value.success
+      );
+      const failed = results.filter(
+        (result): result is PromiseFulfilledResult<{ userId: number, success: false }> => 
+          result.status === "fulfilled" && !result.value.success
+      );
+
+      // Update UI state
+      const successfulIds = successful.map(r => r.value.userId);
+      setSelectedUsers(prev => prev.filter(id => !successfulIds.includes(id)));
+      setAdminUsers(prev => prev.filter(id => !successfulIds.includes(id)));
+
+      // Show feedback
+      if (successful.length > 0 || failed.length > 0) {
+        alert(
+          `Successfully processed ${successful.length} users\n` +
+          `Failed to process ${failed.length} users`
+        );
+      }
       
-      // Execute all assignments in parallel
-      await Promise.all(assignments);
-      
-      // Clear selections after successful assignment
-      setSelectedUsers([]);
-      setAdminUsers([]);
-      alert("Users assigned successfully!");
+      // Refresh existing assignments
+      if (successful.length > 0) {
+        const newAssignments = { ...existingAssignments };
+        successful.forEach(({ value: { userId } }) => {
+          newAssignments[userId] = adminUsers.includes(userId);
+        });
+        setExistingAssignments(newAssignments);
+      }
     } catch (error) {
       console.error("Assignment failed:", error);
-      alert("Failed to assign some users");
+      alert("Failed to process assignments");
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.username.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch ;
-  });
+  const filteredUsers = users
+    .filter(user => {
+      const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.username.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    })
+    .map(user => ({
+      ...user,
+      isAssigned: existingAssignments[user.id] !== undefined,
+      isAdmin: existingAssignments[user.id] || false
+    }));
 
   if (loading) return <div className="text-center p-5">Loading...</div>;
 
@@ -114,9 +191,15 @@ const AssignUsersToDepartment = () => {
                           className="form-check-input me-3"
                           checked={selectedUsers.includes(user.id)}
                           onChange={() => handleUserSelect(user.id)}
+                          disabled={user.isAssigned}
                         />
                         <div>
-                          <h5 className="mb-0">{user.name}</h5>
+                          <h5 className="mb-0">
+                            {user.name} 
+                            {user.isAssigned && (
+                              <span className="badge badge-approved ms-2">Assigned</span>
+                            )}
+                          </h5>
                           <small className="text-muted">{user.username}</small>
                         </div>
                       </div>
@@ -126,10 +209,10 @@ const AssignUsersToDepartment = () => {
                           className="form-check-input"
                           checked={adminUsers.includes(user.id)}
                           onChange={() => handleAdminToggle(user.id)}
-                          disabled={!selectedUsers.includes(user.id)}
+                          disabled={!selectedUsers.includes(user.id) || user.isAssigned}
                         />
                         <label className="form-check-label">
-                          Admin
+                          Admin {user.isAssigned && `(${user.isAdmin ? 'Yes' : 'No'})`}
                         </label>
                       </div>
                     </div>
