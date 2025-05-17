@@ -3,15 +3,15 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import "./styles.scss";
-import eventGroupService from "../../../../services/api-services/event-group.service";
-import eventService from "../../../../services/api-services/event.service";
+import { toast } from "react-toastify";
 import {
   EventGroupResponse,
   EventPayload,
   EventResponse,
-} from "../../../../types/event.types";
-import { toast } from "react-toastify";
-import Modal from "..";
+} from "../../../types/event.types";
+import eventGroupService from "../../../services/api-services/event-group.service";
+import eventService from "../../../services/api-services/event.service";
+import Modal from "../../../components/ui/modals";
 
 interface EventModalProps {
   isOpen: boolean;

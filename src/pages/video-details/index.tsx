@@ -1,23 +1,20 @@
-import { LuArrowLeft } from "react-icons/lu";
-import VideoPlayer, { VideoPlayerRef } from "./components/video-player";
+import VideoPlayer from "./components/video-player";
 import VideoInfo from "./components/video-info";
-import { useNavigate, useParams } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import {
   SingleVideoResponse,
   TimestampPayload,
+  TimestampResponse,
   VideoResponse,
 } from "../../types/video.types";
 import videoService from "../../services/api-services/video.service";
-import { formatSeconds } from "../../utils/helper";
+import RelatedVideoTile from "./components/related-video-tile";
 import "./styles.css";
-import VideoCard from "../../components/ui/cards/video-card";
+import { toast } from "react-toastify";
 
 export default function VideoPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const videoRef = useRef<VideoPlayerRef>(null);
-
   const [vidDetails, setVidDetails] = useState<SingleVideoResponse | null>(
     null
   );
@@ -54,8 +51,51 @@ export default function VideoPage() {
 
   const addTimeStamp = useCallback(
     (data: TimestampPayload) => {
-      if (id) {
+      if (id && vidDetails) {
+        const time = data.timeInSec;
+        const existsWithTime = vidDetails.timestamps.find(
+          (i) => i.timeInSec === time
+        );
+        if (existsWithTime)
+          return toast.error("A timestamp for this time already exists");
+        if (time < 0 || time > vidDetails.durationInSec)
+          return toast.error(
+            `Timestamp must be between 0 and ${vidDetails.durationInSec} seconds`
+          );
+
         videoService.addTimestamp(Number(id), data).then((res) => {
+          if (res.status === "success") {
+            fetchVidDetails();
+          }
+        });
+      }
+    },
+    [id, fetchVidDetails, vidDetails]
+  );
+
+  const updateTimeStamp = useCallback(
+    (data: TimestampResponse) => {
+      if (id && vidDetails) {
+        videoService
+          .updateTimestamp(Number(id), data.id, {
+            comment:
+              data.comment ||
+              `Timestamp-${(vidDetails?.timestamps.length || 0) + 1}`,
+            timeInSec: data.timeInSec,
+          })
+          .then((res) => {
+            if (res.status === "success") {
+              fetchVidDetails();
+            }
+          });
+      }
+    },
+    [id, fetchVidDetails, vidDetails]
+  );
+  const deleteTimestamp = useCallback(
+    (timeStampId: number) => {
+      if (id) {
+        videoService.deleteTimestamp(Number(id), timeStampId).then((res) => {
           if (res.status === "success") {
             fetchVidDetails();
           }
@@ -64,27 +104,20 @@ export default function VideoPage() {
     },
     [id, fetchVidDetails]
   );
-
   if (!vidDetails) return <div>Loading...</div>;
 
   return (
-    <div>
-      <div className="container">
-        <div className="mb-3">
-          <a onClick={() => navigate(-1)} className="back-link">
-            <LuArrowLeft className="icon" />
-            Back to videos
-          </a>
-        </div>
-
-        <div className="row gap-2">
+    <div className="mt-4 bg-white p-3">
+      <div className="container mx-auto">
+        <div className="row justify-content-between">
           <div className="col-lg-8 p-0">
             <div className="card">
               <VideoPlayer
-                ref={videoRef}
                 timestamps={vidDetails.timestamps}
                 id={Number(id)}
                 addTimeStamp={addTimeStamp}
+                updateTimeStamp={updateTimeStamp}
+                deleteTimestamp={deleteTimestamp}
                 poster={vidDetails.thumbnailLr || ""}
                 src={`https://${vidDetails.clientId}.gvideo.io/videos/${vidDetails.clientId}_${vidDetails.slug}/master.m3u8`}
               />
@@ -92,25 +125,28 @@ export default function VideoPage() {
             </div>
           </div>
 
-          <div className="col-lg-3 card p-3">
-            <h5>Timestamps</h5>
+          <div className="col-lg-4">
+            <h5 className="mb-4 mt-1">Related Videos</h5>
             <div className="my-2">
-              {vidDetails.timestamps.map((timestmp) => (
-                <div className="d-flex gap-2 my-2" key={timestmp.id}>
-                  <a
-                    className="font-sm"
-                    onClick={() => videoRef.current?.seekTo(timestmp.timeInSec)}
-                  >
-                    {formatSeconds(timestmp.timeInSec)}
-                  </a>
-                  <span className="font-sm">{timestmp.comment}</span>
+              {relatedVideos.length > 0 ? (
+                <div
+                  style={{
+                    maxHeight: "100vh",
+                    overflowY: "scroll",
+                  }}
+                >
+                  {relatedVideos.map((video) => (
+                    <RelatedVideoTile key={video.id} video={video} />
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p>No related videos available</p>
+              )}
             </div>
           </div>
 
           {/* Related Videos Carousel */}
-          <div className="mt-2 col-11 card p-3">
+          {/* <div className="mt-2 col-11 card p-3">
             <h4>Related Videos</h4>
             <div className="my-3">
               {relatedVideos.length > 0 ? (
@@ -129,7 +165,7 @@ export default function VideoPage() {
                 <p>No related videos available</p>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

@@ -58,7 +58,7 @@ const UploadVideoTile: React.FC<VideoTileProps> = ({
 
   return (
     <>
-      <div className="d-flex align-items-center border rounded p-3 mb-3 shadow-sm">
+      <div className="d-flex align-items-center border rounded p-3 shadow-sm">
         {/* Thumbnail */}
         <div
           className="flex-shrink-0 me-3"

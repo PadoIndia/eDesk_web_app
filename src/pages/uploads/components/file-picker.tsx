@@ -61,10 +61,8 @@ export const FilePicker = () => {
 
   return (
     <div
-      className={`border rounded text-center p-5 ${
-        isDragging
-          ? "border-primary bg-light"
-          : "border-secondary bg-body-tertiary"
+      className={`border rounded text-center p-4 ${
+        isDragging ? "border-primary bg-light" : "border-light bg-body-tertiary"
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

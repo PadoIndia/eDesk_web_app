@@ -32,7 +32,7 @@ const Home: React.FC = () => {
   );
 
   return (
-    <div>
+    <div className="p-3">
       <div className="d-flex justify-content-between p-2">
         <Search value={query} onChange={setQuery} />
         {eventId && (
