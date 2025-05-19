@@ -43,11 +43,15 @@ const VideoUploadList = () => {
 
   return (
     <div className="w-100 bg-white p-3 rounded">
-      <ul className="d-flex gap-2">
+      <ul className="d-flex gap-2 mt-3 position-relative">
         {Object.entries(statusCounts).map(([status, count]) => (
-          <li className="nav-item" key={status}>
+          <li className="" style={{ listStyle: "none" }} key={status}>
             <button
-              className={`nav-link  ${activeTab === status ? "active" : ""}`}
+              className={`btn btn-body border-0  shadow   rounded-pill ${
+                activeTab === status
+                  ? "text-light fw-bold bg-primary"
+                  : "bg-light text-dark"
+              }`}
               onClick={() => setActiveTab(status as VideoStatus)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
