@@ -88,7 +88,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
             {/* Profile dropdown - always visible but adjusts based on screen size */}
             <div className="nav-item dropdown">
               <button
-                className="btn btn-outline-secondary dropdown-toggle d-flex align-items-center"
+                className="btn border-0 btn-outline-secondary dropdown-toggle d-flex align-items-center"
                 type="button"
                 id="profileDropdown"
                 data-bs-toggle="dropdown"

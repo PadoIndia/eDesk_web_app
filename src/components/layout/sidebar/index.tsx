@@ -103,7 +103,7 @@ const Sidebar = () => {
 
         {activeTab === "recents" && (
           <div className="tab-pane fade show active">
-            <div className="recent-videos mt-3">
+            <div className="recent-videos mt-2">
               {videoItems.map((video) => (
                 <div
                   key={video.id}
