@@ -18,6 +18,10 @@ class DepartmentTeamService extends ApiService {
     return this.getData("/");
   }
 
+  getDepartmentById(departmentId:number): ApiResponse{
+    return this.getData(`/${departmentId}`);
+  }
+
 }
 
 

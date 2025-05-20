@@ -18,6 +18,11 @@ class UserDepartmentService extends ApiService {
     return this.getData(`/department/${departmentId}`);
   }
 
+  getUserDepartmentIdByUserId(userId:number):ApiResponse{
+    return this.getData(`/${userId}`);
+  }
+
+
 }
 
 export default new UserDepartmentService();
