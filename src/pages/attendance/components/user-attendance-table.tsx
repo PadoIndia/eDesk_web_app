@@ -202,142 +202,134 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   return (
     <div className="mb-5">
       <div className="d-flex align-items-center mb-3 bg-light p-3 rounded">
-        <FaUser className="text-primary me-2" size={24} />
-        <h4 className="mb-0">{user.name}</h4>
-        <span className="badge bg-secondary ms-2">{user.department}</span>
-        {user.isAdmin && <span className="badge bg-primary ms-2">Admin</span>}
+      <FaUser className="text-primary me-2" size={24} />
+      <h4 className="mb-0">{user.name}</h4>
+      <span className="badge bg-secondary ms-2">{user.department}</span>
+      {user.isAdmin && <span className="badge bg-primary ms-2">Admin</span>}
       </div>
 
       <div className="table-responsive">
-        <table className="table table-bordered table-hover">
-          <thead className="table-light">
-            <tr>
-              <th className="text-center" style={{ width: "100px" }}>
-                Date/Day
-              </th>
-              <th>Punch Data</th>
-              <th className="text-center" style={{ width: "100px" }}>
-                Working Hours
-              </th>
-              <th>Status</th>
-              <th className="text-center" style={{ width: "100px" }}>
-                Manual Status
-              </th>
-              <th>Calendar</th>
-              <th className="text-center" style={{ width: "120px" }}>
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((day) => {
-              const date = formatDate(day);
-              const dateObj = new Date(date);
-              const dayOfWeek = getDayOfWeek(dateObj);
-              const punches = getPunchesForDate(day);
-              const calendarEvent = calendarEvents.find((e) => e.date === date);
+      <table className="table table-bordered table-hover">
+        <thead className="table-light">
+        <tr>
+          <th className="text-center" style={{ width: "100px" }}>
+          Date/Day
+          </th>
+          <th>Punch Data</th>
+          <th className="text-center" style={{ width: "100px" }}>
+          Working Hours
+          </th>
+          <th>Status</th>
+          <th className="text-center" style={{ width: "100px" }}>
+          Manual Status
+          </th>
+          <th className="text-center" style={{ width: "120px" }}>
+          Actions
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        {days.map((day) => {
+          const date = formatDate(day);
+          const dateObj = new Date(date);
+          const dayOfWeek = getDayOfWeek(dateObj);
+          const punches = getPunchesForDate(day);
+          const calendarEvent = calendarEvents.find((e) => e.date === date);
 
-              return (
-                <tr key={date} className={getRowColorForDate(day)}>
-                  <td className="text-center">
-                    <div className="fw-bold">{day}</div>
-                    <div className="small text-muted">{dayOfWeek}</div>
-                  </td>
+          return (
+          <tr key={date} className={getRowColorForDate(day)}>
+            <td className="text-center">
+            <div className="d-flex align-items-center justify-content-center">
+              <span className="fw-bold me-1">{day}</span>
+              <span className="text-muted">({dayOfWeek})</span>
+              {calendarEvent && (
+              <FaCalendarAlt 
+                className={`ms-1 ${calendarEvent.type === "holiday" ? "text-danger" : "text-primary"}`}
+                title={calendarEvent.title}
+              />
+              )}
+            </div>
+            </td>
 
-                    <td>
-                    {punches.length > 0 ? (
-                      <div className="d-flex flex-wrap gap-1">
-                      {punches.map((punch, index) => (
-                        <div
-                        key={punch.id}
-                        className="d-flex align-items-center p-1 bg-light rounded"
-                        style={{ minWidth: '100px', flex: '0 0 auto' }}
-                        title={`${index % 2 === 0 ? "IN" : "OUT"} - ${punch.type}`}
-                        >
-                        <span
-                          className={`me-2 ${
-                          punch.type === "MANUAL"
-                          ? "text-primary fw-bold"
-                          : ""
-                          }`}
-                        >
-                          {formatTime(punch.hh, punch.mm)}
-                        </span>
-                        {getPunchApprovalIcon(punch)}
-                        </div>
-                      ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                    </td>
+            <td>
+            {punches.length > 0 ? (
+              <div className="d-flex flex-wrap gap-1">
+              {punches.map((punch, index) => (
+              <div
+              key={punch.id}
+              className="d-flex align-items-center p-1 bg-light rounded"
+              style={{ minWidth: '100px', flex: '0 0 auto' }}
+              title={`${index % 2 === 0 ? "IN" : "OUT"} - ${punch.type}`}
+              >
+              <span
+                className={`me-2 ${
+                punch.type === "MANUAL"
+                ? "text-primary fw-bold"
+                : ""
+                }`}
+              >
+                {formatTime(punch.hh, punch.mm)}
+              </span>
+              {getPunchApprovalIcon(punch)}
+              </div>
+              ))}
+              </div>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
+            </td>
 
-                  <td className="text-center">
-                    {calculateWorkingHours(punches)}
-                  </td>
+            <td className="text-center">
+            {calculateWorkingHours(punches)}
+            </td>
 
-                  <td className="text-center">
-                    <Badge
-                      label={getStatusForDate(day)}
-                      status={
-                        getStatusForDate(day) === "P"
-                          ? "SUCCESS"
-                          : getStatusForDate(day) === "A"
-                          ? "DANGER"
-                          : getStatusForDate(day) === "H"
-                          ? "PRIMARY"
-                          : "INFO"
-                      }
-                    />
-                  </td>
+            <td className="text-center">
+            <Badge
+              label={getStatusForDate(day)}
+              status={
+              getStatusForDate(day) === "P"
+                ? "SUCCESS"
+                : getStatusForDate(day) === "A"
+                ? "DANGER"
+                : getStatusForDate(day) === "H"
+                ? "PRIMARY"
+                : "INFO"
+              }
+            />
+            </td>
 
-                  <td className="text-center">
-                    {isAdmin && !isCurrentUser ? (
-                      <select
-                        className="form-select form-select-sm"
-                        onChange={(e) =>
-                          onManualStatusChange?.(user.id, date, e.target.value)
-                        }
-                      >
-                        <option value="">—</option>
-                        <option value="P">Present</option>
-                        <option value="A">Absent</option>
-                        <option value="L">Leave</option>
-                      </select>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
+            <td className="text-center">
+            {isAdmin && !isCurrentUser ? (
+              <select
+              className="form-select form-select-sm"
+              onChange={(e) =>
+                onManualStatusChange?.(user.id, date, e.target.value)
+              }
+              >
+              <option value="">—</option>
+              <option value="P">Present</option>
+              <option value="A">Absent</option>
+              <option value="L">Leave</option>
+              </select>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
+            </td>
 
-                  <td>
-                    {calendarEvent && (
-                      <div
-                        className={`small ${
-                          calendarEvent.type === "holiday"
-                            ? "text-danger"
-                            : "text-primary"
-                        }`}
-                      >
-                        <FaCalendarAlt className="me-1" />
-                        {calendarEvent.title}
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="text-center">
-                    <button
-                      onClick={() => onMissPunchRequest(date)} // Pass the row's date
-                      title="Request Missing Punch"
-                    >
-                      <FaPlus className="me-1" />
-                      Miss Punch
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            <td className="text-center">
+            <button
+              onClick={() => onMissPunchRequest(date)}
+              title="Request Missing Punch"
+            >
+              <FaPlus className="me-1" />
+              Miss Punch
+            </button>
+            </td>
+          </tr>
+          );
+        })}
+        </tbody>
+      </table>
       </div>
     </div>
   );
