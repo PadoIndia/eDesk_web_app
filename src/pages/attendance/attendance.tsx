@@ -9,7 +9,7 @@ import AttendanceTables from "./components/attendance-table";
 import RequestsTable from "./components/requests-table";
 import MissPunchForm from "./components/miss-punch-form";
 import ApproveRejectModal from "./components/approve-reject-modal";
-import AdminControls from "./components/admin-control";
+// import AdminControls from "./components/admin-control";
 import LoadingErrorState from "./components/loading-error-state";
 
 import punchDataService from "../../services/api-services/punch-data.service";
@@ -494,15 +494,6 @@ const AttendanceDashboard = () => {
           setRejectionReason={setRejectionReason}
           confirmApproveReject={confirmApproveReject}
           setShowApproveRejectModal={setShowApproveRejectModal}
-        />
-      )}
-
-      {/* Admin Controls - only shown for admins */}
-      {isAdmin && (
-        <AdminControls 
-          currentUser={currentUser} 
-          users={users}
-          setCurrentUser={setCurrentUser}
         />
       )}
     </div>
