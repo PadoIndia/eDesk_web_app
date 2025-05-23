@@ -2,202 +2,172 @@ import { useState, useEffect } from "react";
 import { useAppSelector } from "../../store/store";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
 
-import DashboardHeader from "./components/header";
-import DashboardControls from "./components/control";
-import AttendanceTables from "./components/attendance-table";
-import RequestsTable from "./components/requests-table";
 import MissPunchForm from "./components/miss-punch-form";
-import ApproveRejectModal from "./components/approve-reject-modal";
-// import AdminControls from "./components/admin-control";
+import AttendanceTables from "./components/attendance-table";
+import DashboardControls from "./components/control";
 import LoadingErrorState from "./components/loading-error-state";
+import DashboardHeader from "./components/header";
+import ApproveRejectModal from "./components/approve-reject-modal";
+import RequestsTable from "./components/requests-table";
 
-import punchDataService from "../../services/api-services/punch-data.service";
-import userService from "../../services/api-services/user.service";
-import userDepartmentService from "../../services/api-services/user-department.service";
-import departmentTeamService from "../../services/api-services/department-team.service";
-
-// Type definitions
-import { AttendanceUser, Punch } from "../../types/attendance.types";
+// Type definitions (simplified, using the existing ones from your components)
+import {
+  AttendanceUser,
+  Punch,
+  DashboardData,
+} from "../../types/attendance.types";
 
 const AttendanceDashboard = () => {
   // Get userId from Redux store
   const userId = useAppSelector((state) => state.auth.userData?.user.id);
-  
-  const [users, setUsers] = useState<AttendanceUser[]>([]);
-  const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
+
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Simplified state - no more complex data processing needed
+  const [dashboardData, setDashboardData] = useState<DashboardData>();
+  const [departmentUsers, setDepartmentUsers] = useState<AttendanceUser[]>([]);
   const [missPunchRequests, setMissPunchRequests] = useState<Punch[]>([]);
+
+  // UI state
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [showMissPunchForm, setShowMissPunchForm] = useState(false);
   const [showApproveRejectModal, setShowApproveRejectModal] = useState(false);
   const [currentRequest, setCurrentRequest] = useState<Punch | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(
+    null
+  );
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // Form data - ADDED targetUserId to track who the request is for
   const [formData, setFormData] = useState({
     name: "",
     date: "",
     time: "",
     reason: "",
+    departmentId: 0,
+    targetUserId: 0, // NEW: Track which user the request is for
   });
-  const selectedMonth = new Date().getMonth() + 1; // API expects 1-12
-  const selectedYear = new Date().getFullYear();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("All");
-  const [currentView, setCurrentView] = useState<"department" | "requests">("department");
+  const [currentView, setCurrentView] = useState<"department" | "requests">(
+    "department"
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Calculate attendance status based on punch data
-  const calculateAttendanceStatus = (punchData: Punch[]): "A" | "P" => {
-    const today = new Date();
-    return punchData.some(p => 
-      p.date === today.getDate() &&
-      p.month === today.getMonth() + 1 &&
-      p.year === today.getFullYear()
-    ) ? "P" : "A";
-  };
+  // Derived state from dashboard data
+  const currentUser: AttendanceUser | null = dashboardData?.user
+    ? {
+        ...dashboardData.user,
+        department:
+          dashboardData.user.departments.map((d) => d.name).join(", ") ||
+          "Not Assigned",
+        departments: dashboardData.user.departments,
+        punchData: dashboardData.punchData,
+        attendance: dashboardData.attendance,
+        callDetails: dashboardData.callDetails || [],
+        classDetails: dashboardData.classDetails || [],
+      }
+    : null;
 
-  // Fetch initial data
+  // Update the isAdmin and userDepartments derivation
+  const isAdmin = currentUser?.isAdmin || false;
+  const userDepartments = currentUser?.departments || [];
+
+  // Fetch initial data - MUCH SIMPLER NOW!
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         if (!userId) {
           throw new Error("User ID is required");
         }
-        
-        // Get current user data first
-        const userResponse = await userService.getUserById(Number(userId));
-        if (!userResponse.data) {
-          throw new Error("Failed to fetch user data");
-        }
-        
-        const userData = userResponse.data;
-        
-        // Get user's department
-        const userDepartmentResponse = await userDepartmentService.getUserDepartmentIdByUserId(userId);
-        const departmentData = userDepartmentResponse.data[0];
-        const department = await departmentTeamService.getDepartmentById(departmentData.departmentId);
-        
-        // Get user's punch data
-        const punchDataResponse = await punchDataService.getPunchDataById(
-          userId, 
-          { month: selectedMonth, year: selectedYear }
-        );
-        
-        const punchData = punchDataResponse.data || [];
-        
-        // Create transformed user object
-        const transformedUser: AttendanceUser = {
-          id: userId,
-          name: userData.name || "Unknown User",
-          department: department?.data?.name || "Not Assigned",
-          isAdmin: departmentData?.isAdmin || false,
-          punchData: punchData.map((p:  Partial<Punch>) => ({
-            ...p,
-            userName: userData.name,
-            userDepartment: department?.data?.name
-          })),
-          attendance: { 
-            status: calculateAttendanceStatus(punchData),
-            statusManual: "",
-            comment: "" 
-          },
-          callDetails: [],
-          classDetails: []
-        };
-        
-        setCurrentUser(transformedUser);
-        setIsAdmin(transformedUser.isAdmin);
-        
-        // If user is admin, fetch all users in their department
-        if (transformedUser.isAdmin) {
-          const allUsersResponse = await userService.getAllUsers();
-          
-          if (!allUsersResponse.data) {
-            throw new Error("Failed to fetch users");
-          }
-          
-          // Filter and transform users
-          const departmentUsers = await Promise.all(
-            allUsersResponse.data
-              .filter(user => user.name !== null)
-              .map(async (user) => {
-                // Get user's department
-                const userDeptResponse = await userDepartmentService.getUserDepartmentIdByUserId(user.id);
-                const userDeptData = userDeptResponse.data[0];
-                
-                if (!userDeptData) return null;
-                
-                const userDept = await departmentTeamService.getDepartmentById(userDeptData.departmentId);
-                
-                // Only include users from the same department as the admin
-                if (userDept?.data?.name !== transformedUser.department) {
-                  return null;
-                }
-                
-                // Get user's punch data
-                const userPunchDataResponse = await punchDataService.getPunchDataById(
-                  user.id, 
-                  { month: selectedMonth, year: selectedYear }
-                );
-                
-                const userPunchData = userPunchDataResponse.data || [];
-                
-                return {
-                  id: user.id,
-                  name: user.name || "Unknown User",
-                  department: userDept?.data?.name || "Not Assigned",
-                  isAdmin: userDeptData?.isAdmin || false,
-                  punchData: userPunchData.map((p: Partial<Punch>) => ({
-                    ...p, 
-                    userName: user.name,
-                    userDepartment: userDept?.data?.name
-                  })),
-                  attendance: { 
-                    status: calculateAttendanceStatus(userPunchData),
-                    statusManual: "",
-                    comment: "" 
-                  },
-                  callDetails: [],
-                  classDetails: []
-                } as AttendanceUser;
-              })
+
+        // Single API call to get all dashboard data
+        const dashboardResponse =
+          await attendanceDashboardService.getDashboardData(
+            userId,
+            selectedMonth,
+            selectedYear
           );
-          
-          // Filter out null values and add current user
-          const filteredUsers = [
-            transformedUser,
-            ...departmentUsers.filter((user): user is AttendanceUser => user !== null)
-          ];
-          
-          setUsers(filteredUsers);
-          
-          // Fetch pending miss punch requests for the department
-          const pendingPunchRequests = filteredUsers
-            .flatMap(user => user.punchData)
-            .filter((punch: Punch) => punch.type === "MANUAL" && punch.isApproved === undefined);
-          
-          setMissPunchRequests(pendingPunchRequests);
+
+        if (dashboardResponse.status !== "success") {
+          throw new Error(
+            dashboardResponse.message || "Failed to fetch dashboard data"
+          );
+        }
+
+        setDashboardData(dashboardResponse.data);
+
+        // If user is admin, fetch department users and pending requests
+        if (dashboardResponse.data.user.isAdmin) {
+          const [departmentUsersResponse, pendingRequestsResponse] =
+            await Promise.all([
+              attendanceDashboardService.getDepartmentUsers(
+                userId,
+                selectedMonth,
+                selectedYear
+              ),
+              attendanceDashboardService.getPendingRequests(userId),
+            ]);
+
+          if (departmentUsersResponse.status === "success") {
+            setDepartmentUsers(departmentUsersResponse.data.users);
+          }
+
+          if (pendingRequestsResponse.status === "success") {
+            setMissPunchRequests(pendingRequestsResponse.data);
+          }
         } else {
-          // For non-admin users, just use their own data
-          setUsers([transformedUser]);
-          
-          // Filter punch requests for non-admin (only their own)
-          const pendingPunchRequests = transformedUser.punchData
-            .filter((punch: Punch): boolean => punch.type === "MANUAL" && punch.isApproved === undefined);
-          
-          setMissPunchRequests(pendingPunchRequests);
+          // For non-admin users, just set their own data
+          setDepartmentUsers([
+            {
+              id: dashboardResponse.data.user.id,
+              name: dashboardResponse.data.user.name,
+              department: dashboardResponse.data.user.departments
+                .map((d) => d.name)
+                .join(", "),
+              departments: dashboardResponse.data.user.departments,
+              isAdmin: false,
+              punchData: dashboardResponse.data.punchData,
+              attendance: dashboardResponse.data.attendance,
+              callDetails: dashboardResponse.data.callDetails,
+              classDetails: dashboardResponse.data.classDetails,
+            },
+          ]);
+
+          // Set their own pending requests
+          const userPendingRequests = dashboardResponse.data.punchData.filter(
+            (punch: Punch) =>
+              punch.type === "MANUAL" && punch.isApproved === undefined
+          );
+          setMissPunchRequests(userPendingRequests);
+        }
+
+        // Set initial department for miss punch form
+        if (dashboardResponse.data.user.departments.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            departmentId: dashboardResponse.data.user.departments[0].id,
+          }));
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load attendance data");
-        toast.error("Error loading data: " + (err instanceof Error ? err.message : "Unknown error")); 
+        setError(
+          err instanceof Error ? err.message : "Failed to load attendance data"
+        );
+        toast.error(
+          "Error loading data: " +
+            (err instanceof Error ? err.message : "Unknown error")
+        );
       } finally {
         setLoading(false);
       }
@@ -208,69 +178,126 @@ const AttendanceDashboard = () => {
     }
   }, [userId, selectedMonth, selectedYear]);
 
-  // Update selected date when month/year changes
-  useEffect(() => {
-    const newDate = new Date(selectedYear, selectedMonth - 1, 1);
-    setSelectedDate(newDate.toISOString().split("T")[0].substring(0, 8) + "01");
-  }, [selectedMonth, selectedYear]);
-
   // Filter users based on search term and department
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = departmentUsers.filter((user) => {
     const matchesSearch = user.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
+
     const matchesDepartment =
-      filterDepartment === "All" || user.department === filterDepartment;
+      filterDepartment === "All" ||
+      (user.departments &&
+        user.departments.some((dept) => dept.name === filterDepartment));
 
     // If not admin, only show current user
     if (!isAdmin) return user.id === userId;
-    
-    // If admin, filter based on search and department
+
     return matchesSearch && matchesDepartment;
   });
 
   // Filter requests based on user role
   const filteredRequests = missPunchRequests.filter((request) => {
     if (!currentUser) return false;
-    
-    // For admins, show requests from their department
+
+    // For admins, show requests from their departments
     if (isAdmin) {
-      return request.userDepartment === currentUser.department && request.isApproved === undefined;
+      const adminDepartmentIds =
+        currentUser.departments
+          ?.filter((dept) => dept.isAdmin)
+          .map((dept) => dept.id) || [];
+
+      return (
+        request.departmentId &&
+        adminDepartmentIds.includes(request.departmentId)
+      );
     }
-    
+
     // For non-admins, only show their own requests
     return request.userId === userId && request.isApproved === undefined;
   });
 
-  // Handler for miss punch request
-  const handleMissPunchRequest = (date: string) => {
+  // UPDATED: Handler for miss punch request - now accepts targetUserId
+  const handleMissPunchRequest = (date: string, targetUserId?: number) => {
     setSelectedDate(date);
+
+    // Find the target user (for admin requests) or use current user
+    const targetUser = targetUserId
+      ? departmentUsers.find((user) => user.id === targetUserId)
+      : currentUser;
+
+    if (!targetUser) {
+      toast.error("Target user not found");
+      return;
+    }
+
     setFormData({
-      ...formData,
-      date
+      name: targetUser.name, // Set the target user's name
+      date,
+      time: "",
+      reason: "",
+      departmentId:
+        targetUser.departments[0]?.id || userDepartments[0]?.id || 0,
+      targetUserId: targetUserId || currentUser?.id || 0, // NEW: Set target user ID
     });
     setShowMissPunchForm(true);
   };
 
-  // Handler for manual status change
-  const handleManualStatusChange = async (userId: number, date: string, newStatus: string): Promise<void> => {
+  // Handler for department change in miss punch form
+  const handleDepartmentChange = (departmentId: number) => {
+    setFormData((prev) => ({ ...prev, departmentId }));
+  };
+
+  // Handler for manual status change - NOW using backend API
+  const handleManualStatusChange = async (
+    userId: number,
+    date: string,
+    newStatus: string
+  ): Promise<void> => {
     try {
-      // In a real implementation, you'd call an API to update the status
-      // For example: await attendanceService.updateManualStatus(userId, newStatus);
-        
-      const updatedUsers = users.map((user: AttendanceUser) => {
-        if (user.id === userId) {
-          return {
-            ...user,
-            attendance: {
-              ...user.attendance,
-              statusManual: newStatus,
-            },
-          };
-        }
-        return user;
-      });
-      setUsers(updatedUsers);
+      const [year, month, day] = date.split("-").map(Number);
+
+      const statusData = {
+        userId,
+        date: day,
+        month,
+        year,
+        status: newStatus as
+          | "PRESENT"
+          | "ABSENT"
+          | "HALF_DAY"
+          | "WEEK_OFF"
+          | "HOLIDAY"
+          | "SICK_LEAVE"
+          | "CASUAL_LEAVE"
+          | "PAID_LEAVE"
+          | "UNPAID_LEAVE"
+          | "COMPENSATORY_LEAVE",
+        commentBy: currentUser?.id,
+      };
+
+      const response = await attendanceDashboardService.updateManualStatus(
+        statusData
+      );
+
+      if (response.status !== "success") {
+        throw new Error(response.message || "Failed to update status");
+      }
+
+      // Update local state
+      setDepartmentUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                attendance: {
+                  ...user.attendance,
+                  statusManual: newStatus,
+                },
+              }
+            : user
+        )
+      );
+
       toast.success("Manual status updated successfully");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -278,61 +305,84 @@ const AttendanceDashboard = () => {
     }
   };
 
-  // Form submit handler for miss punch request
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  // UPDATED: Form submit handler - now uses targetUserId
+  const handleFormSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
-    if (!currentUser || !formData.time || !formData.reason) {
+    if (
+      !currentUser ||
+      !formData.time ||
+      !formData.reason ||
+      !formData.departmentId ||
+      !formData.targetUserId
+    ) {
       toast.error("Please fill all required fields");
       return;
     }
 
     try {
-      // Parse the time string to get hours and minutes
-      const [hours, minutes] = formData.time.split(':').map(Number);
-      const dateParts = formData.date.split('-').map(Number);
-      
-      // Ensure we have valid date parts
-      if (dateParts.length !== 3) {
+      const [hours, minutes] = formData.time.split(":").map(Number);
+      const [year, month, day] = formData.date.split("-").map(Number);
+
+      if (!year || !month || !day) {
         toast.error("Invalid date format");
         return;
       }
-      
-      const newPunchData: Partial<Punch> = {
-        userId: currentUser.id,
-        date: dateParts[2], // Day
-        month: dateParts[1], // Month
-        year: dateParts[0], // Year
+
+      const requestData = {
+        userId: formData.targetUserId, // FIXED: Use target user ID instead of current user ID
+        date: day,
+        month,
+        year,
         hh: hours,
         mm: minutes,
-        type: "MANUAL",
         missPunchReason: formData.reason,
+        departmentId: formData.departmentId,
       };
 
-      // In a real implementation, call the API
-      // const response = await punchDataService.createPunchData(newPunchData);
-      
-      // Create a mock response for now
-      const mockResponse: Punch = {
-        ...newPunchData as Punch,
-        id: Math.floor(Math.random() * 1000), // Place id after spread to ensure it's not overwritten
-        userName: currentUser.name,
-        userDepartment: currentUser.department,
-      };
+      const response = await attendanceDashboardService.createMissPunchRequest(
+        requestData
+      );
 
-      // Update state with the new punch data
-      const newPunch: Punch = mockResponse;
-      setMissPunchRequests([...missPunchRequests, newPunch]);
-      
-      setUsers(
-        users.map((user) =>
-          user.id === currentUser.id
-            ? { ...user, punchData: [...user.punchData, newPunch] }
+      if (response.status !== "success") {
+        throw new Error(
+          response.message || "Failed to create miss punch request"
+        );
+      }
+
+      // Update local state
+      setMissPunchRequests((prevRequests) => [...prevRequests, response.data]);
+
+      // Update the target user's punch data in the department users list
+      setDepartmentUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === formData.targetUserId
+            ? {
+                ...user,
+                punchData: [...user.punchData, response.data],
+              }
             : user
         )
       );
-      
-      toast.success("Miss punch request submitted successfully!");
+
+      const targetUserName =
+        departmentUsers.find((u) => u.id === formData.targetUserId)?.name ||
+        "user";
+      toast.success(
+        `Miss punch request submitted successfully for ${targetUserName}!`
+      );
       setShowMissPunchForm(false);
+
+      // Reset form
+      setFormData({
+        name: "",
+        date: "",
+        time: "",
+        reason: "",
+        departmentId: userDepartments[0]?.id || 0,
+        targetUserId: 0,
+      });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to submit request: " + errorMessage);
@@ -340,71 +390,56 @@ const AttendanceDashboard = () => {
   };
 
   // Handler for approve/reject actions
-  const handleApproveReject = (request: Punch, action: "approve" | "reject"): void => {
+  const handleApproveReject = (
+    request: Punch,
+    action: "approve" | "reject"
+  ): void => {
     setCurrentRequest(request);
     setActionType(action);
     setRejectionReason("");
     setShowApproveRejectModal(true);
   };
 
-  // Confirm approve/reject action
+  // Confirm approve/reject action - NOW using backend API
   const confirmApproveReject = async () => {
     if (!currentRequest || !actionType || !currentUser) return;
 
     try {
-      // In a real implementation, call the API
-      // const response = await punchDataService.updatePunchData(
-      //   currentRequest.userId, 
-      //   { 
-      //     punchId: currentRequest.id, 
-      //     isApproved: actionType === "approve",
-      //     ...(actionType === "reject" ? { rejectionReason } : {})
-      //   }
-      // );
+      const approvalData = {
+        isApproved: actionType === "approve",
+        comment: actionType === "reject" ? rejectionReason : undefined,
+        approvedBy: currentUser.id,
+      };
 
-      const updatedRequests = missPunchRequests.map((req) =>
-        req.id === currentRequest.id
-          ? {
-              ...req,
-              isApproved: actionType === "approve",
-              ...(actionType === "approve"
-                ? {
-                    approvedBy: currentUser.name,
-                    approvedOn: new Date().toISOString().split("T")[0],
-                  }
-                : {
-                    missPunchReason: rejectionReason,
-                  }),
-            }
-          : req
+      const response = await attendanceDashboardService.approveMissPunchRequest(
+        currentRequest.id,
+        approvalData
       );
 
-      const updatedUsers = users.map((user) =>
-        user.id === currentRequest.userId
-          ? {
-              ...user,
-              punchData: user.punchData.map((punch) =>
-                punch.id === currentRequest.id
-                  ? {
-                      ...punch,
-                      isApproved: actionType === "approve",
-                      ...(actionType === "approve"
-                        ? {
-                            approvedBy: currentUser.name,
-                            approvedOn: new Date().toISOString().split("T")[0],
-                          }
-                        : {
-                            missPunchReason: rejectionReason,
-                          }),
-                    }
-                  : punch
-              ),
-            }
-          : user
+      if (response.status !== "success") {
+        throw new Error(response.message || "Failed to process request");
+      }
+
+      // Update local state
+      setMissPunchRequests((prevRequests) =>
+        prevRequests.map((req) =>
+          req.id === currentRequest.id ? response.data : req
+        )
       );
 
-      setMissPunchRequests(updatedRequests);
-      setUsers(updatedUsers);
+      setDepartmentUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === currentRequest.userId
+            ? {
+                ...user,
+                punchData: user.punchData.map((punch) =>
+                  punch.id === currentRequest.id ? response.data : punch
+                ),
+              }
+            : user
+        )
+      );
+
       toast.success(
         `Request ${
           actionType === "approve" ? "approved" : "rejected"
@@ -418,7 +453,13 @@ const AttendanceDashboard = () => {
   };
 
   if (loading || error || !currentUser) {
-    return <LoadingErrorState loading={loading} error={error} currentUser={currentUser} />;
+    return (
+      <LoadingErrorState
+        loading={loading}
+        error={error}
+        currentUser={currentUser}
+      />
+    );
   }
 
   return (
@@ -428,34 +469,39 @@ const AttendanceDashboard = () => {
       <DashboardHeader currentUser={currentUser} />
 
       <div className="card shadow mb-4">
-        <DashboardHeader 
-          currentUser={currentUser} 
-          currentView={currentView} 
-          setCurrentView={setCurrentView} 
-          filteredRequests={filteredRequests} 
+        <DashboardHeader
+          currentUser={currentUser}
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+          filteredRequests={filteredRequests}
           isCardHeader={true}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          setSelectedMonth={setSelectedMonth}
+          setSelectedYear={setSelectedYear}
         />
-        
+
         <div className="card-body">
           {currentView === "department" && (
             <>
               {isAdmin && (
-                <DashboardControls 
+                <DashboardControls
                   searchTerm={searchTerm}
                   setSearchTerm={setSearchTerm}
                   filterDepartment={filterDepartment}
                   setFilterDepartment={setFilterDepartment}
-                  users={users}
+                  users={departmentUsers}
                   currentUser={currentUser}
                   handleMissPunchRequest={handleMissPunchRequest}
+                  // selectedDate={selectedDate}
                 />
               )}
-              
+
               <AttendanceTables
                 users={filteredUsers}
                 currentUser={currentUser}
                 selectedYear={selectedYear}
-                selectedMonth={selectedMonth-1} // Convert back to 0-11 for component
+                selectedMonth={selectedMonth - 1}
                 selectedDate={selectedDate}
                 onManualStatusChange={handleManualStatusChange}
                 onMissPunchRequest={handleMissPunchRequest}
@@ -464,11 +510,11 @@ const AttendanceDashboard = () => {
               />
             </>
           )}
-          
+
           {currentView === "requests" && (
-            <RequestsTable 
-              filteredRequests={filteredRequests} 
-              handleApproveReject={handleApproveReject} 
+            <RequestsTable
+              filteredRequests={filteredRequests}
+              handleApproveReject={handleApproveReject}
               isAdmin={isAdmin}
             />
           )}
@@ -482,6 +528,8 @@ const AttendanceDashboard = () => {
           setFormData={setFormData}
           handleFormSubmit={handleFormSubmit}
           setShowMissPunchForm={setShowMissPunchForm}
+          userDepartments={userDepartments}
+          handleDepartmentChange={handleDepartmentChange}
         />
       )}
 

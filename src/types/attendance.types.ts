@@ -1,64 +1,78 @@
+export interface CalendarEvent {
+  date: string; // ISO format YYYY-MM-DD
+  title: string;
+  type: "holiday" | "event" | "meeting";
+}
+
+
+// Extended attendance.types.ts
+
 export interface Punch {
-  id: number;
+  id: number;  // Missing in original
   userId: number;
-  date: number;       // Day of month
-  month: number;      // 1-12
+  date: number;
+  month: number;
   year: number;
-  hh: number;         // Hours
-  mm: number;         // Minutes
-  type: 'AUTO' | 'MANUAL';
-  isApproved?: boolean;
-  approvedBy?: number | string;
+  time: string;  // Changed from hh/mm to match common DB timestamp patterns
+  type: "AUTO" | "MANUAL";
+  isApproved: boolean | null;  // Should allow null for pending status
+  approvedBy?: number | null;
   missPunchReason?: string;
+  createdOn: Date;  // From the orderBy clause
   comment?: string;
-  approvedOn?: string;
+  
+  // Enriched fields from the request processing
   userName?: string;
   userDepartment?: string;
-  createdOn?: string;
-  updatedOn?: string;
-  reason?: string;    // For form submission
-  time?: string;      // For form display
+  departmentId?: number | null;
+  
+  // From included relations
+  user?: {
+    name: string;
+    userDepartment: {
+      department: {
+        id: number;
+        name: string;
+      };
+    }[];
+  };
 }
 
-export interface CallDetails {
+interface Department {
   id: number;
-  callDuration: number;
-  missedCalls: number;
-  incoming: number;
-  outgoing: number;
-  date: string;
-}
-
-export interface ClassDetails {
-  id: number;
-  glcScheduled: number;
-  glcTaken: number;
-  oplcScheduled: number;
-  oplcTaken: number;
-  gdcScheduled: number;
-  gdcTaken: number;
-  opdcScheduled: number;
-  opdcTaken: number;
-  date: string;
+  name: string;
+  isAdmin: boolean;
 }
 
 export interface AttendanceUser {
   id: number;
   name: string;
-  department: string;
+  department: string;      // Comma-separated departments
+  departments: Department[]; // Array of department objects
   isAdmin: boolean;
   punchData: Punch[];
   attendance: {
-    status: 'P' | 'A';  // Present or Absent
-    statusManual: string;
-    comment: string;
+    status: "P" | "A";
+    statusManual?: string;
+    comment?: string;
   };
-  callDetails?: CallDetails[];
-  classDetails?: ClassDetails[];
+  callDetails: [];      // Update with proper type if available
+  classDetails: [];     // Update with proper type if available
 }
 
-export interface CalendarEvent {
-  date: string;    // ISO format YYYY-MM-DD
-  title: string;
-  type: "holiday" | "event" | "meeting";
+export interface DashboardData {
+  user: {
+    id: number;
+    name: string;
+    departments: Department[]; // Raw department data from server
+    isAdmin: boolean;
+  };
+  attendance: {
+    status: "P" | "A";
+    statusManual?: string;
+    comment?: string;
+  };
+  punchData: Punch[];
+  callDetails: [];
+  classDetails: [];
 }

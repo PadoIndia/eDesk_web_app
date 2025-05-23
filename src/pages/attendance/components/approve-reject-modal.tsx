@@ -5,9 +5,9 @@ interface ApproveRejectModalProps {
   currentRequest: Punch;
   actionType: "approve" | "reject" | null;
   rejectionReason: string;
-  setRejectionReason: (reason: string) => void;
-  confirmApproveReject: () => void;
-  setShowApproveRejectModal: (show: boolean) => void;
+  setRejectionReason: React.Dispatch<React.SetStateAction<string>>;
+  confirmApproveReject: () => Promise<void>;
+  setShowApproveRejectModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
@@ -16,50 +16,65 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
   rejectionReason,
   setRejectionReason,
   confirmApproveReject,
-  setShowApproveRejectModal
+  setShowApproveRejectModal,
 }) => {
+  const formatDate = (date: number, month: number, year: number): string => {
+    return `${year}-${String(month).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
+  };
+
   return (
-    <div
-      className="modal show d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-    >
+    <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
+          <div className="modal-header">
             <h5 className="modal-title">
-              {actionType === "approve" ? "Approve Request" : "Reject Request"}
+              {actionType === "approve" ? "Approve" : "Reject"} Miss Punch Request
             </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
+              className="btn-close"
               onClick={() => setShowApproveRejectModal(false)}
-            />
+            ></button>
           </div>
           <div className="modal-body">
-            <div className="mb-3">
-              <p>
-                <strong>Employee:</strong> {currentRequest.userName}
-              </p>
-              <p>
-                <strong>Date:</strong> {currentRequest.date}
-              </p>
-              <p>
-                <strong>Time:</strong> {currentRequest.time}
-              </p>
-              <p>
-                <strong>Reason:</strong> {currentRequest.reason}
-              </p>
+            <div className="row mb-3">
+              <div className="col-sm-6">
+                <p className="mb-1 fw-bold">Employee:</p>
+                <p>{currentRequest.userName || "N/A"}</p>
+              </div>
+              <div className="col-sm-6">
+                <p className="mb-1 fw-bold">Department:</p>
+                <p>{currentRequest.userDepartment || "N/A"}</p>
+              </div>
             </div>
+            <div className="row mb-3">
+              <div className="col-sm-6">
+                <p className="mb-1 fw-bold">Date:</p>
+                <p>{formatDate(currentRequest.date, currentRequest.month, currentRequest.year)}</p>
+              </div>
+              <div className="col-sm-6">
+                <p className="mb-1 fw-bold">Time:</p>
+                <p>{currentRequest.time}</p>
+              </div>
+            </div>
+            <div className="mb-3">
+              <p className="mb-1 fw-bold">Reason:</p>
+              <p>{currentRequest.missPunchReason || "No reason provided"}</p>
+            </div>
+            
             {actionType === "reject" && (
               <div className="mb-3">
-                <label className="form-label">Rejection Reason</label>
+                <label htmlFor="rejectionReason" className="form-label">
+                  Rejection Reason:
+                </label>
                 <textarea
                   className="form-control"
+                  id="rejectionReason"
+                  rows={3}
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   required
-                  rows={3}
-                />
+                ></textarea>
               </div>
             )}
           </div>
@@ -73,15 +88,11 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
             </button>
             <button
               type="button"
-              className={`btn ${
-                actionType === "approve" ? "btn-success" : "btn-danger"
-              }`}
+              className="btn btn-primary"
               onClick={confirmApproveReject}
               disabled={actionType === "reject" && !rejectionReason}
             >
-              {actionType === "approve"
-                ? "Confirm Approval"
-                : "Confirm Rejection"}
+              Confirm {actionType === "approve" ? "Approval" : "Rejection"}
             </button>
           </div>
         </div>

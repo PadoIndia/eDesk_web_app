@@ -23,6 +23,10 @@ class punchDataService extends ApiService {
     return this.deleteData(`/${userId}`);
   }
 
+  getMissPunchData(): ApiResponse{
+    return this.getData("/miss-punch-data");
+  }
+
 }
 
 export default new punchDataService();

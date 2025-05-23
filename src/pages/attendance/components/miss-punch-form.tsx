@@ -1,101 +1,9 @@
-// import React from "react";
+import React, { useCallback } from "react";
 
-// interface MissPunchFormProps {
-//   formData: {
-//     name: string;
-//     date: string;
-//     time: string;
-//     reason: string;
-//   };
-//   setFormData: (data: { name: string; date: string; time: string; reason: string }) => void;
-//   handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-//   setShowMissPunchForm: (show: boolean) => void;
-// }
-
-// const MissPunchForm: React.FC<MissPunchFormProps> = ({
-//   formData,
-//   setFormData,
-//   handleFormSubmit,
-//   setShowMissPunchForm
-// }) => {
-//   return (
-//     <div
-//       className="modal show d-block"
-//       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-//     >
-//       <div className="modal-dialog modal-dialog-centered">
-//         <div className="modal-content">
-//           <div className="modal-header bg-primary text-white">
-//             <h5 className="modal-title">Miss Punch Request</h5>
-//             <button
-//               type="button"
-//               className="btn-close btn-close-white"
-//               onClick={() => setShowMissPunchForm(false)}
-//             />
-//           </div>
-//           <form onSubmit={handleFormSubmit}>
-//             <div className="modal-body">
-//               <div className="mb-3">
-//                 <label className="form-label">Date</label>
-//                 <input
-//                   type="date"
-//                   className="form-control"
-//                   value={formData.date}
-//                   onChange={(e) =>
-//                     setFormData({ ...formData, date: e.target.value })
-//                   }
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-3">
-//                 <label className="form-label">Time</label>
-//                 <input
-//                   type="time"
-//                   className="form-control"
-//                   value={formData.time}
-//                   onChange={(e) =>
-//                     setFormData({ ...formData, time: e.target.value })
-//                   }
-//                   required
-//                 />
-//               </div>
-//               <div className="mb-3">
-//                 <label className="form-label">Reason</label>
-//                 <textarea
-//                   className="form-control"
-//                   value={formData.reason}
-//                   onChange={(e) =>
-//                     setFormData({ ...formData, reason: e.target.value })
-//                   }
-//                   required
-//                   rows={3}
-//                 />
-//               </div>
-//             </div>
-//             <div className="modal-footer">
-//               <button
-//                 type="button"
-//                 className="btn btn-secondary"
-//                 onClick={() => setShowMissPunchForm(false)}
-//               >
-//                 Cancel
-//               </button>
-//               <button type="submit" className="btn btn-primary">
-//                 Submit Request
-//               </button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MissPunchForm;
-
-
-
-import React from "react";
+interface UserDepartment {
+  id: number;
+  name: string;
+}
 
 interface MissPunchFormProps {
   formData: {
@@ -103,75 +11,157 @@ interface MissPunchFormProps {
     date: string;
     time: string;
     reason: string;
+    departmentId: number;
+    targetUserId: number;
   };
-  setFormData: (data: { name: string; date: string; time: string; reason: string }) => void;
-  handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  setShowMissPunchForm: (show: boolean) => void;
+  setFormData: React.Dispatch<
+    React.SetStateAction<{
+      name: string;
+      date: string;
+      time: string;
+      reason: string;
+      departmentId: number;
+      targetUserId: number;
+    }>
+  >;
+  handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  setShowMissPunchForm: React.Dispatch<React.SetStateAction<boolean>>;
+  userDepartments: UserDepartment[];
+  handleDepartmentChange: (departmentId: number) => void;
 }
 
-const MissPunchForm: React.FC<MissPunchFormProps> = ({
+const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
   formData,
   setFormData,
   handleFormSubmit,
-  setShowMissPunchForm
+  setShowMissPunchForm,
+  userDepartments,
+  handleDepartmentChange,
 }) => {
+  // OPTIMIZED: Memoized handlers to prevent unnecessary re-renders
+  const handleClose = useCallback(() => {
+    setShowMissPunchForm(false);
+  }, [setShowMissPunchForm]);
+
+  const handleDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, date: e.target.value }));
+  }, [setFormData]);
+
+  const handleTimeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, time: e.target.value }));
+  }, [setFormData]);
+
+  const handleReasonChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, reason: e.target.value }));
+  }, [setFormData]);
+
+  const handleDepartmentSelect = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const departmentId = parseInt(e.target.value);
+    handleDepartmentChange(departmentId);
+  }, [handleDepartmentChange]);
+
+  // OPTIMIZED: Prevent event bubbling for modal backdrop clicks
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  }, [handleClose]);
+
   return (
-    <div
-      className="modal show d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+    <div 
+      className="modal fade show" 
+      style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+      onClick={handleBackdropClick}
     >
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header bg-primary text-white">
-            <h5 className="modal-title">Miss Punch Request</h5>
+          <div className="modal-header">
+            <h5 className="modal-title">
+              Miss Punch Request {formData.name && `for ${formData.name}`}
+            </h5>
             <button
               type="button"
-              className="btn-close btn-close-white"
-              onClick={() => setShowMissPunchForm(false)}
+              className="btn-close"
+              onClick={handleClose}
               aria-label="Close"
             />
           </div>
           <form onSubmit={handleFormSubmit}>
             <div className="modal-body">
+              {/* Show target user name if it's set (for admin requests) */}
+              {formData.name && (
+                <div className="mb-3">
+                  <label className="form-label">Employee Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formData.name}
+                    disabled
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  />
+                </div>
+              )}
+              
               <div className="mb-3">
-                <label htmlFor="punchDate" className="form-label">Date</label>
+                <label htmlFor="date" className="form-label">
+                  Date <span className="text-danger">*</span>
+                </label>
                 <input
-                  id="punchDate"
                   type="date"
                   className="form-control"
+                  id="date"
                   value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
-                  }
-                  max={new Date().toISOString().split("T")[0]}
+                  onChange={handleDateChange}
                   required
                 />
               </div>
+
               <div className="mb-3">
-                <label htmlFor="punchTime" className="form-label">Time</label>
+                <label htmlFor="time" className="form-label">
+                  Time <span className="text-danger">*</span>
+                </label>
                 <input
-                  id="punchTime"
                   type="time"
                   className="form-control"
+                  id="time"
                   value={formData.time}
-                  onChange={(e) =>
-                    setFormData({ ...formData, time: e.target.value })
-                  }
+                  onChange={handleTimeChange}
                   required
                 />
               </div>
+
               <div className="mb-3">
-                <label htmlFor="punchReason" className="form-label">Reason</label>
-                <textarea
-                  id="punchReason"
-                  className="form-control"
-                  value={formData.reason}
-                  onChange={(e) =>
-                    setFormData({ ...formData, reason: e.target.value })
-                  }
+                <label htmlFor="department" className="form-label">
+                  Department <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-select"
+                  id="department"
+                  value={formData.departmentId}
+                  onChange={handleDepartmentSelect}
                   required
+                >
+                  <option value="">Select Department</option>
+                  {userDepartments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label htmlFor="reason" className="form-label">
+                  Reason <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  className="form-control"
+                  id="reason"
                   rows={3}
-                  placeholder="Please provide a reason for missing the punch"
+                  value={formData.reason}
+                  onChange={handleReasonChange}
+                  placeholder="Please provide a reason for the miss punch request..."
+                  required
                 />
               </div>
             </div>
@@ -179,14 +169,14 @@ const MissPunchForm: React.FC<MissPunchFormProps> = ({
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => setShowMissPunchForm(false)}
+                onClick={handleClose}
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
                 className="btn btn-primary"
-                disabled={!formData.time || !formData.reason}
+                disabled={!formData.time || !formData.reason || !formData.departmentId}
               >
                 Submit Request
               </button>
@@ -196,6 +186,8 @@ const MissPunchForm: React.FC<MissPunchFormProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MissPunchForm.displayName = 'MissPunchForm';
 
 export default MissPunchForm;
