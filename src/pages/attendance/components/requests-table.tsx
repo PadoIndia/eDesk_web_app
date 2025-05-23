@@ -13,8 +13,13 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
   isAdmin,
 }) => {
   const formatDate = (date: number, month: number, year: number): string => {
-    return `${year}-${String(month).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(date).padStart(
+      2,
+      "0"
+    )}`;
   };
+
+  
 
   return (
     <div className="table-responsive">
@@ -37,7 +42,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 <td>{request.userName || "Unknown"}</td>
                 <td>{request.userDepartment || "Unknown"}</td>
                 <td>{formatDate(request.date, request.month, request.year)}</td>
-                <td>{request.time}</td>
+                <td>{request.hh}:{request.mm}</td>
                 <td>{request.missPunchReason || "No reason provided"}</td>
                 <td>
                   {request.isApproved === null ? (
@@ -48,6 +53,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     <span className="badge bg-danger">Rejected</span>
                   )}
                 </td>
+
                 {isAdmin && request.isApproved === null && (
                   <td>
                     <button

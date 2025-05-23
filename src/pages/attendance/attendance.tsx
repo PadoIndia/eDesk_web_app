@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppSelector } from "../../store/store";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -81,112 +81,89 @@ const AttendanceDashboard = () => {
       }
     : null;
 
-    
-    
-    // Update the isAdmin and userDepartments derivation
-    const isAdmin = currentUser?.isAdmin || false;
-    const userDepartments = currentUser?.departments || [];
+  // Update the isAdmin and userDepartments derivation
+  const isAdmin = currentUser?.isAdmin || false;
+  const userDepartments = currentUser?.departments || [];
 
-  // Fetch initial data - MUCH SIMPLER NOW!
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        if (!userId) {
-          throw new Error("User ID is required");
-        }
-        
-        // Single API call to get all dashboard data
-        const dashboardResponse =
-        await attendanceDashboardService.getDashboardData(
-          userId,
-          selectedMonth,
-          selectedYear
-        );
-        
-        
-        
-        if (dashboardResponse.status !== "success") {
-          throw new Error(
-            dashboardResponse.message || "Failed to fetch dashboard data"
-          );
-        }
-        
-        setDashboardData(dashboardResponse.data);
-        
-        // If user is admin, fetch department users and pending requests
-        if (dashboardResponse.data.user.isAdmin) {
-          const [departmentUsersResponse, pendingRequestsResponse] =
-          await Promise.all([
-            attendanceDashboardService.getDepartmentUsers(
-              userId,
-                selectedMonth,
-                selectedYear
-              ),
-              attendanceDashboardService.getPendingRequests(userId),
-            ]);
+const fetchInitialData = useCallback(async () => {
+  try {
+    setLoading(true);
+    setError(null);
 
-          if (departmentUsersResponse.status === "success") {
-            setDepartmentUsers(departmentUsersResponse.data.users);
-          }
+    if (!userId) throw new Error("User ID is required");
 
-          if (pendingRequestsResponse.status === "success") {
-            setMissPunchRequests(pendingRequestsResponse.data);
-          }
-        } else {
-          // For non-admin users, just set their own data
-          setDepartmentUsers([
-            {
-              id: dashboardResponse.data.user.id,
-              name: dashboardResponse.data.user.name,
-              department: dashboardResponse.data.user.departments
-              .map((d:Department) => d.name)
-              .join(", "),
-              departments: dashboardResponse.data.user.departments,
-              isAdmin: false,
-              punchData: dashboardResponse.data.punchData,
-              attendance: dashboardResponse.data.attendance,
-              callDetails: dashboardResponse.data.callDetails,
-              classDetails: dashboardResponse.data.classDetails,
-            },
-          ]);
-          
-          // Set their own pending requests
-          const userPendingRequests = dashboardResponse.data.punchData.filter(
-            (punch: Punch) =>
-              punch.type === "MANUAL" && punch.isApproved === undefined
-          );
-          setMissPunchRequests(userPendingRequests);
-        }
+    const dashboardResponse =
+      await attendanceDashboardService.getDashboardData(
+        userId,
+        selectedMonth,
+        selectedYear
+      );
 
-        // Set initial department for miss punch form
-        if (dashboardResponse.data.user.departments.length > 0) {
-          setFormData((prev) => ({
-            ...prev,
-            departmentId: dashboardResponse.data.user.departments[0].id,
-          }));
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load attendance data"
-        );
-        toast.error(
-          "Error loading data: " +
-          (err instanceof Error ? err.message : "Unknown error")
-        );
-      } finally {
-        setLoading(false);
+    if (dashboardResponse.status !== "success") {
+      throw new Error(dashboardResponse.message || "Failed to fetch dashboard data");
+    }
+
+    setDashboardData(dashboardResponse.data);
+
+    if (dashboardResponse.data.user.isAdmin) {
+      const [departmentUsersResponse, pendingRequestsResponse] = await Promise.all([
+        attendanceDashboardService.getDepartmentUsers(userId, selectedMonth, selectedYear),
+        attendanceDashboardService.getPendingRequests(userId),
+      ]);
+
+      if (departmentUsersResponse.status === "success") {
+        setDepartmentUsers(departmentUsersResponse.data.users);
       }
-    };
-    
+
+      if (pendingRequestsResponse.status === "success") {
+        setMissPunchRequests(pendingRequestsResponse.data);
+      }
+    } else {
+      setDepartmentUsers([
+        {
+          id: dashboardResponse.data.user.id,
+          name: dashboardResponse.data.user.name,
+          department: dashboardResponse.data.user.departments.map((d: Department) => d.name).join(", "),
+          departments: dashboardResponse.data.user.departments,
+          isAdmin: false,
+          punchData: dashboardResponse.data.punchData,
+          attendance: dashboardResponse.data.attendance,
+          callDetails: dashboardResponse.data.callDetails,
+          classDetails: dashboardResponse.data.classDetails,
+        },
+      ]);
+
+      const userPendingRequests = dashboardResponse.data.punchData.filter(
+        (punch: Punch) => punch.type === "MANUAL" && punch.isApproved === undefined
+      );
+      setMissPunchRequests(userPendingRequests);
+    }
+
+    if (dashboardResponse.data.user.departments.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        departmentId: dashboardResponse.data.user.departments[0].id,
+      }));
+    }
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    setError(err instanceof Error ? err.message : "Failed to load attendance data");
+    toast.error("Error loading data: " + (err instanceof Error ? err.message : "Unknown error"));
+  } finally {
+    setLoading(false);
+  }
+}, [userId, selectedMonth, selectedYear]);
+
+
+
+
+  useEffect(() => {
+
     if (userId) {
       fetchInitialData();
     }
-  }, [userId, selectedMonth, selectedYear]);
-  
+  }, [userId, selectedMonth, selectedYear, fetchInitialData]);
+
   // Filter users based on search term and department
   const filteredUsers = departmentUsers.filter((user) => {
     const matchesSearch = user.name
@@ -418,6 +395,7 @@ const AttendanceDashboard = () => {
         departmentId: userDepartments[0]?.id || 0,
         targetUserId: 0,
       });
+      await fetchInitialData(); 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to submit request: " + errorMessage);
