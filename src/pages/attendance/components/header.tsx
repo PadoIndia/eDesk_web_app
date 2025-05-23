@@ -71,7 +71,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(
 
     // Determine header content
     let headerTitle: string;
-    let headerIcon: JSX.Element;
+    let headerIcon: React.ReactElement;
 
     if (currentUser.isAdmin) {
       headerTitle = currentView === "department" 
