@@ -18,6 +18,7 @@ import {
   Punch,
   DashboardData,
 } from "../../types/attendance.types";
+import { Department } from "../../types/department-team.types";
 
 const AttendanceDashboard = () => {
   // Get userId from Redux store
@@ -64,21 +65,27 @@ const AttendanceDashboard = () => {
   // Derived state from dashboard data
   const currentUser: AttendanceUser | null = dashboardData?.user
     ? {
-        ...dashboardData.user,
+        id: dashboardData.user.id,
+        name: dashboardData.user.name,
         department:
           dashboardData.user.departments.map((d) => d.name).join(", ") ||
           "Not Assigned",
         departments: dashboardData.user.departments,
-        punchData: dashboardData.punchData,
-        attendance: dashboardData.attendance,
+        isAdmin: dashboardData.user.isAdmin,
+        punchData: dashboardData.punchData || [],
+        attendance: Array.isArray(dashboardData.attendance)
+          ? dashboardData.attendance
+          : [],
         callDetails: dashboardData.callDetails || [],
         classDetails: dashboardData.classDetails || [],
       }
     : null;
 
-  // Update the isAdmin and userDepartments derivation
-  const isAdmin = currentUser?.isAdmin || false;
-  const userDepartments = currentUser?.departments || [];
+    
+    
+    // Update the isAdmin and userDepartments derivation
+    const isAdmin = currentUser?.isAdmin || false;
+    const userDepartments = currentUser?.departments || [];
 
   // Fetch initial data - MUCH SIMPLER NOW!
   useEffect(() => {
@@ -86,33 +93,35 @@ const AttendanceDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-
+        
         if (!userId) {
           throw new Error("User ID is required");
         }
-
+        
         // Single API call to get all dashboard data
         const dashboardResponse =
-          await attendanceDashboardService.getDashboardData(
-            userId,
-            selectedMonth,
-            selectedYear
-          );
-
+        await attendanceDashboardService.getDashboardData(
+          userId,
+          selectedMonth,
+          selectedYear
+        );
+        
+        
+        
         if (dashboardResponse.status !== "success") {
           throw new Error(
             dashboardResponse.message || "Failed to fetch dashboard data"
           );
         }
-
+        
         setDashboardData(dashboardResponse.data);
-
+        
         // If user is admin, fetch department users and pending requests
         if (dashboardResponse.data.user.isAdmin) {
           const [departmentUsersResponse, pendingRequestsResponse] =
-            await Promise.all([
-              attendanceDashboardService.getDepartmentUsers(
-                userId,
+          await Promise.all([
+            attendanceDashboardService.getDepartmentUsers(
+              userId,
                 selectedMonth,
                 selectedYear
               ),
@@ -133,8 +142,8 @@ const AttendanceDashboard = () => {
               id: dashboardResponse.data.user.id,
               name: dashboardResponse.data.user.name,
               department: dashboardResponse.data.user.departments
-                .map((d) => d.name)
-                .join(", "),
+              .map((d:Department) => d.name)
+              .join(", "),
               departments: dashboardResponse.data.user.departments,
               isAdmin: false,
               punchData: dashboardResponse.data.punchData,
@@ -143,7 +152,7 @@ const AttendanceDashboard = () => {
               classDetails: dashboardResponse.data.classDetails,
             },
           ]);
-
+          
           // Set their own pending requests
           const userPendingRequests = dashboardResponse.data.punchData.filter(
             (punch: Punch) =>
@@ -166,18 +175,18 @@ const AttendanceDashboard = () => {
         );
         toast.error(
           "Error loading data: " +
-            (err instanceof Error ? err.message : "Unknown error")
+          (err instanceof Error ? err.message : "Unknown error")
         );
       } finally {
         setLoading(false);
       }
     };
-
+    
     if (userId) {
       fetchInitialData();
     }
   }, [userId, selectedMonth, selectedYear]);
-
+  
   // Filter users based on search term and department
   const filteredUsers = departmentUsers.filter((user) => {
     const matchesSearch = user.name
@@ -251,7 +260,8 @@ const AttendanceDashboard = () => {
   const handleManualStatusChange = async (
     userId: number,
     date: string,
-    newStatus: string
+    newStatus: string,
+    comment: string
   ): Promise<void> => {
     try {
       const [year, month, day] = date.split("-").map(Number);
@@ -272,8 +282,48 @@ const AttendanceDashboard = () => {
           | "PAID_LEAVE"
           | "UNPAID_LEAVE"
           | "COMPENSATORY_LEAVE",
+        comment,
         commentBy: currentUser?.id,
       };
+
+      // Update local state first
+      setDepartmentUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                attendance: user.attendance
+                  .map((entry) =>
+                    entry.date === day &&
+                    entry.month === month &&
+                    entry.year === year
+                      ? { ...entry, statusManual: newStatus, comment }
+                      : entry
+                  )
+                  .concat(
+                    // Add new entry if not exists
+                    user.attendance.some(
+                      (entry) =>
+                        entry.date === day &&
+                        entry.month === month &&
+                        entry.year === year
+                    )
+                      ? []
+                      : [
+                          {
+                            date: day,
+                            month,
+                            year,
+                            status: "MANUAL",
+                            statusManual: newStatus,
+                            comment,
+                          },
+                        ]
+                  ),
+              }
+            : user
+        )
+      );
 
       const response = await attendanceDashboardService.updateManualStatus(
         statusData
@@ -282,21 +332,6 @@ const AttendanceDashboard = () => {
       if (response.status !== "success") {
         throw new Error(response.message || "Failed to update status");
       }
-
-      // Update local state
-      setDepartmentUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId
-            ? {
-                ...user,
-                attendance: {
-                  ...user.attendance,
-                  statusManual: newStatus,
-                },
-              }
-            : user
-        )
-      );
 
       toast.success("Manual status updated successfully");
     } catch (err: unknown) {

@@ -16,7 +16,7 @@ import {
 
 interface UserAttendanceTableProps {
   user: AttendanceUser;
-  selectedMonth: number; // 0-11 format (JavaScript Date month)
+  selectedMonth: number;
   selectedYear: number;
   selectedDate: string;
   calendarEvents?: CalendarEvent[];
@@ -25,10 +25,26 @@ interface UserAttendanceTableProps {
   onManualStatusChange?: (
     userId: number,
     date: string,
-    newStatus: string
+    newStatus: string,
+    comment: string
   ) => void;
   isAdmin: boolean;
 }
+
+// Status mapping to short codes
+const statusToShortCode: { [key: string]: string } = {
+  PRESENT: "P",
+  ABSENT: "A",
+  HALF_DAY: "HD",
+  WEEK_OFF: "WO",
+  HOLIDAY: "H",
+  SICK_LEAVE: "SL",
+  CASUAL_LEAVE: "CL",
+  PAID_LEAVE: "PL",
+  UNPAID_LEAVE: "UL",
+  COMPENSATORY_LEAVE: "CO",
+};
+
 
 const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   user,
@@ -53,7 +69,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     return user.punchData.filter(
       (punch) =>
         punch.date === day &&
-        punch.month === selectedMonth + 1 && // API uses 1-12 format
+        punch.month === selectedMonth + 1 &&
         punch.year === selectedYear
     );
   };
@@ -62,8 +78,8 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     if (punches.length < 2) return "—";
 
     const sortedPunches = [...punches].sort((a, b) => {
-      const timeA = a.hh * 60 + a.mm;
-      const timeB = b.hh * 60 + b.mm;
+      const timeA = (a.hh ?? 0) * 60 + (a.mm ?? 0);
+      const timeB = (b.hh ?? 0) * 60 + (b.mm ?? 0);
       return timeA - timeB;
     });
 
@@ -73,7 +89,9 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
         const inTime = sortedPunches[i];
         const outTime = sortedPunches[i + 1];
         totalMinutes +=
-          outTime.hh * 60 + outTime.mm - (inTime.hh * 60 + inTime.mm);
+          (outTime.hh ?? 0) * 60 +
+          (outTime.mm ?? 0) -
+          ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
       }
     }
 
@@ -82,41 +100,44 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     return `${hours}h ${minutes}m`;
   };
 
+  // const getStatusForDate = (day: number): string => {
+  //   const dateEntry = user.attendance.find(
+  //     (entry) =>
+  //       entry.date === day &&
+  //       entry.month === selectedMonth + 1 &&
+  //       entry.year === selectedYear
+  //   );
+
+  //   return dateEntry?.statusManual
+  //     ? statusToShortCode[dateEntry.statusManual] || "A"
+  //     : "A";
+  // };
+
   const getStatusForDate = (day: number): string => {
-    const date = new Date(selectedYear, selectedMonth, day);
-    const punches = getPunchesForDate(day);
-    const today = new Date();
+  // Find attendance entry for this date
+  const dateEntry = user.attendance.find(
+    (entry) =>
+      entry.date === day &&
+      entry.month === selectedMonth + 1 &&
+      entry.year === selectedYear
+  );
 
-    // Format today for comparison
-    const todayFormatted = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const dateFormatted = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
+  // Priority 1: Manual status override
+  if (dateEntry?.statusManual) {
+    return statusToShortCode[dateEntry.statusManual] || "A";
+  }
 
-    if (punches.length > 0) return "P";
-    if (date.getDay() === 0 || date.getDay() === 6) return "W"; // Weekend
+  // Priority 2: Check for punch data
+  const punches = getPunchesForDate(day);
+  
+  
+  if (punches.length > 0) return "P"; // Present if any punches exist
 
-    // Check for holidays in calendar events
-    const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(
-      2,
-      "0"
-    )}-${String(day).padStart(2, "0")}`;
-    if (
-      calendarEvents.some((e) => e.date === dateString && e.type === "holiday")
-    )
-      return "H";
+  // Default to absent
+  return "A";
+};
 
-    // If date is in the future, return placeholder
-    if (dateFormatted > todayFormatted) return "—";
 
-    return "A"; // Absent
-  };
 
   const getPunchApprovalIcon = (punch: Punch): React.ReactElement | null => {
     if (punch.type !== "MANUAL") return null;
@@ -146,35 +167,12 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   };
 
   const getRowColorForDate = (day: number): string => {
-    const punches = getPunchesForDate(day);
+    const status = getStatusForDate(day);
 
-    if (punches.length === 0) {
-      const status = getStatusForDate(day);
-      if (status === "A") return "table-danger";
-      if (status === "W" || status === "H") return "table-light";
-      return "";
-    }
-
-    const hasPending = punches.some(
-      (p) => p.type === "MANUAL" && p.isApproved === undefined
-    );
-    const hasRejected = punches.some(
-      (p) => p.type === "MANUAL" && p.isApproved === false
-    );
-    const hasApproved = punches.some(
-      (p) => p.type === "MANUAL" && p.isApproved === true
-    );
-
-    if (
-      punches.length % 2 !== 0 &&
-      !["BD", "Mentor", "Faculty"].includes(user.department)
-    ) {
-      return "table-warning";
-    }
-    if (hasPending) return "table-warning";
-    if (hasRejected) return "table-danger";
-    if (hasApproved) return "table-success";
-
+    if (["A", "SL", "CL", "PL", "UL", "CO"].includes(status))
+      return "table-danger";
+    if (["WO", "H"].includes(status)) return "table-light";
+    if (status === "HD") return "table-warning";
     return "";
   };
 
@@ -232,6 +230,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
               const dayOfWeek = getDayOfWeek(dateObj);
               const punches = getPunchesForDate(day);
               const calendarEvent = calendarEvents.find((e) => e.date === date);
+              const statusShortCode = getStatusForDate(day);
 
               return (
                 <tr key={date} className={getRowColorForDate(day)}>
@@ -240,8 +239,12 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
                       <span className="fw-bold me-1">{day}</span>
                       <span className="text-muted">({dayOfWeek})</span>
                       {calendarEvent && (
-                        <FaCalendarAlt 
-                          className={`ms-1 ${calendarEvent.type === "holiday" ? "text-danger" : "text-primary"}`}
+                        <FaCalendarAlt
+                          className={`ms-1 ${
+                            calendarEvent.type === "holiday"
+                              ? "text-danger"
+                              : "text-primary"
+                          }`}
                           title={calendarEvent.title}
                         />
                       )}
@@ -255,8 +258,10 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
                           <div
                             key={`${punch.date}-${punch.hh}-${punch.mm}-${index}`}
                             className="d-flex align-items-center p-1 bg-light rounded"
-                            style={{ minWidth: '100px', flex: '0 0 auto' }}
-                            title={`${index % 2 === 0 ? "IN" : "OUT"} - ${punch.type}`}
+                            style={{ minWidth: "100px", flex: "0 0 auto" }}
+                            title={`${index % 2 === 0 ? "IN" : "OUT"} - ${
+                              punch.type
+                            }`}
                           >
                             <span
                               className={`me-2 ${
@@ -265,7 +270,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
                                   : ""
                               }`}
                             >
-                              {formatTime(punch.hh, punch.mm)}
+                              {formatTime(punch.hh ?? 0, punch.mm ?? 0)}
                             </span>
                             {getPunchApprovalIcon(punch)}
                           </div>
@@ -282,34 +287,90 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
 
                   <td className="text-center">
                     <Badge
-                      label={getStatusForDate(day)}
+                      label={statusShortCode}
                       status={
-                        getStatusForDate(day) === "P"
+                        statusShortCode === "P"
                           ? "SUCCESS"
-                          : getStatusForDate(day) === "A"
+                          : statusShortCode === "A"
                           ? "DANGER"
-                          : getStatusForDate(day) === "H"
+                          : statusShortCode === "HD"
+                          ? "WARNING"
+                          : ["WO", "H"].includes(statusShortCode)
                           ? "PRIMARY"
                           : "INFO"
+                      }
+                      title={
+                        user.attendance.find(
+                          (entry) =>
+                            entry.date === day &&
+                            entry.month === selectedMonth + 1 &&
+                            entry.year === selectedYear
+                        )?.comment || ""
                       }
                     />
                   </td>
 
                   <td className="text-center">
                     {isAdmin && !isCurrentUser ? (
-                      <select
-                        className="form-select form-select-sm"
-                        onChange={(e) =>
-                          onManualStatusChange?.(user.id, date, e.target.value)
-                        }
-                      >
-                        <option value="">—</option>
-                        <option value="PRESENT">Present</option>
-                        <option value="ABSENT">Absent</option>
-                        <option value="LEAVE">Leave</option>
-                      </select>
+                      <div className="d-flex align-items-center">
+                        <select
+                          className="form-select form-select-sm me-2"
+                          onChange={(e) => {
+                            const comment = prompt(
+                              "Enter comment for status change:"
+                            );
+                            if (comment !== null) {
+                              onManualStatusChange?.(
+                                user.id,
+                                date,
+                                e.target.value,
+                                comment
+                              );
+                            }
+                          }}
+                          value={
+                            user.attendance.find(
+                              (entry) =>
+                                entry.date === day &&
+                                entry.month === selectedMonth + 1 &&
+                                entry.year === selectedYear
+                            )?.statusManual || ""
+                          }
+                        >
+                          <option value="">—</option>
+                          {Object.entries(statusToShortCode).map(
+                            ([status, code]) => (
+                              <option key={status} value={status}>
+                                {code} - {status.replace("_", " ")}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
                     ) : (
-                      <span className="text-muted">—</span>
+                      <div>
+                        {user.attendance.find(
+                          (entry) =>
+                            entry.date === day &&
+                            entry.month === selectedMonth + 1 &&
+                            entry.year === selectedYear
+                        )?.comment ? (
+                          <Badge
+                            label="i"
+                            status="INFO"
+                            title={
+                              user.attendance.find(
+                                (entry) =>
+                                  entry.date === day &&
+                                  entry.month === selectedMonth + 1 &&
+                                  entry.year === selectedYear
+                              )?.comment || ""
+                            }
+                          />
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </div>
                     )}
                   </td>
 

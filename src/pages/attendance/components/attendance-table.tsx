@@ -8,8 +8,8 @@ interface AttendanceTablesProps {
   selectedMonth: number;
   selectedYear: number;
   selectedDate: string;
-  onMissPunchRequest: (date: string) => void;
-  onManualStatusChange: (userId: number, date: string, newStatus: string) => void;
+  onMissPunchRequest: (date: string, userId: number) => void;
+  onManualStatusChange: (userId: number, date: string, newStatus: string, comment:string) => void;
   isAdmin: boolean;
   currentView: "department" | "requests";
 }

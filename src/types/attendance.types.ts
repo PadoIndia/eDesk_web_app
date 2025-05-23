@@ -20,6 +20,8 @@ export interface Punch {
   missPunchReason?: string;
   createdOn: Date;  // From the orderBy clause
   comment?: string;
+  hh?: number;
+  mm?: number;
   
   // Enriched fields from the request processing
   userName?: string;
@@ -51,14 +53,21 @@ export interface AttendanceUser {
   departments: Department[]; // Array of department objects
   isAdmin: boolean;
   punchData: Punch[];
-  attendance: {
-    status: "P" | "A";
-    statusManual?: string;
-    comment?: string;
-  };
+  attendance: AttendanceEntry[];
   callDetails: [];      // Update with proper type if available
   classDetails: [];     // Update with proper type if available
 }
+
+export interface AttendanceEntry {
+  date: number;
+  month: number;
+  year: number;
+  status: string;
+  statusManual?: string;
+  comment?: string;
+}
+
+
 
 export interface DashboardData {
   user: {
