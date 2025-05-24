@@ -26,6 +26,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   onSave,
   onCancel,
 }) => (
+  
   <div className="card shadow mb-4">
     <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
       <h3 className="mb-0 d-flex align-items-center gap-3">

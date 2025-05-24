@@ -8,6 +8,7 @@ export type User = {
     id?: bigint;
     url: string | null;
   };
+  empCode?:string;
   status: string | null;
   isActive: boolean;
   lastSeen: Date | null;
@@ -17,6 +18,7 @@ export type UpdateUser = {
   name?: string;
   username?: string;
   contact?: string;
+  empCode?: string;
 }
 
 export type UserDataDetails = {

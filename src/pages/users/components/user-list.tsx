@@ -5,7 +5,7 @@ import { User } from "../../../types/user.types";
 
 const UsersList = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [show, setShow] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
@@ -13,22 +13,26 @@ const UsersList = () => {
     username: "",
     contact: "91",
     password: "",
+    empCode: "",
   });
-
-  useEffect(() => {
-    getUsers();
-  }, []);
 
   const getUsers = async () => {
     try {
       const resp = await userService.getAllUsers();
       if (resp.status === "success") {
         setUsers(resp.data);
+      } else {
+        toast.error(resp.message || "Failed to fetch users");
       }
     } catch (err) {
       console.error(err);
+      toast.error("An error occurred while fetching users.");
     }
   };
+
+  useEffect(() => {
+    getUsers();
+  }, []);
 
   const resetForm = () => {
     setFormData({
@@ -36,13 +40,14 @@ const UsersList = () => {
       username: "",
       contact: "91",
       password: "",
+      empCode: "",
     });
     setEditingUserId(null);
   };
 
   const handleOpenAddUser = () => {
     resetForm();
-    setShow(true);
+    setShowModal(true);
   };
 
   const handleEditUser = (user: User) => {
@@ -52,12 +57,13 @@ const UsersList = () => {
       username: user.username,
       contact: user.contact,
       password: "",
+      empCode: user.empCode || "",
     });
-    setShow(true);
+    setShowModal(true);
   };
 
-  const handleClose = () => {
-    setShow(false);
+  const handleCloseModal = () => {
+    setShowModal(false);
     resetForm();
   };
 
@@ -65,11 +71,13 @@ const UsersList = () => {
     try {
       if (editingUserId) {
         const data = {
-          ...(formData.contact && { contact: formData.contact }),
-          ...(formData.username && { username: formData.username }),
-          ...(formData.password && { password: formData.password }),
           ...(formData.name && { name: formData.name }),
+          ...(formData.username && { username: formData.username }),
+          ...(formData.contact && { contact: formData.contact }),
+          ...(formData.password && { password: formData.password }),
+          ...(formData.empCode && { empCode: formData.empCode }),
         };
+
         const resp = await userService.updateUser(editingUserId, data);
 
         if (resp.status === "success") {
@@ -79,18 +87,23 @@ const UsersList = () => {
               u.id === editingUserId ? { ...u, ...resp.data } : u
             )
           );
-          handleClose();
-        } else toast.error(resp.message);
+          handleCloseModal();
+        } else {
+          toast.error(resp.message);
+        }
       } else {
         const resp = await userService.createUser(formData);
         if (resp.status === "success") {
-          setUsers([...users, resp.data]);
+          setUsers((prev) => [...prev, resp.data]);
           toast.success("New user added successfully");
-          handleClose();
-        } else toast.error(resp.message);
+          handleCloseModal();
+        } else {
+          toast.error(resp.message);
+        }
       }
     } catch (err) {
       console.error(err);
+      toast.error("Error while saving user");
     }
   };
 
@@ -136,103 +149,106 @@ const UsersList = () => {
         </tbody>
       </table>
 
-      {/* Modal */}
-      {show && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog">
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingUserId ? "Edit User" : "Add User"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleClose}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <form>
-                  <div className="mb-3">
-                    <label className="form-label">Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Username</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={formData.username}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          username: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Contact</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.contact}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          contact: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      {editingUserId ? "Change Password" : "Password"}
-                    </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          password: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </form>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleClose}
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveUser}
-                >
-                  {editingUserId ? "Update User" : "Add User"}
-                </button>
+      {showModal && (
+        <>
+          <div className="modal show d-block" tabIndex={-1} role="dialog">
+            <div className="modal-dialog" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {editingUserId ? "Edit User" : "Add User"}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={handleCloseModal}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <form>
+                    <div className="mb-3">
+                      <label className="form-label">Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Username</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        value={formData.username}
+                        onChange={(e) =>
+                          setFormData({ ...formData, username: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Contact</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={formData.contact}
+                        onChange={(e) =>
+                          setFormData({ ...formData, contact: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        {editingUserId ? "Change Password" : "Password"}
+                      </label>
+                      <input
+                        type="password"
+                        className="form-control"
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        {editingUserId ? "Change empCode" : "empCode"}
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={formData.empCode}
+                        onChange={(e) =>
+                          setFormData({ ...formData, empCode: e.target.value })
+                        }
+                      />
+                    </div>
+                  </form>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleCloseModal}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSaveUser}
+                  >
+                    {editingUserId ? "Update User" : "Add User"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
       )}
-
-      {/* Backdrop for modal */}
-      {show && <div className="modal-backdrop fade show"></div>}
     </div>
   );
 };
