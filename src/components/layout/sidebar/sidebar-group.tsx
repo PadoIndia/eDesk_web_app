@@ -38,7 +38,9 @@ const SidebarGroup = ({ group, isOpen, toggleGroup, activeEventId }: Props) => {
   return (
     <div className="sidebar-group">
       <button
-        className={`group-toggle w-100 ${isActiveGroup ? "active" : ""}`}
+        className={`group-toggle border-0 w-100 ${
+          isActiveGroup ? "active" : ""
+        }`}
         onClick={handleClick}
       >
         <div>

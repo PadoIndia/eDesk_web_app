@@ -48,7 +48,8 @@ const Home: React.FC = () => {
         {eventId && (
           <div>
             <a
-              className="btn btn-primary "
+              className="btn btn-primary"
+              target="_blank"
               href={`/uploads?eventId=${eventId}`}
             >
               <IoAddOutline />
