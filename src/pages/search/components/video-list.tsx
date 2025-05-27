@@ -1,4 +1,4 @@
-import VideoCard from "../../../components/ui/cards/video-card";
+import VideoCard from "../../home/components/video-card";
 import { VideoResponse } from "../../../types/video.types";
 
 interface VideoListProps {

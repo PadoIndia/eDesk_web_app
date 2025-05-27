@@ -1,7 +1,11 @@
 import React from "react";
 import { SingleVideoResponse } from "../../../types/video.types";
 import Modal from "../../../components/ui/modals";
-import { formatSeconds, groupByDateAndUser } from "../../../utils/helper";
+import {
+  formatSeconds,
+  getShortDate,
+  groupByDateAndUser,
+} from "../../../utils/helper";
 
 type DatasetModalProps = {
   data: SingleVideoResponse["videoViewDurations"];
@@ -21,7 +25,7 @@ const DurationsModal: React.FC<DatasetModalProps> = ({
         <table className="table table-bordered rounded table-striped">
           <thead className="table-light">
             <tr>
-              <th>#</th>
+              <th>ID</th>
               <th>User</th>
               <th>Duration (s)</th>
               <th>Viewed On</th>
@@ -34,7 +38,7 @@ const DurationsModal: React.FC<DatasetModalProps> = ({
                   <td>{index + 1}</td>
                   <td>{item.user.name}</td>
                   <td>{formatSeconds(item.durationInSec)}</td>
-                  <td>{new Date(item.createdOn).toLocaleDateString()}</td>
+                  <td>{getShortDate(item.createdOn)}</td>
                 </tr>
               ))
             ) : (

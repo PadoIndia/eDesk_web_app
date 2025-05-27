@@ -1,4 +1,4 @@
-import { LuShare2, LuPencil, LuClock } from "react-icons/lu";
+import { LuClock } from "react-icons/lu";
 import { SingleVideoResponse } from "../../../types/video.types";
 import { formatMiliSeconds } from "../../../utils/helper";
 import { GrView } from "react-icons/gr";
@@ -86,14 +86,14 @@ export default function VideoInfo({ videoInfo }: Props) {
         <span>{new Date(videoInfo?.createdOn).toLocaleDateString()}</span>
       </div>
       <div className="action-buttons">
-        <button className="btn btn-primary d-flex align-items-center">
+        {/* <button className="btn btn-primary d-flex align-items-center">
           <LuShare2 className="icon" />
           Share
         </button>
         <button className="btn btn-light d-flex align-items-center">
           <LuPencil className="icon" />
           Edit Metadata
-        </button>
+        </button> */}
         <div>
           <div
             id="video-download-links"

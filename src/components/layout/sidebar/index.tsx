@@ -114,12 +114,15 @@ const Sidebar = () => {
                   }}
                   className="d-flex align-items-center"
                   onClick={() => navigate(`/videos/${video.id}`)}
+                  title={video.name}
                 >
                   <div>
                     <MdOutlineSlowMotionVideo size={17} />
                   </div>
-                  <span className="text-truncate col-7">{video.name}</span>
-                  <span className="font-sm">
+                  <span className="text-start truncate-modern">
+                    {video.name}
+                  </span>
+                  <span className="font-sm col-3">
                     {formatLocaleDateToDMY(video.createdOn)}
                   </span>
                 </div>

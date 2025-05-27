@@ -4,6 +4,7 @@ import { IoCaretForward } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { GroupedOutput } from "../../../types/sidebar.types";
 import { Badge } from "../../ui/badge";
+import { getShortDate } from "../../../utils/helper";
 
 type Props = {
   group: GroupedOutput;
@@ -42,6 +43,7 @@ const SidebarGroup = ({ group, isOpen, toggleGroup, activeEventId }: Props) => {
           isActiveGroup ? "active" : ""
         }`}
         onClick={handleClick}
+        title={group.label}
       >
         <div>
           {group.children && (
@@ -55,15 +57,18 @@ const SidebarGroup = ({ group, isOpen, toggleGroup, activeEventId }: Props) => {
           {group.children ? (
             <BsFolder2 size={18} />
           ) : (
-            <BsCalendar4Event className="event-icon" />
+            <BsCalendar4Event size={18} className="event-icon" />
           )}
         </div>
-        <span
-          className="text-start text-truncate"
-          style={{ maxWidth: "12rem" }}
-        >
-          {group.label}
-        </span>
+        <div className="d-flex flex-column align-items-start">
+          <span className="text-start truncate-modern">{group.label}</span>
+
+          {!group.children && (
+            <Badge variant="info" className="font-sm rounded-pill">
+              {getShortDate(group.createdOn!)}
+            </Badge>
+          )}
+        </div>
         {!group.children && (
           <span className="count ms-auto">
             <Badge variant="primary">{group.count ?? 0}</Badge>
@@ -81,6 +86,7 @@ const SidebarGroup = ({ group, isOpen, toggleGroup, activeEventId }: Props) => {
               const isActiveEvent = event.id === activeEventId;
               return (
                 <div
+                  title={event.eventName}
                   key={event.id}
                   className={`d-flex justify-content-start gap-2 sidebar-child ${
                     isActiveEvent ? "active" : ""
@@ -90,8 +96,19 @@ const SidebarGroup = ({ group, isOpen, toggleGroup, activeEventId }: Props) => {
                   <div>
                     <BsCalendar4Event className="event-icon" />
                   </div>
-                  <span>{event.eventName}</span>
-                  <span className="count">{event.ecVideos.length}</span>
+                  <div className="d-flex flex-column align-items-start">
+                    <span className="text-start truncate-modern">
+                      {event.eventName}
+                    </span>
+
+                    <Badge variant="info" className="font-sm rounded-pill">
+                      {getShortDate(event.createdOn!)}
+                    </Badge>
+                  </div>
+                  {/* <span className="truncate-modern">{event.eventName}</span> */}
+                  <span className="count">
+                    <Badge variant="primary">{event.ecVideos.length}</Badge>
+                  </span>
                 </div>
               );
             })}

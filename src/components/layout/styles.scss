@@ -38,12 +38,13 @@
       position: fixed; // added fixed position
       top: 3rem;
       left: 0;
-      width: 250px;
+      width: 320px;
       height: 100vh; // ensure full height
       background: #fff;
       z-index: 1000; // ensure it sits above main content
     }
   }
+  
 
   .sidebar-overlay {
     position: fixed;
@@ -67,7 +68,7 @@
 
     @media (min-width: 768px) {
       &.with-sidebar {
-        margin-left: 250px; // leave space for the fixed sidebar
+        margin-left: 320px; // leave space for the fixed sidebar
       }
     }
   }

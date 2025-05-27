@@ -18,6 +18,10 @@ export type TimestampResponse = {
   commentedById: number | null;
   createdOn: Date;
   isDeleted: boolean;
+  commentedBy: {
+    name: string | null;
+    id: number;
+  } | null;
 };
 
 export type VideoViewDurationPayload = {
@@ -57,6 +61,7 @@ export type VideoResponse = VideoPayload & {
     isDeleted: boolean;
   }[];
   createdOn: Date;
+  videoViewDurations: { id: number; userId: number }[];
 };
 
 export type SingleVideoResponse = VideoPayload & {
@@ -70,6 +75,10 @@ export type SingleVideoResponse = VideoPayload & {
     commentedById: number | null;
     createdOn: Date;
     isDeleted: boolean;
+    commentedBy: {
+      name: string | null;
+      id: number;
+    } | null;
   }[];
   event: {
     id: number;

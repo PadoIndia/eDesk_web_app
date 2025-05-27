@@ -27,7 +27,7 @@ const Modal: React.FC<ModalProps> = ({
     <div className="modal-overlay">
       <div className={`custom-modal modal-${size}`}>
         {showCloseIcon && (
-          <button className="close-icon" onClick={onClose}>
+          <button className="close-icon border-0" onClick={onClose}>
             &times;
           </button>
         )}

@@ -3,7 +3,9 @@ import eventGroupService from "../../services/api-services/event-group.service";
 import eventService from "../../services/api-services/event.service";
 import { EventResponse, EventGroupResponse } from "../../types/event.types";
 import { toast } from "react-toastify";
-import EventModal from "../../components/ui/modals/event-modal";
+import { getShortDate } from "../../utils/helper";
+import EventModal from "./event-modal";
+import { Colors } from "../../utils/constants";
 
 type TabType = "events" | "event-groups";
 
@@ -108,6 +110,20 @@ const EventsPage: React.FC = () => {
     setActiveTab(tab);
   };
 
+  const handleRemoveGroup = async (eventId: number, groupId: number) => {
+    if (!window.confirm("Are you sure you want to remove this group?")) return;
+
+    try {
+      const res = await eventService.removeFromGroup(eventId, groupId);
+      if (res.status === "success") {
+        toast.success(res.message);
+        fetchEventData();
+      } else toast.error(res.message);
+    } catch (error) {
+      toast.error("Failed to remove group");
+    }
+  };
+
   return (
     <div>
       <div className="container py-4">
@@ -163,7 +179,9 @@ const EventsPage: React.FC = () => {
                     <thead className="table-light">
                       <tr>
                         <th scope="col">Event Name</th>
-                        <th scope="col">Date</th>
+                        <th scope="col">Groups</th>
+                        <th scope="col">Event Date</th>
+                        <th scope="col">Created On</th>
                         <th scope="col" className="text-end">
                           Actions
                         </th>
@@ -174,7 +192,38 @@ const EventsPage: React.FC = () => {
                         events.map((event) => (
                           <tr key={event.id}>
                             <td>{event.eventName}</td>
-                            <td>{new Date(event.date).toLocaleDateString()}</td>
+                            <td style={{ maxWidth: "200px" }}>
+                              {event.eventGroupMap.length > 0 ? (
+                                event.eventGroupMap.map((group, index) => (
+                                  <span
+                                    key={group.groupId}
+                                    className="badge me-1 d-inline-flex align-items-center"
+                                    style={{
+                                      cursor: "pointer",
+                                      backgroundColor:
+                                        Colors.BGColorList[
+                                          index % Colors.BGColorList.length
+                                        ],
+                                      color:
+                                        Colors.borderColorList[
+                                          index % Colors.borderColorList.length
+                                        ],
+                                    }}
+                                    onClick={() =>
+                                      handleRemoveGroup(event.id, group.groupId)
+                                    }
+                                  >
+                                    {group.group.groupName}
+                                    <span className="ms-2">&times;</span>
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-muted">No Groups</span>
+                              )}
+                            </td>
+
+                            <td>{getShortDate(event.date)}</td>
+                            <td>{getShortDate(event.createdOn)}</td>
                             <td className="text-end">
                               <button
                                 className="btn btn-sm btn-outline-info"
@@ -319,6 +368,10 @@ const EventsPage: React.FC = () => {
           isOpen={isEventModalOpen}
           onClose={handleCloseEventModal}
           initialData={selectedEvent}
+          onSuccess={() => {
+            fetchEventData();
+            handleCloseEventModal();
+          }}
         />
       )}
     </div>
