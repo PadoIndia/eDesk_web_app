@@ -38,11 +38,10 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
               to="/"
               style={{
                 height: "40px",
-                borderRadius: "100%",
                 overflow: "hidden",
               }}
             >
-              <img src="/logo.png" alt="Logo" height="100" className="ms-2" />
+              <img src="/eCloud.png" alt="Logo" height="100" className="ms-2" />
             </Link>
           </div>
 
@@ -120,7 +119,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </li>
                 <li>
                   <button
-                    className="dropdown-item text-danger"
+                    className="dropdown-item text-danger border-0"
                     onClick={() => {
                       dispatch(logOut());
                     }}

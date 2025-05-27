@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import VideoCard from "../../components/ui/cards/video-card";
+import VideoCard from "./components/video-card";
 import Search from "../../components/ui/search";
 import { VideoResponse } from "../../types/video.types";
 import { useParams } from "react-router-dom";

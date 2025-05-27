@@ -31,7 +31,7 @@ export default function VideoPage() {
               .getAllVideos({
                 params: {
                   eventId: res.data.eventId,
-                  limit: 30,
+                  limit: 400,
                 },
               })
               .then((res) => {

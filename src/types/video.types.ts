@@ -61,7 +61,7 @@ export type VideoResponse = VideoPayload & {
     isDeleted: boolean;
   }[];
   createdOn: Date;
-  videoViewDurations: { id: number }[];
+  videoViewDurations: { id: number; userId: number }[];
 };
 
 export type SingleVideoResponse = VideoPayload & {
