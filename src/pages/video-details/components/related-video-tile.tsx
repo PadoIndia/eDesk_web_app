@@ -7,15 +7,16 @@ import { useNavigate } from "react-router-dom";
 
 type VideoTileProps = {
   video: VideoResponse;
+  isActive: boolean;
 };
 
-const RelatedVideoTile: React.FC<VideoTileProps> = ({ video }) => {
+const RelatedVideoTile: React.FC<VideoTileProps> = ({ video, isActive }) => {
   const navigate = useNavigate();
   return (
     <div
-      style={{ cursor: "pointer" }}
+      style={{ cursor: "pointer", background: isActive ? "#fff1e5" : "#fff" }}
       onClick={() => navigate(`/videos/${video.id}`)}
-      className={`d-flex align-items-start ${styles.videoTile}`}
+      className={`d-flex align-items-start p-1 rounded ${styles.videoTile}`}
     >
       {/* Thumbnail */}
       <div className={`position-relative ${styles.thumbnail}`}>
@@ -33,7 +34,7 @@ const RelatedVideoTile: React.FC<VideoTileProps> = ({ video }) => {
 
       {/* Details */}
       <div className={`ms-3 ${styles.videoDetails}`}>
-        <h6 className={`mb-1 text-truncate ${styles.title}`}>{video.name}</h6>
+        <h6 className={`mx-1 truncate-modern ${styles.title}`}>{video.name}</h6>
         <div className="text-muted small">
           <Badge variant="primary">{video.event.eventName}</Badge>
         </div>

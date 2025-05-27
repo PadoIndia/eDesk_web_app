@@ -5,4 +5,5 @@ export type GroupedOutput = {
   label: string;
   count: number;
   children?: EventResponse[];
+  createdOn?: string | Date;
 };

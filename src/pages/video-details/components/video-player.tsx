@@ -7,6 +7,7 @@ import {
 import videoService from "../../../services/api-services/video.service";
 import Hls from "hls.js";
 import { formatSeconds } from "../../../utils/helper";
+import { useAppSelector } from "../../../store/store";
 
 type Props = {
   id: number;
@@ -27,6 +28,7 @@ const VideoPlayer = ({
   updateTimeStamp,
   deleteTimestamp,
 }: Props) => {
+  const userId = useAppSelector((s) => s.auth.userData?.user.id);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -184,7 +186,7 @@ const VideoPlayer = ({
 
       {showAddButton && !showTooltip && duration > 0 && (
         <button
-          className="btn btn-body"
+          className="btn btn-body border-0"
           style={{
             border: "none",
             position: "absolute",
@@ -206,9 +208,9 @@ const VideoPlayer = ({
           transition: "all 200ms ease-in-out",
           transform: `translateX(${showTimestamps ? "0" : "30px"})`,
           top: "1.5rem",
-          width: "30%",
           opacity: showTimestamps ? 1 : 0,
         }}
+        className="col-md-6 col-12"
       >
         <div className="card p-3">
           <h5>Timestamps</h5>
@@ -217,10 +219,10 @@ const VideoPlayer = ({
               <div
                 className="row p-1 align-items-center"
                 key={timestmp.id}
-                style={{ gap: "0.5rem" }}
+                style={{ gap: "0.2rem" }}
               >
                 <a
-                  className="font-sm col-3"
+                  className="font-sm col-2"
                   onClick={() => {
                     if (videoRef.current) {
                       videoRef.current.currentTime = timestmp.timeInSec;
@@ -231,8 +233,9 @@ const VideoPlayer = ({
                   {formatSeconds(timestmp.timeInSec)}
                 </a>
 
-                {editingTimestampId === timestmp.id ? (
-                  <div className="col-6 d-flex">
+                {editingTimestampId === timestmp.id &&
+                userId === timestmp.commentedById ? (
+                  <div className="col-3 d-flex">
                     <input
                       value={editingLabel}
                       onChange={(e) => setEditingLabel(e.target.value)}
@@ -247,22 +250,28 @@ const VideoPlayer = ({
                   </div>
                 ) : (
                   <span
-                    className="col-6 font-sm"
+                    className="col-4 font-sm"
                     onDoubleClick={() => {
-                      setEditingTimestampId(timestmp.id);
-                      setEditingLabel(timestmp.comment || "");
+                      if (timestmp.commentedById === userId) {
+                        setEditingTimestampId(timestmp.id);
+                        setEditingLabel(timestmp.comment || "");
+                      }
                     }}
                   >
                     {timestmp.comment}
                   </span>
                 )}
-
-                <button
-                  className="btn btn-sm btn-outline-danger col-2 d-flex align-items-center justify-content-center"
-                  onClick={() => handleDelete(timestmp.id)}
-                >
-                  <MdDelete size={18} />
-                </button>
+                <span className="col-3 font-sm">
+                  {timestmp.commentedBy?.name}
+                </span>
+                {timestmp.commentedById === userId && (
+                  <button
+                    className="btn btn-sm btn-outline-danger col-2 d-flex align-items-center justify-content-center"
+                    onClick={() => handleDelete(timestmp.id)}
+                  >
+                    <MdDelete size={18} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -274,7 +283,7 @@ const VideoPlayer = ({
         style={{
           position: "absolute",
           top: "0.5rem",
-          right: showTimestamps ? "35%" : "1.5rem",
+          right: showTimestamps ? "55%" : "1.5rem",
           background: "rgba(0,0,0,0.5)",
           transition: "all 200ms ease-in-out",
           cursor: "pointer",

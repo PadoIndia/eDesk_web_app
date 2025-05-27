@@ -1,7 +1,7 @@
 import React from "react";
 import "./styles.css";
-import { IoShareSocialOutline } from "react-icons/io5";
-import { HiOutlineDocumentText } from "react-icons/hi";
+// import { IoShareSocialOutline } from "react-icons/io5";
+// import { HiOutlineDocumentText } from "react-icons/hi";
 import { VideoResponse } from "../../../../types/video.types";
 import { formatMiliSeconds } from "../../../../utils/helper";
 type Props = VideoResponse & { hideMeta?: boolean };
@@ -12,6 +12,7 @@ const VideoCard: React.FC<Props> = ({
   durationInSec,
   thumbnailLr,
   hideMeta,
+  videoViewDurations,
 }) => {
   return (
     <div
@@ -31,10 +32,12 @@ const VideoCard: React.FC<Props> = ({
         {!hideMeta && (
           <>
             <div className="video-card-meta">
-              <div className="video-card-views">{0} views</div>
+              <div className="video-card-views">
+                {videoViewDurations.length} views
+              </div>
             </div>
 
-            <div className="video-card-actions">
+            {/* <div className="video-card-actions">
               <div className="action-button">
                 <IoShareSocialOutline size={18} />
                 <span>Share</span>
@@ -43,7 +46,7 @@ const VideoCard: React.FC<Props> = ({
                 <HiOutlineDocumentText size={18} />
                 <span>Open Logs</span>
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </div>

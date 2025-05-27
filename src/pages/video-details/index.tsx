@@ -36,7 +36,7 @@ export default function VideoPage() {
               })
               .then((res) => {
                 if (res.status === "success") {
-                  setRelatedVideos(res.data.filter((v) => v.id !== Number(id)));
+                  setRelatedVideos(res.data);
                 }
               });
           }
@@ -66,7 +66,7 @@ export default function VideoPage() {
         videoService.addTimestamp(Number(id), data).then((res) => {
           if (res.status === "success") {
             fetchVidDetails();
-          }
+          } else toast.error(res.message);
         });
       }
     },
@@ -86,7 +86,7 @@ export default function VideoPage() {
           .then((res) => {
             if (res.status === "success") {
               fetchVidDetails();
-            }
+            } else toast.error(res.message);
           });
       }
     },
@@ -98,7 +98,7 @@ export default function VideoPage() {
         videoService.deleteTimestamp(Number(id), timeStampId).then((res) => {
           if (res.status === "success") {
             fetchVidDetails();
-          }
+          } else toast.error(res.message);
         });
       }
     },
@@ -136,7 +136,11 @@ export default function VideoPage() {
                   }}
                 >
                   {relatedVideos.map((video) => (
-                    <RelatedVideoTile key={video.id} video={video} />
+                    <RelatedVideoTile
+                      key={video.id}
+                      video={video}
+                      isActive={Number(id) === video.id}
+                    />
                   ))}
                 </div>
               ) : (
@@ -144,28 +148,6 @@ export default function VideoPage() {
               )}
             </div>
           </div>
-
-          {/* Related Videos Carousel */}
-          {/* <div className="mt-2 col-11 card p-3">
-            <h4>Related Videos</h4>
-            <div className="my-3">
-              {relatedVideos.length > 0 ? (
-                <div
-                  className="d-flex gap-3"
-                  style={{
-                    overflowX: "scroll",
-                    maxWidth: "100%",
-                  }}
-                >
-                  {relatedVideos.map((video) => (
-                    <VideoCard key={video.id} hideMeta {...video} />
-                  ))}
-                </div>
-              ) : (
-                <p>No related videos available</p>
-              )}
-            </div>
-          </div> */}
         </div>
       </div>
     </div>

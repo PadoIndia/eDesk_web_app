@@ -140,6 +140,7 @@ export function transformEvents(events: EventResponse[]): GroupedOutput[] {
         id: event.id,
         label: event.eventName,
         count: event.ecVideos.length,
+        createdOn: event.createdOn,
       });
     }
   }
