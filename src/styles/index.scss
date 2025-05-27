@@ -127,3 +127,11 @@ button:focus-visible {
 .transition {
   transition: all 200ms ease-in-out !important;
 }
+
+.truncate-modern {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

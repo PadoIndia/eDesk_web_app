@@ -3,7 +3,6 @@ import { EventResponse } from "../types/event.types";
 import { GroupedOutput } from "../types/sidebar.types";
 import { VideoViewDuration } from "../types/video.types";
 
-
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
 
@@ -148,3 +147,18 @@ export function transformEvents(events: EventResponse[]): GroupedOutput[] {
   return [...Array.from(groupMap.values()), ...ungrouped];
 }
 
+/**
+ * Convert a date string or Date object into a short format like "22 Mar, 2025"
+ * @param dateString - The input date as a string or Date object
+ * @returns A formatted date string in the format "DD Mon, YYYY"
+ */
+export function getShortDate(dateString: string | Date): string {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  };
+  const parts = date.toLocaleDateString("en-GB", options).split(" ");
+  return `${parts[0]} ${parts[1]}, ${parts[2]}`;
+}

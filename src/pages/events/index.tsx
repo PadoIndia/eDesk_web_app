@@ -4,6 +4,7 @@ import eventService from "../../services/api-services/event.service";
 import { EventResponse, EventGroupResponse } from "../../types/event.types";
 import { toast } from "react-toastify";
 import EventModal from "../../components/ui/modals/event-modal";
+import { getShortDate } from "../../utils/helper";
 
 type TabType = "events" | "event-groups";
 
@@ -163,7 +164,8 @@ const EventsPage: React.FC = () => {
                     <thead className="table-light">
                       <tr>
                         <th scope="col">Event Name</th>
-                        <th scope="col">Date</th>
+                        <th scope="col">Event Date</th>
+                        <th scope="col">Created On</th>
                         <th scope="col" className="text-end">
                           Actions
                         </th>
@@ -174,7 +176,8 @@ const EventsPage: React.FC = () => {
                         events.map((event) => (
                           <tr key={event.id}>
                             <td>{event.eventName}</td>
-                            <td>{new Date(event.date).toLocaleDateString()}</td>
+                            <td>{getShortDate(event.date)}</td>
+                            <td>{getShortDate(event.createdOn)}</td>
                             <td className="text-end">
                               <button
                                 className="btn btn-sm btn-outline-info"
@@ -319,6 +322,10 @@ const EventsPage: React.FC = () => {
           isOpen={isEventModalOpen}
           onClose={handleCloseEventModal}
           initialData={selectedEvent}
+          onSuccess={() => {
+            fetchEventData();
+            handleCloseEventModal();
+          }}
         />
       )}
     </div>
