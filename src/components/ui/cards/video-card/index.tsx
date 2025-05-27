@@ -3,7 +3,8 @@ import "./styles.css";
 // import { IoShareSocialOutline } from "react-icons/io5";
 // import { HiOutlineDocumentText } from "react-icons/hi";
 import { VideoResponse } from "../../../../types/video.types";
-import { formatMiliSeconds } from "../../../../utils/helper";
+import { formatMiliSeconds, getShortDate } from "../../../../utils/helper";
+import { Badge } from "../../badge";
 type Props = VideoResponse & { hideMeta?: boolean };
 
 const VideoCard: React.FC<Props> = ({
@@ -13,6 +14,7 @@ const VideoCard: React.FC<Props> = ({
   thumbnailLr,
   hideMeta,
   videoViewDurations,
+  createdOn,
 }) => {
   return (
     <div
@@ -32,6 +34,9 @@ const VideoCard: React.FC<Props> = ({
         {!hideMeta && (
           <>
             <div className="video-card-meta">
+              <div className="video-card-views">
+                <Badge>{getShortDate(createdOn)}</Badge>{" "}
+              </div>
               <div className="video-card-views">
                 {videoViewDurations.length} views
               </div>

@@ -135,3 +135,9 @@ button:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+@media(max-width: 768px) {
+  html {
+    font-size: 12px !important;
+  }
+}

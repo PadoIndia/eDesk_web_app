@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAppDispatch } from "../../../store/store";
 import { logOut } from "../../../features/auth.slice";
@@ -6,6 +6,13 @@ import { logOut } from "../../../features/auth.slice";
 export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [navbarCollapsed, setNavbarCollapsed] = useState(true);
   const dispatch = useAppDispatch();
+  const location = useLocation();
+
+  const pathname = location.pathname;
+  const isHome = pathname === "/";
+  const isEventPage = /^\/events\/[^/]+$/.test(pathname);
+
+  const shouldShowSidebar = isHome || isEventPage;
 
   const toggleNavbar = () => {
     setNavbarCollapsed(!navbarCollapsed);
@@ -17,13 +24,15 @@ export default function Navbar({ onMenuClick }: { onMenuClick: () => void }) {
         <div className="container-fluid">
           {/* Logo and hamburger section */}
           <div className="d-flex align-items-center">
-            <button
-              className="btn btn-light border-0 d-lg-none me-2"
-              onClick={onMenuClick}
-              aria-label="Toggle sidebar"
-            >
-              <i className="bi bi-list fs-5"></i>
-            </button>
+            {shouldShowSidebar && (
+              <button
+                className="btn btn-light border-0 d-lg-none me-2"
+                onClick={onMenuClick}
+                aria-label="Toggle sidebar"
+              >
+                <i className="bi bi-list fs-5"></i>
+              </button>
+            )}
             <Link
               className="navbar-brand d-flex align-items-center"
               to="/"
