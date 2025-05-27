@@ -7,9 +7,8 @@ html {
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: #213547;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,9 +23,8 @@ a {
   font-size: 1.1rem !important;
 }
 
-
 a:hover {
-  color: #535bf2;
+  color: #747bff;
 }
 
 body {
@@ -37,6 +35,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+  color: #213547;
+  background-color: #ffffff;
 }
 
 h1 {
@@ -46,43 +46,24 @@ h1 {
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(209, 213, 219, 1) !important;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f9f9f9;
   cursor: pointer;
   transition: border-color 0.25s;
-  border-color: rgba(209, 213, 219, 1) !important;
 }
 
 button:hover {
   border-color: #646cff;
-  ;
 }
-
 
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-
-  a:hover {
-    color: #747bff;
-  }
-
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
 
 .Form-heading1 {
   font-size: 22px !important;
@@ -101,7 +82,6 @@ button:focus-visible {
   color: #333a47 !important;
 }
 
-
 .font-xs {
   font-size: 0.714rem !important;
 }
@@ -118,7 +98,6 @@ button:focus-visible {
   font-size: 1.429rem !important;
 }
 
-
 @keyframes skeleton-pulse {
   0% {
     background-position: -200% 0;
@@ -127,6 +106,7 @@ button:focus-visible {
     background-position: 200% 0;
   }
 }
+
 .skeleton {
   background: linear-gradient(90deg, #f9f9f9 25%, #f0f0f0 50%, #f9f9f9 75%);
   background-size: 200% 100%;
@@ -145,5 +125,5 @@ button:focus-visible {
 }
 
 .transition {
-  transition:all 200ms ease-in-out !important;
+  transition: all 200ms ease-in-out !important;
 }
