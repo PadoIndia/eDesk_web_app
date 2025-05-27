@@ -48,9 +48,31 @@ const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let intervalId: any = null;
     let hls: Hls | null = null;
+
+    const updateTime = () => setCurrentTime(video.currentTime);
+    const updateDuration = () => setDuration(video.duration);
+    const startSync = () => {
+      if (!intervalId && document.visibilityState === "visible") {
+        intervalId = setInterval(syncVideoWatch, 12 * 1000);
+      }
+    };
+    const stopSync = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        video.pause();
+        stopSync();
+      } else if (document.visibilityState === "visible" && !video.paused) {
+        startSync();
+      }
+    };
 
     if (Hls.isSupported()) {
       hls = new Hls();
@@ -63,20 +85,12 @@ const VideoPlayer = ({
       video.src = src;
     }
 
-    const updateTime = () => setCurrentTime(video.currentTime);
-    const updateDuration = () => setDuration(video.duration);
-    const startSync = () => {
-      intervalId = setInterval(syncVideoWatch, 12 * 1000);
-    };
-    const stopSync = () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-
     video.addEventListener("timeupdate", updateTime);
     video.addEventListener("loadedmetadata", updateDuration);
     video.addEventListener("playing", startSync);
     video.addEventListener("pause", stopSync);
     video.addEventListener("ended", stopSync);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       video.removeEventListener("timeupdate", updateTime);
@@ -84,6 +98,8 @@ const VideoPlayer = ({
       video.removeEventListener("playing", startSync);
       video.removeEventListener("pause", stopSync);
       video.removeEventListener("ended", stopSync);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stopSync();
       if (hls) hls.destroy();
     };
   }, [src]);
