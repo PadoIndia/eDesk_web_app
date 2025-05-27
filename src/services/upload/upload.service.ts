@@ -89,7 +89,10 @@ class UploadService {
         eventId: event_id,
         fileName: vidFile.name,
       });
-      if (vidResp.status !== "success") return toast.error(vidResp.message);
+      if (vidResp.status !== "success") {
+        store.dispatch(updateStatus({ id: vidFile.id, status: "failed" }));
+        return toast.error(vidResp.message);
+      }
       const vidData = vidResp.data;
       const client_id = vidData.video.client_id.toString();
       store.dispatch(
