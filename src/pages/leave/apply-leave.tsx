@@ -67,25 +67,6 @@ const ApplyLeave: React.FC = () => {
     []
   );
 
-  // const watchStartIsHalfDay = useWatch({ control, name: "isHalfDay" });
-  // const watchEndIsHalfDay = useWatch({ control, name: "isHalfDay" });
-  // const watchStart = useWatch({ control, name: "startDate" });
-  // const watchEnd = useWatch({ control, name: "endDate" });
-
-  // const calculateDuration = () => {
-  //   if (!watchStart || !watchEnd) return 0;
-  //   const diffTime = watchEnd.getTime() - watchStart.getTime();
-  //   const diffDays = diffTime / (1000 * 60 * 60 * 24) + 1;
-  //   const totalStartDays = watchStartIsHalfDay ? diffDays - 0.5 : diffDays;
-  //   const totalEndDays = watchEndIsHalfDay
-  //     ? totalStartDays - 0.5
-  //     : totalStartDays;
-  //   return totalEndDays;
-  // };
-
-  // const duration = calculateDuration();
-
-  // Watchers
   const watchStartIsHalfDay = useWatch({ control, name: "isStartHalfDay" });
   const watchEndIsHalfDay = useWatch({ control, name: "isEndHalfDay" });
   const watchStart = useWatch({ control, name: "startDate" });

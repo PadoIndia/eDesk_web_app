@@ -22,7 +22,18 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
   handleMissPunchRequest
 }) => {
   // Extract unique departments for filter dropdown
-  const departments = Array.from(new Set(users.map((user) => user.department)));
+  // const departments = Array.from(new Set(users.map((user) => user.department)));
+
+  const departments = [
+  "All",
+  ...Array.from(
+    new Set(
+      users
+        .flatMap((user) => user.department.split(",").map((d) => d.trim()))
+    )
+  ).filter(Boolean),
+];
+
   
   // Check if current user needs miss punch button
   const showMissPunchButton = currentUser && 
