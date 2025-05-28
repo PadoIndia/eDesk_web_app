@@ -1,18 +1,23 @@
-import { LuClock } from "react-icons/lu";
+import { LuClock, LuPencil, LuSave } from "react-icons/lu";
 import { SingleVideoResponse } from "../../../types/video.types";
 import { formatMiliSeconds } from "../../../utils/helper";
 import { GrView } from "react-icons/gr";
-import DurationsModal from "./durations-modal";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import videoService from "../../../services/api-services/video.service";
 import { toast } from "react-toastify";
+import Modal from "../../../components/ui/modals";
+
+const DurationsModal = React.lazy(() => import("./durations-modal"));
 
 type Props = {
   videoInfo: SingleVideoResponse;
+  onUpdateSuccess: () => void;
 };
 
-export default function VideoInfo({ videoInfo }: Props) {
+export default function VideoInfo({ videoInfo, onUpdateSuccess }: Props) {
   const [showModal, setShowModal] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [name, setName] = useState(videoInfo.name);
 
   async function getVideoContent(videoId: string) {
     const containerId = "video-download-links";
@@ -63,6 +68,23 @@ export default function VideoInfo({ videoInfo }: Props) {
     }
   }, [videoInfo]);
 
+  const onUpdateVideo = () => {
+    if (name && name !== videoInfo?.name) {
+      videoService
+        .updateVideo(Number(videoInfo.id), { name: name.trim() })
+        .then((res) => {
+          if (res.status === "success") {
+            onUpdateSuccess();
+            toast.success(res.message);
+            setShowEdit(false);
+          } else toast.error(res.message);
+        })
+        .catch((err) =>
+          toast.error(err instanceof Error ? err.message : "Some Error Occured")
+        );
+    }
+  };
+
   return (
     <div className="video-info">
       <DurationsModal
@@ -70,6 +92,31 @@ export default function VideoInfo({ videoInfo }: Props) {
         onClose={() => setShowModal(false)}
         show={showModal}
       />
+
+      <Modal
+        title="Edit Video"
+        showCloseIcon
+        isOpen={showEdit}
+        onClose={() => setShowEdit(false)}
+      >
+        <label htmlFor="form form-label">Title</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          type="text"
+          className="form-control rounded"
+        />
+        <div className="mt-2">
+          <button
+            className="btn btn-primary d-flex align-items-center"
+            onClick={onUpdateVideo}
+            disabled={!name || name == videoInfo.name}
+          >
+            <LuSave className="icon" />
+            Save
+          </button>
+        </div>
+      </Modal>
       <h1 className="video-title">{videoInfo?.name}</h1>
       <div className="video-meta">
         <span className="d-flex align-items-center">
@@ -89,11 +136,14 @@ export default function VideoInfo({ videoInfo }: Props) {
         {/* <button className="btn btn-primary d-flex align-items-center">
           <LuShare2 className="icon" />
           Share
-        </button>
-        <button className="btn btn-light d-flex align-items-center">
+        </button> */}
+        <button
+          className="btn btn-light d-flex align-items-center"
+          onClick={() => setShowEdit(true)}
+        >
           <LuPencil className="icon" />
           Edit Metadata
-        </button> */}
+        </button>
         <div>
           <div
             id="video-download-links"
