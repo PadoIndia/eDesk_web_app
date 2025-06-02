@@ -8,6 +8,7 @@ import { IoAddOutline } from "react-icons/io5";
 import { EventResponse } from "../../types/event.types";
 import eventService from "../../services/api-services/event.service";
 import { Badge } from "../../components/ui/badge";
+import { toast } from "react-toastify";
 
 const Home: React.FC = () => {
   const { eventId } = useParams();
@@ -15,30 +16,43 @@ const Home: React.FC = () => {
   const [query, setQuery] = useState("");
   const [eventDetail, setEventDetail] = useState<EventResponse | null>(null);
 
-  useEffect(() => {
-    if (eventId) {
-      eventService.getEventById(+eventId).then((resp) => {
+  const fetchData = () => {
+    eventService.getEventById(+eventId!).then((resp) => {
+      if (resp.status === "success") {
+        setEventDetail(resp.data);
+      }
+    });
+    videoService
+      .getAllVideos({
+        params: {
+          eventId,
+        },
+      })
+      .then((resp) => {
         if (resp.status === "success") {
-          setEventDetail(resp.data);
+          setVideos(resp.data);
         }
       });
-      videoService
-        .getAllVideos({
-          params: {
-            eventId,
-          },
-        })
-        .then((resp) => {
-          if (resp.status === "success") {
-            setVideos(resp.data);
-          }
-        });
+  };
+
+  useEffect(() => {
+    if (eventId) {
+      fetchData();
     }
   }, [eventId]);
 
   const filtered = videos.filter((v) =>
     v.name.toLowerCase().includes(query.toLowerCase())
   );
+
+  const handleVidDelete = (id: number) => {
+    videoService.deleteVideo(id).then((res) => {
+      if (res.status === "success") {
+        fetchData();
+        toast.success(res.message);
+      } else toast.error(res.message);
+    });
+  };
 
   return (
     <div className="p-3">
@@ -70,7 +84,11 @@ const Home: React.FC = () => {
       )}
       <div className="row gap-4 mx-auto">
         {filtered.map((video) => (
-          <VideoCard key={video.videoId} {...video} />
+          <VideoCard
+            key={video.videoId}
+            {...video}
+            onDelete={handleVidDelete}
+          />
         ))}
       </div>
     </div>
