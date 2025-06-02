@@ -9,12 +9,9 @@ import { Badge } from "../../../../components/ui/badge";
 import DurationsModal from "../../../video-details/components/durations-modal";
 import videoService from "../../../../services/api-services/video.service";
 import { toast } from "react-toastify";
-import { MdDeleteOutline } from "react-icons/md";
-import Modal from "../../../../components/ui/modals";
 
 type Props = VideoResponse & {
   hideMeta?: boolean;
-  onDelete?: (id: number) => void;
 };
 
 const VideoCard: React.FC<Props> = ({
@@ -25,11 +22,9 @@ const VideoCard: React.FC<Props> = ({
   hideMeta,
   videoViewDurations,
   createdOn,
-  onDelete,
 }) => {
   const [views, setViews] = useState<VideoViewDuration[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const uniqueViews = videoViewDurations.reduce(
     (
@@ -81,15 +76,6 @@ const VideoCard: React.FC<Props> = ({
             <div className="video-card-meta">
               <div className="video-card-views d-flex justify-content-between w-100">
                 <Badge>{getShortDate(createdOn)}</Badge>{" "}
-                <button
-                  type="button"
-                  className="btn btn-body border-0 p-0 ms-2"
-                  title="Delete video"
-                  style={{ color: "#dc3545", fontSize: 22, lineHeight: 1 }}
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <MdDeleteOutline />
-                </button>
               </div>
             </div>
             <div
@@ -111,48 +97,6 @@ const VideoCard: React.FC<Props> = ({
             </div> */}
           </>
         )}
-        <Modal
-          isOpen={showDeleteDialog && !!onDelete}
-          onClose={() => setShowDeleteDialog(false)}
-        >
-          <div className="modal d-block" tabIndex={-1} role="dialog">
-            <div className="modal-dialog modal-dialog-centered" role="document">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Delete Video</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    aria-label="Close"
-                    onClick={() => setShowDeleteDialog(false)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <p>
-                    Are you sure you want to delete <strong>{name}</strong>?
-                    This action cannot be undone.
-                  </p>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={() => setShowDeleteDialog(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger"
-                    onClick={() => onDelete!(id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Modal>
       </div>
     </div>
   );

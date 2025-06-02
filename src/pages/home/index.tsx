@@ -8,7 +8,6 @@ import { IoAddOutline } from "react-icons/io5";
 import { EventResponse } from "../../types/event.types";
 import eventService from "../../services/api-services/event.service";
 import { Badge } from "../../components/ui/badge";
-import { toast } from "react-toastify";
 
 const Home: React.FC = () => {
   const { eventId } = useParams();
@@ -45,15 +44,6 @@ const Home: React.FC = () => {
     v.name.toLowerCase().includes(query.toLowerCase())
   );
 
-  const handleVidDelete = (id: number) => {
-    videoService.deleteVideo(id).then((res) => {
-      if (res.status === "success") {
-        fetchData();
-        toast.success(res.message);
-      } else toast.error(res.message);
-    });
-  };
-
   return (
     <div className="p-3">
       <div className="d-flex justify-content-between p-2">
@@ -84,11 +74,7 @@ const Home: React.FC = () => {
       )}
       <div className="row gap-4 mx-auto">
         {filtered.map((video) => (
-          <VideoCard
-            key={video.videoId}
-            {...video}
-            onDelete={handleVidDelete}
-          />
+          <VideoCard key={video.videoId} {...video} />
         ))}
       </div>
     </div>

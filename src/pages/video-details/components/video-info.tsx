@@ -6,6 +6,8 @@ import React, { useEffect, useState } from "react";
 import videoService from "../../../services/api-services/video.service";
 import { toast } from "react-toastify";
 import Modal from "../../../components/ui/modals";
+import { MdDeleteOutline } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 const DurationsModal = React.lazy(() => import("./durations-modal"));
 
@@ -18,6 +20,8 @@ export default function VideoInfo({ videoInfo, onUpdateSuccess }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [name, setName] = useState(videoInfo.name);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const navigate = useNavigate();
 
   async function getVideoContent(videoId: string) {
     const containerId = "video-download-links";
@@ -85,6 +89,18 @@ export default function VideoInfo({ videoInfo, onUpdateSuccess }: Props) {
     }
   };
 
+  const onDeleteVideo = async () => {
+    try {
+      const resp = await videoService.deleteVideo(videoInfo.id);
+      if (resp.status === "success") {
+        navigate(`/events/${videoInfo.eventId}`);
+        toast.success(resp.message);
+      } else toast.error(resp.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (error as string));
+    }
+  };
+
   return (
     <div className="video-info">
       <DurationsModal
@@ -130,6 +146,7 @@ export default function VideoInfo({ videoInfo, onUpdateSuccess }: Props) {
           <GrView />
           See views
         </span>
+
         <span>{new Date(videoInfo?.createdOn).toLocaleDateString()}</span>
       </div>
       <div className="action-buttons">
@@ -144,18 +161,56 @@ export default function VideoInfo({ videoInfo, onUpdateSuccess }: Props) {
           <LuPencil className="icon" />
           Edit Metadata
         </button>
+
         <div>
           <div
             id="video-download-links"
             className="d-flex gap-2 align-items-center"
           ></div>
         </div>
+        <button
+          className="btn btn-danger d-flex align-items-center"
+          title="Delete video"
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          <MdDeleteOutline className="icon" />
+          Delete
+        </button>
       </div>
 
       <div>
         <h3 className="metadata-label">Description</h3>
         <p className="text-muted">{videoInfo?.comment}</p>
       </div>
+      <Modal
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        showCloseIcon
+        title="Delete Video"
+      >
+        <div className="">
+          <p>
+            Are you sure you want to delete <strong>{name}</strong>? This action
+            cannot be undone.
+          </p>
+        </div>
+        <div className="d-flex gap-2 justify-content-end">
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setShowDeleteDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-danger"
+            onClick={onDeleteVideo}
+          >
+            Delete
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
