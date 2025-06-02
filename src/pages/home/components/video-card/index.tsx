@@ -14,7 +14,7 @@ import Modal from "../../../../components/ui/modals";
 
 type Props = VideoResponse & {
   hideMeta?: boolean;
-  onDelete: (id: number) => void;
+  onDelete?: (id: number) => void;
 };
 
 const VideoCard: React.FC<Props> = ({
@@ -112,7 +112,7 @@ const VideoCard: React.FC<Props> = ({
           </>
         )}
         <Modal
-          isOpen={showDeleteDialog}
+          isOpen={showDeleteDialog && !!onDelete}
           onClose={() => setShowDeleteDialog(false)}
         >
           <div className="modal d-block" tabIndex={-1} role="dialog">
@@ -144,7 +144,7 @@ const VideoCard: React.FC<Props> = ({
                   <button
                     type="button"
                     className="btn btn-outline-danger"
-                    onClick={() => onDelete(id)}
+                    onClick={() => onDelete!(id)}
                   >
                     Delete
                   </button>
