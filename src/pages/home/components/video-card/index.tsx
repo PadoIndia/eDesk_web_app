@@ -10,7 +10,9 @@ import DurationsModal from "../../../video-details/components/durations-modal";
 import videoService from "../../../../services/api-services/video.service";
 import { toast } from "react-toastify";
 
-type Props = VideoResponse & { hideMeta?: boolean };
+type Props = VideoResponse & {
+  hideMeta?: boolean;
+};
 
 const VideoCard: React.FC<Props> = ({
   id,
@@ -72,7 +74,7 @@ const VideoCard: React.FC<Props> = ({
         {!hideMeta && (
           <>
             <div className="video-card-meta">
-              <div className="video-card-views">
+              <div className="video-card-views d-flex justify-content-between w-100">
                 <Badge>{getShortDate(createdOn)}</Badge>{" "}
               </div>
             </div>

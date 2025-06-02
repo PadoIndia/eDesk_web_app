@@ -73,7 +73,7 @@ function PhoneVerification() {
             <div className="phone-input-group d-flex mt-md-5 mt-4 align-items-center">
               {/* Flag and code box */}
               <div
-                className="form-control w-auto pe-0 flag d-flex ps-1 d-flex align-items-center"
+                className="form-control login-input w-auto pe-0 flag d-flex ps-1 d-flex align-items-center"
                 style={{
                   border: `2px solid`,
                   borderColor: mobileNumberInvalid ? "#CC2C2C" : "",
@@ -101,7 +101,7 @@ function PhoneVerification() {
               <input
                 type="text"
                 autoFocus
-                className="form-control mobileInput"
+                className="form-control login-input mobileInput"
                 style={{
                   borderColor: mobileNumberInvalid ? "#CC2C2C" : "",
                   borderLeft: "none",
