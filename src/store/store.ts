@@ -4,6 +4,7 @@ import authSlice from "../features/auth.slice";
 import videoSlice from "../features/video.slice";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
+import departmentSlice from "../features/department.slice";
 
 const persistConfig = {
   key: "root",
@@ -14,6 +15,7 @@ const persistConfig = {
 const reducers = combineReducers({
   auth: authSlice,
   video: videoSlice,
+  department: departmentSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, reducers);

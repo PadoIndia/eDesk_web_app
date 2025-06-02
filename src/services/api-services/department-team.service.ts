@@ -3,27 +3,20 @@ import ApiService from "./api-service";
 
 class DepartmentTeamService extends ApiService {
   constructor() {
-    super("/admin/department-management");
+    super("/admin/department-team");
   }
 
-  createDepartment(department: {
-    name: string;
-    slug: string;
-    responsibilities: string;
-  }): ApiResponse {
-    return this.postData("/", department);
+  linkTeamToDepartment(departmentId: number, teamId: number): ApiResponse {
+    return this.postData("/", { departmentId, teamId });
   }
 
-  getDepartments():ApiResponse{
-    return this.getData("/");
+  getTeamsByDepartment(departmentId: number): ApiResponse {
+    return this.getData(`/department/${departmentId}`);
   }
 
-  getDepartmentById(departmentId:number): ApiResponse{
-    return this.getData(`/${departmentId}`);
+  unlinkTeam(linkId: number): ApiResponse {
+    return this.deleteData(`/${linkId}`);
   }
-
 }
-
-
 
 export default new DepartmentTeamService();

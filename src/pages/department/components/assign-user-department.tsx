@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Department } from "../../../types/department-team.types";
 import { User } from "../../../types/user.types";
-import DepartmentTeamService from "../../../services/api-services/department-team.service";
+// import DepartmentTeamService from "../../../services/api-services/department-team.service";
 import userService from "../../../services/api-services/user.service";
 import userDepartmentService from "../../../services/api-services/user-department.service";
+import departmentService from "../../../services/api-services/department.service";
 
 const AssignUsersToDepartment = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -20,7 +21,7 @@ const AssignUsersToDepartment = () => {
     const fetchData = async () => {
       try {
         const [deptResponse, usersResponse] = await Promise.all([
-          DepartmentTeamService.getDepartments(),
+          departmentService.getDepartments(),
           userService.getAllUsers()
         ]);
         setDepartments(deptResponse.data);
@@ -92,7 +93,7 @@ const AssignUsersToDepartment = () => {
             const response = exists
               ? await userDepartmentService.updateUserDepartment(
                   userId, 
-                  departmentId, 
+                  departmentId,
                   isAdmin
                 )
               : await userDepartmentService.createUserDepartment({ 

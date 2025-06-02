@@ -9,7 +9,9 @@ import {
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Badge from "../../components/badge";
-
+import leaveRequestService from "../../services/api-services/leave-request.service";
+import leaveTransactionService from "../../services/api-services/leave-transaction.service";
+import { useAppSelector } from "../../store/store";
 
 const LeaveDashboard = () => {
   interface LeaveBalance {
@@ -42,85 +44,35 @@ const LeaveDashboard = () => {
   // });
   const [loading, setLoading] = useState(true);
 
+  const userId = useAppSelector((s)=>s.auth.userData?.user.id);
+
   // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setLeaveBalance([
-        {
-          id: 1,
-          type: "Annual Leave",
-          total: 20,
-          used: 8,
-          remaining: 12,
-          isPaid: true,
-        },
-        {
-          id: 2,
-          type: "Sick Leave",
-          total: 12,
-          used: 3,
-          remaining: 9,
-          isPaid: true,
-        },
-        {
-          id: 3,
-          type: "Unpaid Leave",
-          total: 30,
-          used: 0,
-          remaining: 30,
-          isPaid: false,
-        },
-        {
-          id: 4,
-          type: "Bereavement Leave",
-          total: 5,
-          used: 0,
-          remaining: 5,
-          isPaid: true,
-        },
-      ]);
+useEffect(() => {
+    const fetchData = async () => {
+      if (!userId) return;
+      
+      setLoading(true);
+      try {
+        // Fetch leave balance
+        const balanceRes = await leaveTransactionService.getLeaveBalance(userId);
+        setLeaveBalance(balanceRes.data);
+        
+        // Fetch recent requests
+        const requestsRes = await leaveRequestService.getMyLeaveRequests({
+          limit: 3,
+          sortBy: "submittedOn",
+          sortOrder: "desc"
+        });
+        setRecentRequests(requestsRes.data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setRecentRequests([
-        {
-          id: 101,
-          type: "Annual Leave",
-          startDate: "2025-05-10",
-          endDate: "2025-05-12",
-          duration: 3,
-          status: "APPROVED",
-          reason: "Family vacation",
-        },
-        {
-          id: 102,
-          type: "Sick Leave",
-          startDate: "2025-04-20",
-          endDate: "2025-04-21",
-          duration: 2,
-          status: "APPROVED",
-          reason: "Fever and cold",
-        },
-        {
-          id: 103,
-          type: "Annual Leave",
-          startDate: "2025-06-15",
-          endDate: "2025-06-16",
-          duration: 2,
-          status: "PENDING",
-          reason: "Personal work",
-        },
-      ]);
-
-      // setLeaveStats({
-      //   pending: 2,
-      //   approved: 5,
-      //   rejected: 1,
-      //   total: 8,
-      // });
-
-      setLoading(false);
-    }, 1000);
-  }, []);
+    fetchData();
+  }, [userId]);
 
   // // Helper function for status badge color
   // interface LeaveStatus {

@@ -12,6 +12,10 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../App.css";
 import Badge from "../../components/badge";
+import leaveRequestService from "../../services/api-services/leave-request.service";
+import { CreateLeaveRequestRequest } from "../../types/leave.types";
+import { useAppSelector } from "../../store/store";
+import userService from "../../services/api-services/user.service";
 
 interface LeaveRequest {
   id: number;
@@ -38,72 +42,36 @@ const LeaveRequests = () => {
     end: null,
   });
 
-  // Mock data - replace with API calls in a real app
-  useEffect(() => {
-    const mockData: LeaveRequest[] = [
-      {
-        id: 1,
-        employeeName: "John Doe",
-        leaveType: "Annual Leave",
-        startDate: "2025-06-10",
-        endDate: "2025-06-12",
-        duration: 3,
-        status: "PENDING",
-        reason: "Family vacation",
-        submittedOn: "2025-05-25",
-      },
-      {
-        id: 2,
-        employeeName: "John Doe",
-        leaveType: "Annual Leave",
-        startDate: "2025-07-10",
-        endDate: "2025-09-12",
-        duration: 3,
-        status: "REJECTED",
-        reason: "Family vacation",
-        submittedOn: "2025-05-25",
-      },
-      {
-        id: 3,
-        employeeName: "John Doe",
-        leaveType: "Annual Leave",
-        startDate: "2025-06-10",
-        endDate: "2025-06-12",
-        duration: 3,
-        status: "APPROVED",
-        reason: "Family vacation",
-        submittedOn: "2025-05-25",
-      },
-      {
-        id: 4,
-        employeeName: "John Doe",
-        leaveType: "Annual Leave",
-        startDate: "2025-06-10",
-        endDate: "2025-06-12",
-        duration: 3,
-        status: "CANCELLED",
-        reason: "Family vacation",
-        submittedOn: "2025-05-25",
-      },
-      {
-        id: 5,
-        employeeName: "John Doe",
-        leaveType: "Annual Leave",
-        startDate: "2025-06-11",
-        endDate: "2025-06-12",
-        duration: 2,
-        status: "PENDING",
-        reason: "Family vacation",
-        submittedOn: "2025-05-25",
-      },
-      // More sample data...
-    ];
+  const userId = useAppSelector((s)=>s.auth.userData?.user.id);
 
-    setTimeout(() => {
-      setRequests(mockData);
-      setLoading(false);
-    }, 800);
-  }, []);
+  
+  useEffect(() => {
+    const fetchRequests = async () => {
+      
+      const user = await userService.getUserById(userId);
+      
+      setLoading(true);
+      
+      try {
+        let response;
+        if (user?.role === "MANAGER") {
+          response = await leaveRequestService.getLeaveRequestsForManagerApproval();
+        } else if (user?.role === "HR") {
+          response = await leaveRequestService.getLeaveRequestsForHRApproval();
+        } else {
+          response = await leaveRequestService.getMyLeaveRequests();
+        }
+        
+        setRequests(response.data);
+      } catch (error) {
+        console.error("Failed to fetch leave requests:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [user?.role]);
 
   const filteredRequests = requests.filter((request) => {
     // Search filter
@@ -124,22 +92,38 @@ const LeaveRequests = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  const handleApprove = (id: number) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === id ? { ...req, status: "APPROVED" } : req
-      )
-    );
-    // In a real app, you would call an API here
+const handleApprove = async (id: number) => {
+    try {
+      const data: ManagerApproveRejectLeaveRequestRequest = {
+        status: "APPROVED",
+        comment: "Approved by manager"
+      };
+      await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
+      setRequests(
+        requests.map((req) =>
+          req.id === id ? { ...req, status: "APPROVED" } : req
+        )
+      );
+    } catch (error) {
+      console.error("Failed to approve request:", error);
+    }
   };
 
-  const handleReject = (id: number) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === id ? { ...req, status: "REJECTED" } : req
-      )
-    );
-    // In a real app, you would call an API here
+  const handleReject = async (id: number) => {
+    try {
+      const data: ManagerApproveRejectLeaveRequestRequest = {
+        status: "REJECTED",
+        comment: "Rejected by manager"
+      };
+      await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
+      setRequests(
+        requests.map((req) =>
+          req.id === id ? { ...req, status: "REJECTED" } : req
+        )
+      );
+    } catch (error) {
+      console.error("Failed to reject request:", error);
+    }
   };
 
   const getStatusBadge = (status: string) => {

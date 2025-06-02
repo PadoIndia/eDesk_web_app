@@ -1,23 +1,52 @@
 import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
-import { Department } from "../../../types/department-team.types";
+import teamService from "../../../services/api-services/team.service";
+import departmentTeamService from "../../../services/api-services/department-team.service";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../store/store";
+import { setDepartments } from "../../../features/department.slice";
 
-interface TeamFormProps {
-  departments: Department[];
-  onAddTeam: (departmentId: string, teamName: string, responsibilities: string) => void;
-}
-
-const TeamForm = ({ departments, onAddTeam }: TeamFormProps) => {
-  const [selectedDept, setSelectedDept] = useState("");
+const TeamForm = () => {
+  const departments = useSelector((state: RootState) => state.department.departments) || [];
+  const [selectedDept, setSelectedDept] = useState<number | "">("");
   const [teamName, setTeamName] = useState("");
   const [responsibilities, setResponsibilities] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (selectedDept && teamName.trim()) {
-      onAddTeam(selectedDept, teamName, responsibilities);
-      setTeamName("");
-      setResponsibilities("");
+      try {
+        const teamResponse = await teamService.createTeam({
+          name: teamName,
+          responsibilities,
+          slug: teamName.toLowerCase().replace(/\s+/g, "-"),
+        });
+        await departmentTeamService.linkTeamToDepartment(
+          Number(selectedDept),
+          teamResponse.data.id
+        );
+
+        const updatedDepartments = departments.map((dept) => {
+          if (dept.id === Number(selectedDept)) {
+            return {
+              ...dept,
+              teams: [...(dept.teams || []), teamResponse.data],
+            };
+          }
+          return dept;
+        });
+
+        dispatch(setDepartments(updatedDepartments));
+
+        setTeamName("");
+        setResponsibilities("");
+        setSelectedDept("");
+      } catch (error) {
+        console.error("Failed to create team:", error);
+      }
     }
   };
 
@@ -28,7 +57,9 @@ const TeamForm = ({ departments, onAddTeam }: TeamFormProps) => {
         <select
           className="form-select"
           value={selectedDept}
-          onChange={(e) => setSelectedDept(e.target.value)}
+          onChange={(e) =>
+            setSelectedDept(e.target.value === "" ? "" : Number(e.target.value))
+          }
         >
           <option value="">Select Department</option>
           {departments.map((dept) => (
@@ -47,6 +78,7 @@ const TeamForm = ({ departments, onAddTeam }: TeamFormProps) => {
             placeholder="Team name"
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
+            required
           />
         </div>
 
@@ -63,9 +95,9 @@ const TeamForm = ({ departments, onAddTeam }: TeamFormProps) => {
           </p>
         </div>
 
-        <button 
-          className="btn btn-primary w-100" 
-          type="submit" 
+        <button
+          className="btn btn-primary w-100"
+          type="submit"
           disabled={!selectedDept}
         >
           <FaPlus className="me-2" />

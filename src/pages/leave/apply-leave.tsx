@@ -3,6 +3,10 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { FaCalendarAlt, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import leaveRequestService from "../../services/api-services/leave-request.service";
+import { CreateLeaveRequestRequest } from "../../types/leave.types";
+import { useAppSelector } from "../../store/store";
+import userService from "../../services/api-services/user.service";
 
 interface LeaveType {
   id: number;
@@ -41,6 +45,10 @@ const ApplyLeave: React.FC = () => {
       halfDayTypeEnd: undefined,
     },
   });
+
+  const userId = useAppSelector((s)=>s.auth.userData?.user.id);
+
+  const user = userService.getUserById(userId);
 
   // Mock data - replace with API fetch
   const leaveTypes: LeaveType[] = useMemo(
@@ -119,16 +127,28 @@ const ApplyLeave: React.FC = () => {
   const duration = calculateDuration();
 
   const onSubmit = async (data: FormData) => {
+    if (!user) return;
+    
     try {
-      const payload = { ...data, duration };
-      console.log("Submitting:", payload);
-      // await api.post('/leave-request', payload);
+      const payload: CreateLeaveRequestRequest = {
+        leaveTypeId: data.leaveTypeId,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate.toISOString(),
+        duration,
+        reason: data.reason,
+        managerId: user.managerId || 0, // Should come from user data
+        hrId: user.hrId || 0 // Should come from user data
+      };
+
+      const response = await leaveRequestService.createLeaveRequest(payload);
       alert("Leave application submitted successfully!");
+      console.log("Leave request created:", response.data);
     } catch (err) {
       console.error(err);
       alert("Submission failed.");
     }
   };
+
 
   return (
     <div className="container py-4">

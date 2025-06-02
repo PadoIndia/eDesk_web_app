@@ -6,23 +6,33 @@ class UserDepartmentService extends ApiService {
     super("/admin/user-department");
   }
 
-  createUserDepartment(userDepartment:{userId:number, departmentId:number, isAdmin:boolean}):ApiResponse{
-      return this.postData("/", userDepartment);
+  createUserDepartment(userDepartment: {
+    userId: number;
+    departmentId: number;
+    isAdmin: boolean;
+  }): ApiResponse {
+    return this.postData("/", userDepartment);
   }
 
-  updateUserDepartment(userId:number,departmentId:number,isAdmin:boolean):ApiResponse{
-    return this.putData(`/${userId}/${departmentId}/`, isAdmin);
-    }
+  updateUserDepartment(
+    userId: number,
+    departmentId: number,
+    isAdmin: boolean
+  ): ApiResponse {
+    return this.putData(`/${userId}/${departmentId}`, isAdmin);
+  }
 
-    getByDepartment(departmentId: number): ApiResponse {
+  getByDepartment(departmentId: number): ApiResponse {
     return this.getData(`/department/${departmentId}`);
   }
 
-  getUserDepartmentIdByUserId(userId:number):ApiResponse{
+  getUserDepartmentIdByUserId(userId: number): ApiResponse {
     return this.getData(`/${userId}`);
   }
 
-
+  deleteUserDepartment(id: number): ApiResponse {
+    return this.deleteData(`/${id}`);
+  }
 }
 
 export default new UserDepartmentService();

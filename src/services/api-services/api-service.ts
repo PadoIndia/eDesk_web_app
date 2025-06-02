@@ -105,6 +105,13 @@ class ApiService {
     return apiClient.put(this.getUrl(path), data, { ...options, headers });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  patchData(path: string, data?: any, options?: AxiosRequestConfig): ApiResponse {
+    const headers = options?.headers || this.getHeaders();
+
+    return apiClient.patch(this.getUrl(path), data, { ...options, headers });
+  }
+
   deleteData(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
