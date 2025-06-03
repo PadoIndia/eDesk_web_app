@@ -9,9 +9,9 @@ import { useAppDispatch, useAppSelector } from "./store/store";
 import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
-import HrmApp from "./hrm-app";
 import Uploads from "./pages/uploads";
 import UsersList from "./pages/users/components/user-list";
+import HrmApp from "./hrm-app";
 
 function App() {
   const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);

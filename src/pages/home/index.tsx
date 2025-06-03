@@ -15,24 +15,28 @@ const Home: React.FC = () => {
   const [query, setQuery] = useState("");
   const [eventDetail, setEventDetail] = useState<EventResponse | null>(null);
 
-  useEffect(() => {
-    if (eventId) {
-      eventService.getEventById(+eventId).then((resp) => {
+  const fetchData = () => {
+    eventService.getEventById(+eventId!).then((resp) => {
+      if (resp.status === "success") {
+        setEventDetail(resp.data);
+      }
+    });
+    videoService
+      .getAllVideos({
+        params: {
+          eventId,
+        },
+      })
+      .then((resp) => {
         if (resp.status === "success") {
-          setEventDetail(resp.data);
+          setVideos(resp.data);
         }
       });
-      videoService
-        .getAllVideos({
-          params: {
-            eventId,
-          },
-        })
-        .then((resp) => {
-          if (resp.status === "success") {
-            setVideos(resp.data);
-          }
-        });
+  };
+
+  useEffect(() => {
+    if (eventId) {
+      fetchData();
     }
   }, [eventId]);
 

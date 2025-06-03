@@ -24,8 +24,15 @@ const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="modal-overlay">
-      <div className={`custom-modal modal-${size}`}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{ cursor: "pointer" }}
+    >
+      <div
+        className={`custom-modal modal-${size}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {showCloseIcon && (
           <button className="close-icon border-0" onClick={onClose}>
             &times;

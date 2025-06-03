@@ -104,6 +104,7 @@ export default function VideoPage() {
     },
     [id, fetchVidDetails]
   );
+
   if (!vidDetails) return <div>Loading...</div>;
 
   return (
@@ -121,7 +122,10 @@ export default function VideoPage() {
                 poster={vidDetails.thumbnailLr || ""}
                 src={`https://${vidDetails.clientId}.gvideo.io/videos/${vidDetails.clientId}_${vidDetails.slug}/master.m3u8`}
               />
-              <VideoInfo videoInfo={vidDetails} />
+              <VideoInfo
+                videoInfo={vidDetails}
+                onUpdateSuccess={fetchVidDetails}
+              />
             </div>
           </div>
 
