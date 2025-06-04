@@ -3,6 +3,7 @@ import {
   Address,
   Contact,
   CreateContact,
+  CreateUserDetails,
   UpdateUser,
   User,
   UserDataDetails,
@@ -29,6 +30,16 @@ class UserService extends ApiService {
   //////////////////////// User Details ////////////////////////
   getUserDetailsById(id: number): ApiResponse<UserDataDetails> {
     return this.getData(`/details/${id}`);
+  }
+
+  getUserDetails():ApiResponse<UserDataDetails[]> {
+    return this.getData(`/details`);
+  }
+
+  createUserDetails(data: CreateUserDetails): ApiResponse{
+    console.log("this is create user details api", data);
+    
+    return this.postData(`/details`, data);
   }
 
   /////////////////////// User Contacts ///////////////////////

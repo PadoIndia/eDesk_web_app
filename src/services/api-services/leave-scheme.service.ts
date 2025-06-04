@@ -21,5 +21,10 @@ class LeaveSchemeService extends ApiService {
   deleteLeaveScheme(id: number): ApiResponse<void> {
     return this.deleteData(`/${id}`);
   }
+
+  getLeaveSchemeById(id:number): ApiResponse{
+    return this.getData(`/${id}`);
+  }
+
 }
 export default new LeaveSchemeService();

@@ -11,7 +11,7 @@ interface MissPunchFormProps {
     date: string;
     time: string;
     reason: string;
-    departmentId: number;
+    // departmentId: number;
     targetUserId: number;
   };
   setFormData: React.Dispatch<
@@ -20,14 +20,14 @@ interface MissPunchFormProps {
       date: string;
       time: string;
       reason: string;
-      departmentId: number;
+      // departmentId: number;
       targetUserId: number;
     }>
   >;
   handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
   setShowMissPunchForm: React.Dispatch<React.SetStateAction<boolean>>;
   userDepartments: UserDepartment[];
-  handleDepartmentChange: (departmentId: number) => void;
+  // handleDepartmentChange: (departmentId: number) => void;
 }
 
 const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
@@ -35,10 +35,9 @@ const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
   setFormData,
   handleFormSubmit,
   setShowMissPunchForm,
-  userDepartments,
-  handleDepartmentChange,
+  // userDepartments,
+  // handleDepartmentChange,
 }) => {
-  // OPTIMIZED: Memoized handlers to prevent unnecessary re-renders
   const handleClose = useCallback(() => {
     setShowMissPunchForm(false);
   }, [setShowMissPunchForm]);
@@ -55,10 +54,10 @@ const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
     setFormData((prev) => ({ ...prev, reason: e.target.value }));
   }, [setFormData]);
 
-  const handleDepartmentSelect = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const departmentId = parseInt(e.target.value);
-    handleDepartmentChange(departmentId);
-  }, [handleDepartmentChange]);
+  // const handleDepartmentSelect = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+  //   const departmentId = parseInt(e.target.value);
+  //   handleDepartmentChange(departmentId);
+  // }, [handleDepartmentChange]);
 
   // OPTIMIZED: Prevent event bubbling for modal backdrop clicks
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
@@ -130,7 +129,7 @@ const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
                 />
               </div>
 
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <label htmlFor="department" className="form-label">
                   Department <span className="text-danger">*</span>
                 </label>
@@ -148,7 +147,7 @@ const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               <div className="mb-3">
                 <label htmlFor="reason" className="form-label">
@@ -176,7 +175,7 @@ const MissPunchForm: React.FC<MissPunchFormProps> = React.memo(({
               <button 
                 type="submit" 
                 className="btn btn-primary"
-                disabled={!formData.time || !formData.reason || !formData.departmentId}
+                disabled={!formData.time || !formData.reason}
               >
                 Submit Request
               </button>

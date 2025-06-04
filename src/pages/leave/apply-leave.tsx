@@ -1,18 +1,40 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FaCalendarAlt, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
+import { FaCalendarAlt, FaPaperPlane, FaInfoCircle, FaSpinner } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import leaveRequestService from "../../services/api-services/leave-request.service";
 import { CreateLeaveRequestRequest } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
 import userService from "../../services/api-services/user.service";
+import leaveSchemeService from "../../services/api-services/leave-scheme.service"; // Assuming this service exists
+import teamService from "../../services/api-services/team.service";
 
 interface LeaveType {
   id: number;
   name: string;
   isPaid: boolean;
   description: string;
+  maxDays?: number;
+  remainingDays?: number;
+}
+
+interface UserDataDetails {
+  id: number;
+  gender: string;
+  dob: string;
+  joiningDate: string;
+  createdOn: string;
+  leaveSchemeId?: number;
+  updatedOn: string;
+  userId: number;
+  weekoff: string;
+}
+
+interface LeaveScheme {
+  id: number;
+  name: string;
+  leaveTypes: LeaveType[];
 }
 
 interface FormData {
@@ -27,11 +49,17 @@ interface FormData {
 }
 
 const ApplyLeave: React.FC = () => {
+  const [userDetails, setUserDetails] = useState<UserDataDetails | null>(null);
+  const [leaveScheme, setLeaveScheme] = useState<LeaveScheme | null>(null);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     control,
-    // setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
@@ -46,34 +74,60 @@ const ApplyLeave: React.FC = () => {
     },
   });
 
-  const userId = useAppSelector((s)=>s.auth.userData?.user.id);
+  const userId = useAppSelector((s) => s.auth.userData?.user.id);
 
-  const user = userService.getUserById(userId);
+  // Fetch user details and leave scheme on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userId) {
+        setError("User ID not found");
+        setLoading(false);
+        return;
+      }
 
-  // Mock data - replace with API fetch
-  const leaveTypes: LeaveType[] = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "Annual Leave",
-        isPaid: true,
-        description: "Paid time off for vacations",
-      },
-      {
-        id: 2,
-        name: "Sick Leave",
-        isPaid: true,
-        description: "Paid time off for illness",
-      },
-      {
-        id: 3,
-        name: "Unpaid Leave",
-        isPaid: false,
-        description: "Unpaid time off",
-      },
-    ],
-    []
-  );
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch user details
+        const userDetailsResponse = await userService.getUserDetailsById(userId);
+        
+        console.log("user details response", userDetailsResponse);
+        
+
+        if (!userDetailsResponse.status || !userDetailsResponse.data) {
+          throw new Error("Failed to fetch user details");
+        }
+
+        const userDetailsData = userDetailsResponse.data;
+        setUserDetails(userDetailsData);
+
+        // Fetch leave scheme if leaveSchemeId exists
+        if (userDetailsData.leaveSchemeId) {
+          const leaveSchemeResponse = await leaveSchemeService.getLeaveSchemeById(userDetailsData.leaveSchemeId);
+          console.log("leave scheme response",leaveSchemeResponse);
+          
+
+          if (!leaveSchemeResponse.status || !leaveSchemeResponse.data) {
+            throw new Error("Failed to fetch leave scheme");
+          }
+
+          const leaveSchemeData = leaveSchemeResponse.data;
+          setLeaveScheme(leaveSchemeData);
+          setLeaveTypes(leaveSchemeData.leaveTypes || []);
+        } else {
+          setError("No leave scheme assigned to user");
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load user data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   const watchStartIsHalfDay = useWatch({ control, name: "isStartHalfDay" });
   const watchEndIsHalfDay = useWatch({ control, name: "isEndHalfDay" });
@@ -81,6 +135,17 @@ const ApplyLeave: React.FC = () => {
   const watchEnd = useWatch({ control, name: "endDate" });
   const watchHalfDayTypeStart = useWatch({ control, name: "halfDayTypeStart" });
   const watchHalfDayTypeEnd = useWatch({ control, name: "halfDayTypeEnd" });
+
+  // Calculate minimum date based on joining date
+  const minDate = useMemo(() => {
+    if (!userDetails?.joiningDate) return new Date();
+    
+    const joiningDate = new Date(userDetails.joiningDate);
+    const today = new Date();
+    
+    // Return the later of joining date or today
+    return joiningDate > today ? joiningDate : today;
+  }, [userDetails?.joiningDate]);
 
   // Duration calculation
   const calculateDuration = () => {
@@ -127,8 +192,16 @@ const ApplyLeave: React.FC = () => {
   const duration = calculateDuration();
 
   const onSubmit = async (data: FormData) => {
-    if (!user) return;
+    if (!userDetails) {
+      alert("User details not available");
+      return;
+    }
+
+    const managerId = await teamService.getManagerByUserId(userDetails.userId);
+
+    console.log("managerId", managerId);
     
+
     try {
       const payload: CreateLeaveRequestRequest = {
         leaveTypeId: data.leaveTypeId,
@@ -136,19 +209,64 @@ const ApplyLeave: React.FC = () => {
         endDate: data.endDate.toISOString(),
         duration,
         reason: data.reason,
-        managerId: user.managerId || 0, // Should come from user data
-        hrId: user.hrId || 0 // Should come from user data
+        managerId: (managerId.data === null)? 1 : managerId.data ,
+        hrId: userDetails.hrId || 1 // Assuming this exists in user details
       };
+
+      console.log("leave apply payload", payload);
+      
 
       const response = await leaveRequestService.createLeaveRequest(payload);
       alert("Leave application submitted successfully!");
       console.log("Leave request created:", response.data);
+      
+      // Reset form after successful submission
+      reset();
     } catch (err) {
       console.error(err);
-      alert("Submission failed.");
+      alert("Submission failed. Please try again.");
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container py-4">
+        <div className="row justify-content-center">
+          <div className="col-lg-8">
+            <div className="card shadow-sm">
+              <div className="card-body text-center py-5">
+                <FaSpinner className="fa-spin fs-1 text-primary mb-3" />
+                <h5>Loading your leave information...</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container py-4">
+        <div className="row justify-content-center">
+          <div className="col-lg-8">
+            <div className="alert alert-danger" role="alert">
+              <h4 className="alert-heading">Error</h4>
+              <p>{error}</p>
+              <button 
+                className="btn btn-outline-danger"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-4">
@@ -162,6 +280,13 @@ const ApplyLeave: React.FC = () => {
               </h4>
             </div>
             <div className="card-body p-4">
+              {/* Leave Scheme Info */}
+              {leaveScheme && (
+                <div className="alert alert-info mb-4">
+                  <h6 className="mb-1">Your Leave Scheme: {leaveScheme.name}</h6>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 {/* Leave Type */}
                 <div className="mb-4">
@@ -177,7 +302,9 @@ const ApplyLeave: React.FC = () => {
                     <option value={0}>-- Select Leave Type --</option>
                     {leaveTypes.map((lt) => (
                       <option key={lt.id} value={lt.id}>
-                        {lt.name} {lt.isPaid ? "(Paid)" : "(Unpaid)"}
+                        {lt.name}
+                        {lt.maxDays && ` - Max: ${lt.maxDays} days`}
+                        {lt.remainingDays !== undefined && ` - Remaining: ${lt.remainingDays} days`}
                       </option>
                     ))}
                   </select>
@@ -199,7 +326,19 @@ const ApplyLeave: React.FC = () => {
                         {type && (
                           <div className="alert alert-info d-flex align-items-center mb-4 p-3">
                             <FaInfoCircle className="me-2 flex-shrink-0" />
-                            <span>{type.description}</span>
+                            <div>
+                              <div>{type.description}</div>
+                              {type.maxDays && (
+                                <small className="text-muted">
+                                  Maximum allowed: {type.maxDays} days
+                                </small>
+                              )}
+                              {type.remainingDays !== undefined && (
+                                <small className="text-muted d-block">
+                                  Remaining balance: {type.remainingDays} days
+                                </small>
+                              )}
+                            </div>
                           </div>
                         )}
                       </>
@@ -210,7 +349,7 @@ const ApplyLeave: React.FC = () => {
                 {/* Dates */}
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold p-3">
+                    <label className="form-label fw-semibold">
                       Start Date
                     </label>
                     <Controller<FormData>
@@ -222,7 +361,7 @@ const ApplyLeave: React.FC = () => {
                           {...field}
                           selected={value as Date}
                           onChange={(date: Date | null) => onChange(date)}
-                          minDate={new Date()}
+                          minDate={minDate}
                           className={`form-control ${
                             errors.startDate ? "is-invalid" : ""
                           }`}
@@ -239,7 +378,7 @@ const ApplyLeave: React.FC = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold p-3">
+                    <label className="form-label fw-semibold">
                       End Date
                     </label>
                     <Controller<FormData>
@@ -257,7 +396,7 @@ const ApplyLeave: React.FC = () => {
                           {...field}
                           selected={value as Date}
                           onChange={(date: Date | null) => onChange(date)}
-                          minDate={watchStart || new Date()}
+                          minDate={watchStart || minDate}
                           className={`form-control ${
                             errors.endDate ? "is-invalid" : ""
                           }`}
@@ -416,7 +555,7 @@ const ApplyLeave: React.FC = () => {
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || leaveTypes.length === 0}
                   >
                     {isSubmitting ? (
                       <>

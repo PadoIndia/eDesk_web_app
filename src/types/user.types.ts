@@ -33,6 +33,14 @@ export type UserDataDetails = {
   weekoff: string;
 };
 
+export type CreateUserDetails = {
+  gender: string;
+  dob: string;
+  joiningDate: string;
+  leaveSchemeId?: number;
+  weekoff: string;
+}
+
 export type Contact = {
   id: number;
   relation: string;

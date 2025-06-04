@@ -26,8 +26,12 @@ class UserDepartmentService extends ApiService {
     return this.getData(`/department/${departmentId}`);
   }
 
-  getUserDepartmentIdByUserId(userId: number): ApiResponse {
+  getUserDepartmentByUserId(userId: number): ApiResponse {
     return this.getData(`/${userId}`);
+  }
+
+  getDepartmentManager(departmentId: number): ApiResponse{
+    return this.getData(`/department/manager/${departmentId}`);
   }
 
   deleteUserDepartment(id: number): ApiResponse {

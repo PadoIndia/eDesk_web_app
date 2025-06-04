@@ -32,6 +32,8 @@ const AttendanceDashboard = () => {
   const [departmentUsers, setDepartmentUsers] = useState<AttendanceUser[]>([]);
   const [missPunchRequests, setMissPunchRequests] = useState<Punch[]>([]);
 
+  
+
   // UI state
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -50,7 +52,7 @@ const AttendanceDashboard = () => {
     date: "",
     time: "",
     reason: "",
-    departmentId: 0,
+    // departmentId: 0,
     targetUserId: 0, // NEW: Track which user the request is for
   });
 
@@ -221,17 +223,16 @@ const fetchInitialData = useCallback(async () => {
       date,
       time: "",
       reason: "",
-      departmentId:
-        targetUser.departments[0]?.id || userDepartments[0]?.id || 0,
+      // departmentId:targetUser.departments[0]?.id || userDepartments[0]?.id || 0,
       targetUserId: targetUserId || currentUser?.id || 0, // NEW: Set target user ID
     });
     setShowMissPunchForm(true);
   };
 
-  // Handler for department change in miss punch form
-  const handleDepartmentChange = (departmentId: number) => {
-    setFormData((prev) => ({ ...prev, departmentId }));
-  };
+  // // Handler for department change in miss punch form
+  // const handleDepartmentChange = (departmentId: number) => {
+  //   setFormData((prev) => ({ ...prev, departmentId }));
+  // };
 
   // Handler for manual status change - NOW using backend API
   const handleManualStatusChange = async (
@@ -317,7 +318,36 @@ const fetchInitialData = useCallback(async () => {
     }
   };
 
-  // UPDATED: Form submit handler - now uses targetUserId
+  // NEW: Helper function to auto-approve miss punch request
+  const autoApproveMissPunchRequest = async (requestId: number): Promise<Punch | null> => {
+    try {
+      if (!currentUser) {
+        throw new Error("Current user not found");
+      }
+
+      const approvalData = {
+        isApproved: true,
+        comment: "Auto-approved by admin",
+        approvedBy: currentUser.id,
+      };
+
+      const response = await attendanceDashboardService.approveMissPunchRequest(
+        requestId,
+        approvalData
+      );
+
+      if (response.status !== "success") {
+        throw new Error(response.message || "Failed to auto-approve request");
+      }
+
+      return response.data;
+    } catch (err) {
+      console.error("Error auto-approving request:", err);
+      throw err;
+    }
+  };
+
+  // Form submit handler - UPDATED with auto-approval logic
   const handleFormSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
@@ -326,7 +356,7 @@ const fetchInitialData = useCallback(async () => {
       !currentUser ||
       !formData.time ||
       !formData.reason ||
-      !formData.departmentId ||
+      // !formData.departmentId ||
       !formData.targetUserId
     ) {
       toast.error("Please fill all required fields");
@@ -350,7 +380,7 @@ const fetchInitialData = useCallback(async () => {
         hh: hours,
         mm: minutes,
         missPunchReason: formData.reason,
-        departmentId: formData.departmentId,
+        // departmentId: formData.departmentId,
       };
 
       const response = await attendanceDashboardService.createMissPunchRequest(
@@ -363,8 +393,42 @@ const fetchInitialData = useCallback(async () => {
         );
       }
 
-      // Update local state
-      setMissPunchRequests((prevRequests) => [...prevRequests, response.data]);
+      let finalRequestData = response.data;
+      const targetUserName =
+        departmentUsers.find((u) => u.id === formData.targetUserId)?.name ||
+        "user";
+
+      // NEW: Auto-approve if admin is creating request for different user
+      const isAdminRequestForOtherUser = isAdmin && formData.targetUserId !== currentUser.id;
+
+      if (isAdminRequestForOtherUser) {
+        try {
+          const approvedRequest = await autoApproveMissPunchRequest(response.data.id);
+          if (approvedRequest) {
+            finalRequestData = approvedRequest;
+            toast.success(
+              `Miss punch request created and auto-approved for ${targetUserName}!`
+            );
+          }
+        } catch (approvalErr) {
+          // If auto-approval fails, still show success for creation
+          console.error("Auto-approval failed:", approvalErr);
+          toast.success(
+            `Miss punch request submitted for ${targetUserName}! (Auto-approval failed, will need manual approval)`
+          );
+        }
+      } else {
+        toast.success(
+          `Miss punch request submitted successfully for ${targetUserName}!`
+        );
+      }
+
+      // Update local state with the final request data (approved or pending)
+      setMissPunchRequests((prevRequests) => {
+        // Remove the original request if it was auto-approved (to avoid duplicates)
+        const filteredRequests = prevRequests.filter(req => req.id !== finalRequestData.id);
+        return [...filteredRequests, finalRequestData];
+      });
 
       // Update the target user's punch data in the department users list
       setDepartmentUsers((prevUsers) =>
@@ -372,18 +436,14 @@ const fetchInitialData = useCallback(async () => {
           user.id === formData.targetUserId
             ? {
                 ...user,
-                punchData: [...user.punchData, response.data],
+                punchData: user.punchData
+                  .filter(punch => punch.id !== finalRequestData.id) // Remove old version
+                  .concat([finalRequestData]), // Add updated version
               }
             : user
         )
       );
 
-      const targetUserName =
-        departmentUsers.find((u) => u.id === formData.targetUserId)?.name ||
-        "user";
-      toast.success(
-        `Miss punch request submitted successfully for ${targetUserName}!`
-      );
       setShowMissPunchForm(false);
 
       // Reset form
@@ -392,10 +452,10 @@ const fetchInitialData = useCallback(async () => {
         date: "",
         time: "",
         reason: "",
-        departmentId: userDepartments[0]?.id || 0,
+        // departmentId: userDepartments[0]?.id || 0,
         targetUserId: 0,
       });
-      await fetchInitialData(); 
+      
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to submit request: " + errorMessage);
@@ -542,7 +602,7 @@ const fetchInitialData = useCallback(async () => {
           handleFormSubmit={handleFormSubmit}
           setShowMissPunchForm={setShowMissPunchForm}
           userDepartments={userDepartments}
-          handleDepartmentChange={handleDepartmentChange}
+          // handleDepartmentChange={handleDepartmentChange}
         />
       )}
 

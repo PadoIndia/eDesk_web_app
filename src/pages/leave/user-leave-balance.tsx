@@ -142,52 +142,6 @@ const UserLeaveBalances = () => {
               <p>Try adjusting your filters</p>
             </div>
           ) : (
-            // <div className="table-responsive">
-            //   <table className="table table-hover">
-            //     <thead>
-            //       <tr>
-            //         <th>User</th>
-            //         <th>Scheme</th>
-            //         <th>Leave Balances</th>
-            //       </tr>
-            //     </thead>
-            //     <tbody>
-            //       {filteredBalances.map(user => (
-            //         <React.Fragment key={user.userId}>
-            //           <tr>
-            //             <td>
-            //               <div className="d-flex align-items-center">
-            //                 <div className="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-            //                   <FaUser className="text-muted" />
-            //                 </div>
-            //                 <div>
-            //                   <div>{user.userName}</div>
-            //                   <small className="text-muted">ID: {user.userId}</small>
-            //                 </div>
-            //               </div>
-            //             </td>
-            //             <td>
-            //               <span className="badge bg-info">{user.leaveScheme}</span>
-            //             </td>
-            //             <td colSpan={2}>
-            //               <div className="d-flex flex-wrap gap-3">
-            //                 {user.balances.map((balance, idx) => (
-            //                   <div key={idx} className="border p-2 rounded bg-light">
-            //                     <small className="d-block fw-bold">{balance.leaveType}</small>
-            //                     <small className="d-block">Total: {balance.total}</small>
-            //                     <small className="d-block">Used: {balance.used}</small>
-            //                     <small className="d-block">Remaining: {balance.remaining}</small>
-            //                     <small className="d-block">Carry Forward: {balance.carryForward}</small>
-            //                   </div>
-            //                 ))}
-            //               </div>
-            //             </td>
-            //           </tr>
-            //         </React.Fragment>
-            //       ))}
-            //     </tbody>
-            //   </table>
-            // </div>
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead>

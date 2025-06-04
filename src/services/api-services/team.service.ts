@@ -34,6 +34,14 @@ class TeamService extends ApiService {
     return this.deleteData(`/${userId}/${teamId}/remove-user`);
   } // this removes users from a team
 
+  getManagerByUserId(userId: number): ApiResponse {
+    return this.getData(`/manager/${userId}`);
+  }
+
+  
+
+
+
 }
 
 export default new TeamService();
