@@ -114,7 +114,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       (p) => p.isApproved !== false || !p.approvedBy
     );
 
-    if (validPunches.length % 2 !== 0) return "—";
+    if (validPunches.length % 2 !== 0 || validPunches.length === 0) return "—";
 
     // Punches are already sorted, so we can calculate directly
     let totalMinutes = 0;

@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaCalendarAlt, FaClock, FaBars, FaTimes, FaUsers } from "react-icons/fa";
+// import { useAppSelector } from "../../../store/store";
+// import userDepartmentService from "../../../services/api-services/user-department.service";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +12,7 @@ const Sidebar = () => {
   const handleNavClick = () => {
     setIsOpen(false);
   };
+
 
   return (
     <div
@@ -89,6 +92,7 @@ const Sidebar = () => {
               Attendance
             </span>
           </NavLink>
+
           <NavLink
             to="/hrm/department-management"
             className="text-decoration-none text-dark"

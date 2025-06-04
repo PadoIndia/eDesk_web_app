@@ -1,7 +1,7 @@
+// Updated LeaveTransactions main component
 import React, { useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import leaveTransactionService from "../../services/api-services/leave-transaction.service";
-// import userService from "../../services/api-services/user.service";
 import { CreateLeaveTransactionRequest } from "../../types/leave.types";
 import { useLeaveTransactions } from "./leave-transaction-components/use-leave-transaction";
 import { useTransactionFilters } from "./leave-transaction-components/use-transaction-filter";
@@ -29,8 +29,13 @@ const LeaveTransactions: React.FC = () => {
     yearFilter,
     setYearFilter,
     filteredTransactions,
+    paginatedTransactions,
     transactionLeaveTypes,
     years,
+    currentPage,
+    itemsPerPage,
+    handlePageChange,
+    handleItemsPerPageChange,
     clearFilters
   } = useTransactionFilters(transactions);
 
@@ -99,7 +104,7 @@ const LeaveTransactions: React.FC = () => {
 
         <div className="card-body">
           <TransactionTable
-            transactions={filteredTransactions}
+            transactions={paginatedTransactions} // Use paginated transactions instead of filtered
             loading={loading}
           />
         </div>
@@ -107,6 +112,10 @@ const LeaveTransactions: React.FC = () => {
         <TransactionsPagination
           filteredCount={filteredTransactions.length}
           totalCount={transactions.length}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
         />
       </div>
     </div>

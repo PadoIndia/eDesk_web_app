@@ -21,10 +21,6 @@ const Navbar = () => {
         <Link className="btn btn-primary" to="/hrm/dashboard">
           Dashboard
         </Link>
-
-        <Link className="btn btn-outline-primary" to="/login">
-          Login
-        </Link>
       </div>
     </nav>
   );

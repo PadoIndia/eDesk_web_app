@@ -15,7 +15,10 @@ export const useLeaveTransactions = () => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const params: LeaveTransactionFilters = {};
+      const params: LeaveTransactionFilters = {
+        page: 1,
+        limit: 101,
+      };
       const transactionResponse =
         await leaveTransactionService.getLeaveTransactions(params);
 
