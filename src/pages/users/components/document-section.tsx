@@ -5,6 +5,7 @@ import { FaPlus, FaTimes, FaTrash, FaSave, FaSpinner } from "react-icons/fa";
 import { getDocumentTypeIcon } from "../../../utils/helper.tsx";
 import { toast } from "react-toastify";
 import generalService from "../../../services/api-services/general.service.ts";
+import { generateSHA256 } from "../../../utils/helper.ts";
 // import userApi from "../../services/api-services/user.service.ts";
 
 interface DocumentsSectionProps {
@@ -42,10 +43,13 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 
       // Upload the file
       const formData = new FormData();
-      formData.append("document", selectedFile);
-
-      const response = await generalService.uploadToS3(selectedFile);
+      // formData.append("document", selectedFile);
+      const fileHash = await generateSHA256(selectedFile);
+      formData.append("hash", fileHash);
+      const response = await generalService.uploadToS3([{image:selectedFile, hash:fileHash}]);
       console.log(response,"sadadsasd");
+
+      
       
       // const fileId = uploadResponse.data.fileIds[0].id;
 
