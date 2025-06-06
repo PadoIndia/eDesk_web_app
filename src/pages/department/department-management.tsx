@@ -1,7 +1,6 @@
 import { FaUsers } from "react-icons/fa";
 import DepartmentSidebar from "./components/department-sidebar";
 import DepartmentList from "./components/department-list";
-import { Link } from "react-router-dom";
 
 const DepartmentManagement = () => {
 
@@ -14,9 +13,6 @@ const DepartmentManagement = () => {
             Departments & Teams
           </h5>
           <div>
-            <Link to="/hrm/user-department" className="btn btn-light me-2">
-              Assign Users
-            </Link>
           </div>
         </div>
         <DepartmentSidebar />

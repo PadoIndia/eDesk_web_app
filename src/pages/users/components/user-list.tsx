@@ -5,20 +5,42 @@ import { User } from "../../../types/user.types";
 import { Department } from "../../../types/department-team.types";
 import departmentService from "../../../services/api-services/department.service";
 import userDepartmentService from "../../../services/api-services/user-department.service";
+import leaveSchemeService from "../../../services/api-services/leave-scheme.service";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface UserDepartmentAssignment {
   departmentId: number;
   isAdmin: boolean;
 }
 
+type LeaveScheme = {
+  id: number;
+  name: string;
+};
+
+type CreateUserDetails = {
+  gender: string;
+  dob: string;
+  joiningDate: string;
+  leaveSchemeId?: number;
+  weekoff: string;
+};
+
 const UsersList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [leaveSchemes, setLeaveSchemes] = useState<LeaveScheme[]>([]);
   const [userDepartments, setUserDepartments] = useState<
     Record<number, UserDepartmentAssignment[]>
   >({});
+  const [loading, setLoading] = useState(false);
+
+  // Date states
+  const [dobDate, setDobDate] = useState<Date | null>(null);
+  const [joiningDateValue, setJoiningDateValue] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,14 +49,35 @@ const UsersList = () => {
     password: "",
     empCode: "",
     departmentAssignments: [] as UserDepartmentAssignment[],
+    // User details fields
+    gender: "",
+    dob: "",
+    joiningDate: "",
+    leaveSchemeId: undefined as number | undefined,
+    weekoff: "",
   });
+
+  const genderOptions = [
+    { value: "MALE", label: "Male" },
+    { value: "FEMALE", label: "Female" },
+    { value: "OTHER", label: "Other" },
+  ];
+
+  const weekDays = [
+    "MONDAY",
+    "TUESDAY", 
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY"
+  ];
 
   const getUsers = async () => {
     try {
       const resp = await userService.getAllUsers();
       if (resp.status === "success") {
         setUsers(resp.data);
-        // Fetch department assignments for each user
         await fetchUserDepartments(resp.data);
       } else {
         toast.error(resp.message || "Failed to fetch users");
@@ -87,9 +130,19 @@ const UsersList = () => {
     }
   };
 
+  const fetchLeaveSchemes = async () => {
+    try {
+      const response = await leaveSchemeService.getLeaveSchemes();
+      setLeaveSchemes(response.data);
+    } catch (error) {
+      console.error("Failed to fetch leave schemes:", error);
+    }
+  };
+
   useEffect(() => {
     getUsers();
     getDepartments();
+    fetchLeaveSchemes();
   }, []);
 
   const resetForm = () => {
@@ -100,8 +153,15 @@ const UsersList = () => {
       password: "",
       empCode: "",
       departmentAssignments: [],
+      gender: "",
+      dob: "",
+      joiningDate: "",
+      leaveSchemeId: undefined,
+      weekoff: "",
     });
     setEditingUserId(null);
+    setDobDate(null);
+    setJoiningDateValue(null);
   };
 
   const handleOpenAddUser = () => {
@@ -116,9 +176,15 @@ const UsersList = () => {
       name: user.name || "",
       username: user.username,
       contact: user.contact,
-      password: "", // Keep empty for editing
+      password: "",
       empCode: user.empCode || "",
       departmentAssignments: existingAssignments,
+      // For editing, we don't load user details as they should already exist
+      gender: "",
+      dob: "",
+      joiningDate: "",
+      leaveSchemeId: undefined,
+      weekoff: "",
     });
     setShowModal(true);
   };
@@ -161,8 +227,44 @@ const UsersList = () => {
     }));
   };
 
+  const handleDateChange = (field: 'dob' | 'joiningDate', date: Date | null) => {
+    if (field === 'dob') {
+      setDobDate(date);
+      setFormData(prev => ({
+        ...prev,
+        dob: date ? date.toISOString() : ""
+      }));
+    } else {
+      setJoiningDateValue(date);
+      setFormData(prev => ({
+        ...prev,
+        joiningDate: date ? date.toISOString() : ""
+      }));
+    }
+  };
+
   const handleSaveUser = async () => {
     try {
+      setLoading(true);
+      
+      // Validation for new users
+      if (!editingUserId) {
+        if (!formData.name || !formData.username || !formData.contact || !formData.password) {
+          toast.error("Please fill all basic user fields");
+          return;
+        }
+        
+        if (formData.departmentAssignments.length === 0) {
+          toast.error("Please assign at least one department");
+          return;
+        }
+        
+        if (!formData.gender || !formData.dob || !formData.joiningDate || !formData.weekoff) {
+          toast.error("Please fill all user details fields");
+          return;
+        }
+      }
+
       let userId = editingUserId;
 
       // First, create or update the user
@@ -188,11 +290,12 @@ const UsersList = () => {
           return;
         }
       } else {
+        // Create new user
         const resp = await userService.createUser({
           name: formData.name,
           username: formData.username,
           contact: formData.contact,
-          password: formData.password, // Only include password for new users
+          password: formData.password,
           empCode: formData.empCode,
         });
 
@@ -205,13 +308,11 @@ const UsersList = () => {
         }
       }
 
-      // Then handle department assignments
+      // Handle department assignments (only for new users or when editing departments)
       if (userId && formData.departmentAssignments.length > 0) {
         try {
-          // Get existing assignments for this user
           const existingAssignments = userDepartments[userId] || [];
 
-          // Determine which assignments to add, update, or remove
           const assignmentsToAdd = formData.departmentAssignments.filter(
             (newAssignment) =>
               !existingAssignments.some(
@@ -264,7 +365,6 @@ const UsersList = () => {
             await Promise.all(promises);
           }
 
-          // Update local state
           setUserDepartments((prev) => ({
             ...prev,
             [userId]: formData.departmentAssignments,
@@ -275,15 +375,35 @@ const UsersList = () => {
         }
       }
 
+      // Create user details (only for new users)
+      if (!editingUserId && userId) {
+        try {
+          const userDetailsData: CreateUserDetails = {
+            gender: formData.gender,
+            dob: formData.dob,
+            joiningDate: formData.joiningDate,
+            weekoff: formData.weekoff,
+            ...(formData.leaveSchemeId && { leaveSchemeId: Number(formData.leaveSchemeId) })
+          };
+
+          await userService.createUserDetails(userDetailsData);
+        } catch (detailsError) {
+          console.error("Error creating user details:", detailsError);
+          toast.error("User created but failed to save user details");
+        }
+      }
+
       toast.success(
         editingUserId
           ? "User updated successfully"
-          : "New user added successfully"
+          : "New user created successfully with all details"
       );
       handleCloseModal();
     } catch (err) {
       console.error(err);
       toast.error("Error while saving user");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,11 +479,11 @@ const UsersList = () => {
       {showModal && (
         <>
           <div className="modal show d-block" tabIndex={-1} role="dialog">
-            <div className="modal-dialog modal-lg" role="document">
+            <div className="modal-dialog modal-xl" role="document">
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">
-                    {editingUserId ? "Edit User" : "Add User"}
+                    {editingUserId ? "Edit User" : "Add New User"}
                   </h5>
                   <button
                     type="button"
@@ -374,9 +494,11 @@ const UsersList = () => {
                 <div className="modal-body">
                   <form>
                     <div className="row">
-                      <div className="col-md-6">
+                      {/* Basic User Information */}
+                      <div className="col-md-4">
+                        <h6 className="text-primary mb-3">Basic Information</h6>
                         <div className="mb-3">
-                          <label className="form-label">Name</label>
+                          <label className="form-label">Name <span className="text-danger">*</span></label>
                           <input
                             type="text"
                             className="form-control"
@@ -384,10 +506,11 @@ const UsersList = () => {
                             onChange={(e) =>
                               setFormData({ ...formData, name: e.target.value })
                             }
+                            required
                           />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">Username</label>
+                          <label className="form-label">Username (Email) <span className="text-danger">*</span></label>
                           <input
                             type="email"
                             className="form-control"
@@ -398,10 +521,11 @@ const UsersList = () => {
                                 username: e.target.value,
                               })
                             }
+                            required
                           />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">Contact</label>
+                          <label className="form-label">Contact <span className="text-danger">*</span></label>
                           <input
                             type="text"
                             className="form-control"
@@ -412,12 +536,12 @@ const UsersList = () => {
                                 contact: e.target.value,
                               })
                             }
+                            required
                           />
                         </div>
-                        {/* Only show password field for new users */}
                         {!editingUserId && (
                           <div className="mb-3">
-                            <label className="form-label">Password</label>
+                            <label className="form-label">Password <span className="text-danger">*</span></label>
                             <input
                               type="password"
                               className="form-control"
@@ -428,6 +552,7 @@ const UsersList = () => {
                                   password: e.target.value,
                                 })
                               }
+                              required
                             />
                           </div>
                         )}
@@ -447,71 +572,161 @@ const UsersList = () => {
                         </div>
                       </div>
 
-                      <div className="col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">
-                            Department Assignments
-                          </label>
-                          
-                          {/* Dropdown to add departments */}
+                      {/* User Details (only for new users) */}
+                      {!editingUserId && (
+                        <div className="col-md-4">
+                          <h6 className="text-primary mb-3">Personal Details</h6>
                           <div className="mb-3">
+                            <label className="form-label">Gender <span className="text-danger">*</span></label>
                             <select
                               className="form-select"
-                              onChange={handleDepartmentSelect}
-                              value=""
+                              value={formData.gender}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gender: e.target.value })
+                              }
+                              required
                             >
-                              <option value="">Select a department to add</option>
-                              {getAvailableDepartments().map((dept) => (
-                                <option key={dept.id} value={dept.id}>
-                                  {dept.name}
+                              <option value="">Select Gender</option>
+                              {genderOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
                                 </option>
                               ))}
                             </select>
                           </div>
-
-                          {/* List of assigned departments */}
-                          <div 
-                            className="border p-3 rounded"
-                            style={{ maxHeight: "250px", overflowY: "auto" }}
-                          >
-                            {formData.departmentAssignments.length === 0 ? (
-                              <small className="text-muted">
-                                No departments selected
-                              </small>
-                            ) : (
-                              formData.departmentAssignments.map((assignment) => {
-                                const dept = departments.find(d => d.id === assignment.departmentId);
-                                return (
-                                  <div 
-                                    key={assignment.departmentId}
-                                    className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded bg-light"
-                                  >
-                                    <span>{dept?.name}</span>
-                                    <div className="d-flex align-items-center gap-2">
-                                      <div className="form-check">
-                                        <input
-                                          type="checkbox"
-                                          className="form-check-input"
-                                          checked={assignment.isAdmin}
-                                          onChange={() => handleAdminToggle(assignment.departmentId)}
-                                        />
-                                        <label className="form-check-label">
-                                          Admin
-                                        </label>
-                                      </div>
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-danger"
-                                        onClick={() => handleRemoveDepartment(assignment.departmentId)}
-                                      >
-                                        Remove
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            )}
+                          <div className="mb-3">
+                            <label className="form-label">Date of Birth <span className="text-danger">*</span></label>
+                            <DatePicker
+                              selected={dobDate}
+                              onChange={(date) => handleDateChange('dob', date)}
+                              className="form-control"
+                              placeholderText="Select date of birth"
+                              dateFormat="yyyy-MM-dd"
+                              maxDate={new Date()}
+                              showYearDropdown
+                              showMonthDropdown
+                              dropdownMode="select"
+                              required
+                            />
                           </div>
+                          <div className="mb-3">
+                            <label className="form-label">Joining Date <span className="text-danger">*</span></label>
+                            <DatePicker
+                              selected={joiningDateValue}
+                              onChange={(date) => handleDateChange('joiningDate', date)}
+                              className="form-control"
+                              placeholderText="Select joining date"
+                              dateFormat="yyyy-MM-dd"
+                              maxDate={new Date()}
+                              showYearDropdown
+                              showMonthDropdown
+                              dropdownMode="select"
+                              required
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">Week Off <span className="text-danger">*</span></label>
+                            <select
+                              className="form-select"
+                              value={formData.weekoff}
+                              onChange={(e) =>
+                                setFormData({ ...formData, weekoff: e.target.value })
+                              }
+                              required
+                            >
+                              <option value="">Select Week Off</option>
+                              {weekDays.map(day => (
+                                <option key={day} value={day}>
+                                  {day.charAt(0) + day.slice(1).toLowerCase()}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">Leave Scheme</label>
+                            <select
+                              className="form-select"
+                              value={formData.leaveSchemeId || ''}
+                              onChange={(e) =>
+                                setFormData({ 
+                                  ...formData, 
+                                  leaveSchemeId: e.target.value ? parseInt(e.target.value) : undefined 
+                                })
+                              }
+                            >
+                              <option value="">Select Leave Scheme (Optional)</option>
+                              {leaveSchemes.map(scheme => (
+                                <option key={scheme.id} value={scheme.id}>
+                                  {scheme.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Department Assignments */}
+                      <div className={editingUserId ? "col-md-8" : "col-md-4"}>
+                        <h6 className="text-primary mb-3">
+                          Department Assignments {!editingUserId && <span className="text-danger">*</span>}
+                        </h6>
+                        
+                        <div className="mb-3">
+                          <select
+                            className="form-select"
+                            onChange={handleDepartmentSelect}
+                            value=""
+                          >
+                            <option value="">Select a department to add</option>
+                            {getAvailableDepartments().map((dept) => (
+                              <option key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div 
+                          className="border p-3 rounded"
+                          style={{ maxHeight: "300px", overflowY: "auto" }}
+                        >
+                          {formData.departmentAssignments.length === 0 ? (
+                            <small className="text-muted">
+                              No departments selected
+                            </small>
+                          ) : (
+                            formData.departmentAssignments.map((assignment) => {
+                              const dept = departments.find(d => d.id === assignment.departmentId);
+                              return (
+                                <div 
+                                  key={assignment.departmentId}
+                                  className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded bg-light"
+                                >
+                                  <span>{dept?.name}</span>
+                                  <div className="d-flex align-items-center gap-2">
+                                    <div className="form-check">
+                                      <input
+                                        type="checkbox"
+                                        className="form-check-input"
+                                        checked={assignment.isAdmin}
+                                        onChange={() => handleAdminToggle(assignment.departmentId)}
+                                      />
+                                      <label className="form-check-label">
+                                        Admin
+                                      </label>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-danger"
+                                      onClick={() => handleRemoveDepartment(assignment.departmentId)}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                     </div>
@@ -522,15 +737,24 @@ const UsersList = () => {
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleCloseModal}
+                    disabled={loading}
                   >
-                    Close
+                    Cancel
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={handleSaveUser}
+                    disabled={loading}
                   >
-                    {editingUserId ? "Update User" : "Add User"}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {editingUserId ? "Updating..." : "Creating..."}
+                      </>
+                    ) : (
+                      editingUserId ? "Update User" : "Create User"
+                    )}
                   </button>
                 </div>
               </div>
