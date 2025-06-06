@@ -19,7 +19,7 @@ class UserDepartmentService extends ApiService {
     departmentId: number,
     isAdmin: boolean
   ): ApiResponse {
-    return this.putData(`/${userId}/${departmentId}`, isAdmin);
+    return this.putData(`/${userId}/${departmentId}`, {isAdmin});
   }
 
   getByDepartment(departmentId: number): ApiResponse {
@@ -34,8 +34,8 @@ class UserDepartmentService extends ApiService {
     return this.getData(`/department/manager/${departmentId}`);
   }
 
-  deleteUserDepartment(id: number): ApiResponse {
-    return this.deleteData(`/${id}`);
+  deleteUserDepartment(userId: number, departmentId: number): ApiResponse {
+    return this.deleteData(`/${userId}/${departmentId}`);
   }
 }
 

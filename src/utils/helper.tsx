@@ -10,7 +10,11 @@ import {
   FaBusinessTime,
   FaMapMarkerAlt,
   FaFileAlt,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaHourglassHalf,
 } from "react-icons/fa";
+import { Punch } from "../types/attendance.types";
 
 export const getContactTypeIcon = (type: string) => {
   switch (type) {
@@ -43,11 +47,35 @@ export const getDetailIcon = (label: string) => {
 
 export const getDocumentTypeIcon = () => <FaIdCard className="text-primary" />;
 
-export const validateEmail = (email: string) =>
-  /^\S+@\S+\.\S+$/.test(email);
+export const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
 
-export const validatePhone = (phone: string) =>
-  /^\+?\d{10,15}$/.test(phone);
+export const validatePhone = (phone: string) => /^\+?\d{10,15}$/.test(phone);
 
 export const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString();
+
+export const getPunchApprovalIcon = (
+  punch: Punch
+): React.ReactElement | null => {
+  if (punch.type !== "MANUAL") return null;
+
+  if (punch.isApproved === true) {
+    return (
+      <FaCheckCircle
+        className="text-success ms-2"
+        title={`Approved by ${punch.approvedBy || "Admin"}`}
+      />
+    );
+  } else if (punch.isApproved === false && punch.approvedBy) {
+    return (
+      <FaTimesCircle
+        className="text-danger ms-2"
+        title={`Rejected: ${punch.missPunchReason || "No reason provided"}`}
+      />
+    );
+  } else {
+    return (
+      <FaHourglassHalf className="text-warning ms-2" title="Pending Approval" />
+    );
+  }
+};

@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import {
   FaUser,
   FaPlus,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaHourglassHalf,
+  // FaCheckCircle,
+  // FaTimesCircle,
+  // FaHourglassHalf,
   FaCalendarAlt,
+  FaChartBar,
 } from "react-icons/fa";
 import Badge from "../../../components/badge";
 import {
@@ -13,7 +14,16 @@ import {
   Punch,
   CalendarEvent,
 } from "../../../types/attendance.types";
-import userService from "../../../services/api-services/user.service";
+import {
+  getDaysInMonth,
+  formatTime,
+  getWeekOff,
+  calculateWorkingHours,
+  calculateWorkingMinutes,
+  getLeaveTypeFromComment,
+  getDayOfWeek,
+} from "../../../utils/helper";
+import { getPunchApprovalIcon } from "../../../utils/helper.tsx";
 
 interface UserAttendanceTableProps {
   user: AttendanceUser;
@@ -64,7 +74,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   useEffect(() => {
     const fetchWeekOff = async () => {
       try {
-        const weekOff = await getWeekOff();
+        const weekOff = await getWeekOff(user.id);
         // Convert to uppercase for case-insensitive comparison
         setWeekOffDays(
           weekOff.split(",").map((day) => day.trim().toUpperCase())
@@ -79,13 +89,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
   }, []);
 
   // Helper functions
-  const getDaysInMonth = (month: number, year: number): number => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const formatTime = (hh: number, mm: number): string => {
-    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-  };
 
   const getPunchesForDate = (day: number): Punch[] => {
     const punches = user.punchData.filter(
@@ -101,38 +104,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       const timeB = (b.hh ?? 0) * 60 + (b.mm ?? 0);
       return timeA - timeB;
     });
-  };
-
-  const getWeekOff = async (): Promise<string> => {
-    const response = await userService.getUserDetailsById(user.id);
-    const weekoff = response.data.weekoff;
-    return weekoff;
-  };
-
-  const calculateWorkingHours = (punches: Punch[]): string => {
-    const validPunches = punches.filter(
-      (p) => p.isApproved !== false || !p.approvedBy
-    );
-
-    if (validPunches.length % 2 !== 0 || validPunches.length === 0) return "—";
-
-    // Punches are already sorted, so we can calculate directly
-    let totalMinutes = 0;
-
-    for (let i = 0; i < validPunches.length; i += 2) {
-      if (i + 1 < validPunches.length) {
-        const inTime = validPunches[i];
-        const outTime = validPunches[i + 1];
-        totalMinutes +=
-          (outTime.hh ?? 0) * 60 +
-          (outTime.mm ?? 0) -
-          ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
-      }
-    }
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m`;
   };
 
   const getStatusForDate = (day: number): string => {
@@ -157,42 +128,23 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       return statusToShortCode[dateEntry.statusManual] || "A";
     }
 
-    // Priority 2: Check for punch data
-    const punches = getPunchesForDate(day);
-    if (punches.length > 0) return "P"; // Present if any punches exist
-
-    // Priority 3: Week-off day
-    if (isWeekOff) return "WO";
-
-    // Default to absent
-    return "A";
-  };
-
-  const getPunchApprovalIcon = (punch: Punch): React.ReactElement | null => {
-    if (punch.type !== "MANUAL") return null;
-
-    if (punch.isApproved === true) {
-      return (
-        <FaCheckCircle
-          className="text-success ms-2"
-          title={`Approved by ${punch.approvedBy || "Admin"}`}
-        />
-      );
-    } else if (punch.isApproved === false && punch.approvedBy) {
-      return (
-        <FaTimesCircle
-          className="text-danger ms-2"
-          title={`Rejected: ${punch.missPunchReason || "No reason provided"}`}
-        />
-      );
-    } else {
-      return (
-        <FaHourglassHalf
-          className="text-warning ms-2"
-          title="Pending Approval"
-        />
-      );
+    // Priority 2: Check if there's a comment (indicates leave)
+    if (dateEntry?.comment) {
+      // If there's a comment but no manual status, treat as leave
+      // Determine leave type from comment content
+      return getLeaveTypeFromComment(dateEntry.comment);
     }
+
+    // Priority 3: Check for punch data
+    const punches = getPunchesForDate(day);
+    const validPunches = punches.filter(
+      (p) => p.isApproved !== false || !p.approvedBy
+    );
+
+    if (isWeekOff && validPunches.length === 0) return "WO";
+    if (validPunches.length === 0 || validPunches.length % 2 !== 0) return "A";
+
+    return "P";
   };
 
   const getRowColorForDate = (day: number): string => {
@@ -209,7 +161,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     }
 
     // Then check status-based colors
-    if (["A", "SL", "CL", "PL", "UL", "CO"].includes(status))
+    if (["A", "SL", "CL", "PL", "UL", "CO", "EL"].includes(status))
       return "table-danger";
     if (["WO", "H"].includes(status)) return "table-light";
     if (status === "HD") return "table-warning";
@@ -250,15 +202,126 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     )}-${String(day).padStart(2, "0")}`;
   };
 
-  // Get day of week
-  const getDayOfWeek = (date: Date): string => {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    return days[date.getDay()];
+  // Calculate monthly summary
+  const calculateMonthlySummary = () => {
+    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    const summary = {
+      totalDays: daysInMonth,
+      presentDays: 0,
+      absentDays: 0,
+      halfDays: 0,
+      weekOffs: 0,
+      holidays: 0,
+      leaves: 0,
+      totalWorkingHours: 0,
+      averageWorkingHours: 0,
+      workingDays: 0,
+      leavesBreakdown: {
+        sickLeave: 0,
+        casualLeave: 0,
+        paidLeave: 0,
+        unpaidLeave: 0,
+        compensatoryLeave: 0,
+        earnedLeave: 0,
+      },
+    };
+
+    days.forEach((day) => {
+      const status = getStatusForDate(day);
+      const punches = getPunchesForDate(day);
+      const workingMinutes = calculateWorkingMinutes(punches);
+
+      switch (status) {
+        case "P":
+          summary.presentDays++;
+          summary.workingDays++;
+          summary.totalWorkingHours += workingMinutes;
+          break;
+        case "A":
+          summary.absentDays++;
+          summary.workingDays++;
+          break;
+        case "HD":
+          summary.halfDays++;
+          summary.workingDays++;
+          summary.totalWorkingHours += workingMinutes;
+          break;
+        case "WO":
+          summary.weekOffs++;
+          break;
+        case "H":
+          summary.holidays++;
+          break;
+        case "SL":
+          summary.leaves++;
+          summary.leavesBreakdown.sickLeave++;
+          summary.workingDays++;
+          break;
+        case "CL":
+          summary.leaves++;
+          summary.leavesBreakdown.casualLeave++;
+          summary.workingDays++;
+          break;
+        case "PL":
+          summary.leaves++;
+          summary.leavesBreakdown.paidLeave++;
+          summary.workingDays++;
+          break;
+        case "UL":
+          summary.leaves++;
+          summary.leavesBreakdown.unpaidLeave++;
+          summary.workingDays++;
+          break;
+        case "CO":
+          summary.leaves++;
+          summary.leavesBreakdown.compensatoryLeave++;
+          summary.workingDays++;
+          break;
+        case "EL":
+          summary.leaves++;
+          summary.leavesBreakdown.earnedLeave++;
+          summary.workingDays++;
+          break;
+      }
+    });
+
+    // Calculate average working hours
+    const totalHours = Math.floor(summary.totalWorkingHours / 60);
+    const totalMinutes = summary.totalWorkingHours % 60;
+    const presentAndHalfDays = summary.presentDays + summary.halfDays;
+
+    if (presentAndHalfDays > 0) {
+      const avgMinutes = summary.totalWorkingHours / presentAndHalfDays;
+      const avgHours = Math.floor(avgMinutes / 60);
+      const avgMins = Math.floor(avgMinutes % 60);
+      summary.averageWorkingHours = parseFloat(
+        `${avgHours}.${Math.floor((avgMins / 60) * 100)}`
+      );
+    }
+
+    return {
+      ...summary,
+      totalWorkingHoursFormatted: `${totalHours}h ${totalMinutes}m`,
+      averageWorkingHoursFormatted: `${Math.floor(
+        summary.averageWorkingHours
+      )}h ${Math.floor((summary.averageWorkingHours % 1) * 60)}m`,
+      attendancePercentage:
+        summary.workingDays > 0
+          ? Math.round(
+              ((summary.presentDays + summary.halfDays * 0.5 + summary.leaves) /
+                summary.workingDays) *
+                100
+            )
+          : 0,
+    };
   };
 
   // Generate table rows
   const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const monthlySummary = calculateMonthlySummary();
 
   return (
     <div className="mb-5">
@@ -362,7 +425,20 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
                   </td>
 
                   <td className="text-center">
-                    {attendanceEntry?.comment ? (
+                    {attendanceEntry?.comment &&
+                    !attendanceEntry?.statusManual ? (
+                      <Badge
+                        label={statusShortCode}
+                        status={
+                          ["SL", "CL", "PL", "UL", "CO", "EL"].includes(
+                            statusShortCode
+                          )
+                            ? "INFO"
+                            : "SUCCESS"
+                        }
+                        title={attendanceEntry.comment}
+                      />
+                    ) : attendanceEntry?.comment ? (
                       <Badge
                         label="i"
                         status="INFO"
@@ -447,6 +523,186 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Monthly Summary Section */}
+      <div className="mt-4">
+        <div className="d-flex align-items-center mb-3">
+          <FaChartBar className="text-primary me-2" size={20} />
+          <h5 className="mb-0">Monthly Summary</h5>
+        </div>
+
+        <div className="row">
+          {/* Attendance Overview */}
+          <div className="col-md-6 mb-3">
+            <div className="card h-100">
+              <div className="card-header bg-primary text-white">
+                <h6 className="mb-0">Attendance Overview</h6>
+              </div>
+              <div className="card-body">
+                <div className="row text-center">
+                  <div className="col-6 col-lg-3 mb-2">
+                    <div className="border rounded p-2">
+                      <div className="h5 text-success mb-1">
+                        {monthlySummary.presentDays}
+                      </div>
+                      <small className="text-muted">Present</small>
+                    </div>
+                  </div>
+                  <div className="col-6 col-lg-3 mb-2">
+                    <div className="border rounded p-2">
+                      <div className="h5 text-danger mb-1">
+                        {monthlySummary.absentDays}
+                      </div>
+                      <small className="text-muted">Absent</small>
+                    </div>
+                  </div>
+                  <div className="col-6 col-lg-3 mb-2">
+                    <div className="border rounded p-2">
+                      <div className="h5 text-warning mb-1">
+                        {monthlySummary.halfDays}
+                      </div>
+                      <small className="text-muted">Half Days</small>
+                    </div>
+                  </div>
+                  <div className="col-6 col-lg-3 mb-2">
+                    <div className="border rounded p-2">
+                      <div className="h5 text-info mb-1">
+                        {monthlySummary.leaves}
+                      </div>
+                      <small className="text-muted">Leaves</small>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-center">
+                  <span className="badge bg-success fs-6">
+                    Attendance: {monthlySummary.attendancePercentage}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Working Hours */}
+          <div className="col-md-6 mb-3">
+            <div className="card h-100">
+              <div className="card-header bg-info text-white">
+                <h6 className="mb-0">Working Hours</h6>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-12 mb-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span>Total Hours:</span>
+                      <strong className="text-primary">
+                        {monthlySummary.totalWorkingHoursFormatted}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="col-12 mb-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span>Average/Day:</span>
+                      <strong className="text-success">
+                        {monthlySummary.averageWorkingHoursFormatted}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="text-center">
+                      <div className="h6 text-muted mb-1">
+                        {monthlySummary.workingDays}
+                      </div>
+                      <small className="text-muted">Working Days</small>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="text-center">
+                      <div className="h6 text-muted mb-1">
+                        {monthlySummary.weekOffs + monthlySummary.holidays}
+                      </div>
+                      <small className="text-muted">Offs/Holidays</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Leave Breakdown (only show if there are leaves) */}
+          {monthlySummary.leaves > 0 && (
+            <div className="col-12 mb-3">
+              <div className="card">
+                <div className="card-header bg-warning text-dark">
+                  <h6 className="mb-0">Leave Breakdown</h6>
+                </div>
+                <div className="card-body">
+                  <div className="row text-center">
+                    {monthlySummary.leavesBreakdown.sickLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-danger mb-1">
+                            {monthlySummary.leavesBreakdown.sickLeave}
+                          </div>
+                          <small className="text-muted">Sick Leave</small>
+                        </div>
+                      </div>
+                    )}
+                    {monthlySummary.leavesBreakdown.casualLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-info mb-1">
+                            {monthlySummary.leavesBreakdown.casualLeave}
+                          </div>
+                          <small className="text-muted">Casual Leave</small>
+                        </div>
+                      </div>
+                    )}
+                    {monthlySummary.leavesBreakdown.paidLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-success mb-1">
+                            {monthlySummary.leavesBreakdown.paidLeave}
+                          </div>
+                          <small className="text-muted">Paid Leave</small>
+                        </div>
+                      </div>
+                    )}
+                    {monthlySummary.leavesBreakdown.unpaidLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-warning mb-1">
+                            {monthlySummary.leavesBreakdown.unpaidLeave}
+                          </div>
+                          <small className="text-muted">Unpaid Leave</small>
+                        </div>
+                      </div>
+                    )}
+                    {monthlySummary.leavesBreakdown.compensatoryLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-primary mb-1">
+                            {monthlySummary.leavesBreakdown.compensatoryLeave}
+                          </div>
+                          <small className="text-muted">Comp Leave</small>
+                        </div>
+                      </div>
+                    )}
+                    {monthlySummary.leavesBreakdown.earnedLeave > 0 && (
+                      <div className="col-6 col-md-2 mb-2">
+                        <div className="border rounded p-2">
+                          <div className="h6 text-secondary mb-1">
+                            {monthlySummary.leavesBreakdown.earnedLeave}
+                          </div>
+                          <small className="text-muted">Earned Leave</small>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

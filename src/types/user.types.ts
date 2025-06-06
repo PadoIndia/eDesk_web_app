@@ -4,6 +4,7 @@ export type User = {
   name: string | null;
   username: string;
   contact: string;
+  password?: string;
   profileImg: {
     id?: bigint;
     url: string | null;

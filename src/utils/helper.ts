@@ -1,3 +1,5 @@
+import userService from "../services/api-services/user.service";
+import { Punch } from "../types/attendance.types";
 import { VerifyOtpResponse } from "../types/auth.types";
 import { EventResponse } from "../types/event.types";
 import { GroupedOutput } from "../types/sidebar.types";
@@ -90,7 +92,7 @@ export const decryptAndParseTokenFromStorage = (): VerifyOtpResponse | null => {
   }
 };
 
-export async function generateSHA256(file:File){
+export async function generateSHA256(file: File) {
   const buffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -99,7 +101,6 @@ export async function generateSHA256(file:File){
     .join("");
   return hashHex;
 }
-
 
 export function groupByDateAndUser(
   durations: VideoViewDuration[]
@@ -174,3 +175,85 @@ export function getShortDate(dateString: string | Date): string {
   const parts = date.toLocaleDateString("en-GB", options).split(" ");
   return `${parts[0]} ${parts[1]}, ${parts[2]}`;
 }
+
+export const getDaysInMonth = (month: number, year: number): number => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+export const formatTime = (hh: number, mm: number): string => {
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+};
+
+export const getWeekOff = async (userId: number): Promise<string> => {
+  const response = await userService.getUserDetailsById(userId);
+  const weekoff = response.data.weekoff;
+  return weekoff;
+};
+
+export const calculateWorkingHours = (punches: Punch[]): string => {
+  const validPunches = punches.filter(
+    (p) => p.isApproved !== false || !p.approvedBy
+  );
+
+  if (validPunches.length % 2 !== 0 || validPunches.length === 0) return "—";
+
+  // Punches are already sorted, so we can calculate directly
+  let totalMinutes = 0;
+
+  for (let i = 0; i < validPunches.length; i += 2) {
+    if (i + 1 < validPunches.length) {
+      const inTime = validPunches[i];
+      const outTime = validPunches[i + 1];
+      totalMinutes +=
+        (outTime.hh ?? 0) * 60 +
+        (outTime.mm ?? 0) -
+        ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
+    }
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+};
+
+export const calculateWorkingMinutes = (punches: Punch[]): number => {
+  const validPunches = punches.filter(
+    (p) => p.isApproved !== false || !p.approvedBy
+  );
+
+  if (validPunches.length % 2 !== 0 || validPunches.length === 0) return 0;
+
+  let totalMinutes = 0;
+
+  for (let i = 0; i < validPunches.length; i += 2) {
+    if (i + 1 < validPunches.length) {
+      const inTime = validPunches[i];
+      const outTime = validPunches[i + 1];
+      totalMinutes +=
+        (outTime.hh ?? 0) * 60 +
+        (outTime.mm ?? 0) -
+        ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
+    }
+  }
+
+  return totalMinutes;
+};
+
+export const getLeaveTypeFromComment = (comment: string): string => {
+  const commentLower = comment.toLowerCase();
+  if (commentLower.includes("sick") || commentLower.includes("medical"))
+    return "SL";
+  if (commentLower.includes("casual")) return "CL";
+  if (commentLower.includes("paid")) return "PL";
+  if (commentLower.includes("unpaid")) return "UL";
+  if (commentLower.includes("compensatory") || commentLower.includes("comp"))
+    return "CO";
+  if (commentLower.includes("earned")) return "EL";
+  // Default to casual leave if can't determine
+  return "CL";
+};
+
+export const getDayOfWeek = (date: Date): string => {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return days[date.getDay()];
+};
