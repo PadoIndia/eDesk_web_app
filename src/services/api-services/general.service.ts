@@ -7,26 +7,6 @@ class GeneralService extends ApiService {
     super("");
   }
 
-  // uploadToS3(files:Files[]): ApiResponse<Files>{
-  //     return this.postData('/uploads',files);
-  // }
-  // uploadToS3(
-  //   file: File
-  // ): ApiResponse {
-
-  //   const hash = generateSHA256(file);
-
-  //   const formData = new FormData();
-  //   formData.append('files',file);
-  //   formData.append('hashes',hash);
-
-  //   return this.postData("/uploads", formData,{
-  //     headers: {
-  //       "Content-Type": "multipart/form-data",
-  //     },
-  //   });
-  // }
-
   uploadToS3(
     data: {
       image: File;

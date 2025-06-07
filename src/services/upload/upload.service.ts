@@ -156,7 +156,11 @@ class UploadService {
           );
         },
         onSuccess: async function () {
-          console.log("Download %s from %s", upload.file.name, upload.url);
+          console.log(
+            "Download %s from %s",
+            (upload.file as File).name,
+            upload.url
+          );
           uploadMap.delete(file.name);
           store.dispatch(updateStatus({ id: vidFile.id, status: "uploaded" }));
 
