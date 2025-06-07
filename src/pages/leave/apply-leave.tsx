@@ -1,6 +1,11 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FaCalendarAlt, FaPaperPlane, FaInfoCircle, FaSpinner } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaPaperPlane,
+  FaInfoCircle,
+  FaSpinner,
+} from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import leaveRequestService from "../../services/api-services/leave-request.service";
@@ -29,6 +34,7 @@ interface UserDataDetails {
   updatedOn: string;
   userId: number;
   weekoff: string;
+  hrId?: number;
 }
 
 interface LeaveScheme {
@@ -90,10 +96,11 @@ const ApplyLeave: React.FC = () => {
         setError(null);
 
         // Fetch user details
-        const userDetailsResponse = await userService.getUserDetailsById(userId);
-        
+        const userDetailsResponse = await userService.getUserDetailsById(
+          userId
+        );
+
         console.log("user details response", userDetailsResponse);
-        
 
         if (!userDetailsResponse.status || !userDetailsResponse.data) {
           throw new Error("Failed to fetch user details");
@@ -104,9 +111,11 @@ const ApplyLeave: React.FC = () => {
 
         // Fetch leave scheme if leaveSchemeId exists
         if (userDetailsData.leaveSchemeId) {
-          const leaveSchemeResponse = await leaveSchemeService.getLeaveSchemeById(userDetailsData.leaveSchemeId);
-          console.log("leave scheme response",leaveSchemeResponse);
-          
+          const leaveSchemeResponse =
+            await leaveSchemeService.getLeaveSchemeById(
+              userDetailsData.leaveSchemeId
+            );
+          console.log("leave scheme response", leaveSchemeResponse);
 
           if (!leaveSchemeResponse.status || !leaveSchemeResponse.data) {
             throw new Error("Failed to fetch leave scheme");
@@ -120,7 +129,9 @@ const ApplyLeave: React.FC = () => {
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load user data");
+        setError(
+          err instanceof Error ? err.message : "Failed to load user data"
+        );
       } finally {
         setLoading(false);
       }
@@ -139,10 +150,10 @@ const ApplyLeave: React.FC = () => {
   // Calculate minimum date based on joining date
   const minDate = useMemo(() => {
     if (!userDetails?.joiningDate) return new Date();
-    
+
     const joiningDate = new Date(userDetails.joiningDate);
     const today = new Date();
-    
+
     // Return the later of joining date or today
     return joiningDate > today ? joiningDate : today;
   }, [userDetails?.joiningDate]);
@@ -200,7 +211,6 @@ const ApplyLeave: React.FC = () => {
     const managerId = await teamService.getManagerByUserId(userDetails.userId);
 
     console.log("managerId", managerId);
-    
 
     try {
       const payload: CreateLeaveRequestRequest = {
@@ -209,17 +219,16 @@ const ApplyLeave: React.FC = () => {
         endDate: data.endDate.toISOString(),
         duration,
         reason: data.reason,
-        managerId: (managerId.data === null)? 1 : managerId.data ,
-        hrId: userDetails.hrId || 1 // Assuming this exists in user details
+        managerId: managerId.data === null ? 1 : managerId.data,
+        hrId: userDetails.hrId || 1, // Assuming this exists in user details
       };
 
       console.log("leave apply payload", payload);
-      
 
       const response = await leaveRequestService.createLeaveRequest(payload);
       alert("Leave application submitted successfully!");
       console.log("Leave request created:", response.data);
-      
+
       // Reset form after successful submission
       reset();
     } catch (err) {
@@ -255,7 +264,7 @@ const ApplyLeave: React.FC = () => {
             <div className="alert alert-danger" role="alert">
               <h4 className="alert-heading">Error</h4>
               <p>{error}</p>
-              <button 
+              <button
                 className="btn btn-outline-danger"
                 onClick={() => window.location.reload()}
               >
@@ -283,7 +292,9 @@ const ApplyLeave: React.FC = () => {
               {/* Leave Scheme Info */}
               {leaveScheme && (
                 <div className="alert alert-info mb-4">
-                  <h6 className="mb-1">Your Leave Scheme: {leaveScheme.name}</h6>
+                  <h6 className="mb-1">
+                    Your Leave Scheme: {leaveScheme.name}
+                  </h6>
                 </div>
               )}
 
@@ -304,7 +315,8 @@ const ApplyLeave: React.FC = () => {
                       <option key={lt.id} value={lt.id}>
                         {lt.name}
                         {lt.maxDays && ` - Max: ${lt.maxDays} days`}
-                        {lt.remainingDays !== undefined && ` - Remaining: ${lt.remainingDays} days`}
+                        {lt.remainingDays !== undefined &&
+                          ` - Remaining: ${lt.remainingDays} days`}
                       </option>
                     ))}
                   </select>
@@ -349,9 +361,7 @@ const ApplyLeave: React.FC = () => {
                 {/* Dates */}
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">
-                      Start Date
-                    </label>
+                    <label className="form-label fw-semibold">Start Date</label>
                     <Controller<FormData>
                       name="startDate"
                       control={control}
@@ -378,9 +388,7 @@ const ApplyLeave: React.FC = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">
-                      End Date
-                    </label>
+                    <label className="form-label fw-semibold">End Date</label>
                     <Controller<FormData>
                       name="endDate"
                       control={control}
