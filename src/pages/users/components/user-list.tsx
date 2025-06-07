@@ -39,6 +39,7 @@ const UsersList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  // const [departments, setDepartments] = useState<Department[]>([]);
   const [leaveSchemes, setLeaveSchemes] = useState<LeaveScheme[]>([]);
   const [userDepartments, setUserDepartments] = useState<
     Record<number, UserDepartmentAssignment[]>
@@ -49,12 +50,14 @@ const UsersList = () => {
   const [dobDate, setDobDate] = useState<Date | null>(null);
   const [joiningDateValue, setJoiningDateValue] = useState<Date | null>(null);
 
+
   const [formData, setFormData] = useState({
     name: "",
     username: "",
     contact: "91",
     password: "",
     empCode: "",
+    isActive: true,
     departmentAssignments: [] as UserDepartmentAssignment[],
     // User details fields
     gender: "",
@@ -165,6 +168,7 @@ const UsersList = () => {
       joiningDate: "",
       leaveSchemeId: undefined,
       weekoff: "",
+      isActive: true,
     });
     setEditingUserId(null);
     setDobDate(null);
@@ -185,6 +189,7 @@ const UsersList = () => {
       contact: user.contact,
       password: "",
       empCode: user.empCode || "",
+      isActive: user.isActive,
       departmentAssignments: existingAssignments,
       // For editing, we don't load user details as they should already exist
       gender: "",
@@ -195,6 +200,7 @@ const UsersList = () => {
     });
     setShowModal(true);
   };
+
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -300,6 +306,7 @@ const UsersList = () => {
           ...(formData.username && { username: formData.username }),
           ...(formData.contact && { contact: formData.contact }),
           ...(formData.empCode && { empCode: formData.empCode }),
+          isActive: formData.isActive,
         };
 
         const resp = await userService.updateUser(editingUserId, userData);
@@ -322,6 +329,7 @@ const UsersList = () => {
           contact: formData.contact,
           password: formData.password,
           empCode: formData.empCode,
+          isActive: formData.isActive,
         });
 
         if (resp.status === "success") {
@@ -394,7 +402,6 @@ const UsersList = () => {
             ...prev,
             [userId]: formData.departmentAssignments,
           }));
-          
         } catch (deptError) {
           console.error("Error updating department assignments:", deptError);
           toast.error("User saved but failed to update department assignments");
@@ -491,7 +498,7 @@ const UsersList = () => {
                   {getDepartmentNames(user.id) || "No departments assigned"}
                 </small>
               </td>
-              <td>{user.isActive ? "Active" : "Inactive"}</td>
+             <td>{user.isActive ? "Active" : "Inactive"}</td>
               <td>
                 <button
                   className="btn btn-warning btn-sm me-2"
@@ -607,6 +614,27 @@ const UsersList = () => {
                               })
                             }
                           />
+                        </div>
+                        {/* Add after Employee Code field */}
+                        <div className="mb-3 form-check form-switch">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="isActiveToggle"
+                            checked={formData.isActive}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                isActive: e.target.checked,
+                              })
+                            }
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor="isActiveToggle"
+                          >
+                            Active User
+                          </label>
                         </div>
                       </div>
 
