@@ -4,16 +4,29 @@ import authSlice from "../features/auth.slice";
 import videoSlice from "../features/video.slice";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-
+import chatSlice from "../features/chat-slice";
+import userSlice from "../features/user-slice";
+import taskSlice from "../features/task-slice";
+import mediaSlice from "../features/media-slice";
+import replySlice from "../features/reply-slice";
+import messageSlice from "../features/message-slice";
+import viewMediaSlice from "../features/view-media-slice";
 const persistConfig = {
   key: "root",
   storage,
-  blacklist: ["auth"],
+  whitelist: ["video"],
 };
 
 const reducers = combineReducers({
   auth: authSlice,
   video: videoSlice,
+  chatReducer: chatSlice,
+  userReducer: userSlice,
+  taskReducer: taskSlice,
+  mediaReducer: mediaSlice,
+  replyReducer: replySlice,
+  messageReducer: messageSlice,
+  viewMediaReducer: viewMediaSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, reducers);

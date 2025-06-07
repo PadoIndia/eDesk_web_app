@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import VideoPage from "./pages/video-details";
 import Home from "./pages/home";
@@ -11,7 +12,10 @@ import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
 import Uploads from "./pages/uploads";
 import UsersList from "./pages/users/components/user-list";
-import HrmApp from "./hrm-app";
+
+const HrmApp = React.lazy(() => import("./hrm-app"));
+const Loading = React.lazy(() => import("./components/loading"));
+const ChatPage = React.lazy(() => import("./pages/chats"));
 
 function App() {
   const loggedIn = useAppSelector((s) => s.auth.isLoggedIn);
@@ -23,13 +27,7 @@ function App() {
   }, []);
 
   if (isVerifying) {
-    return (
-      <div className="w-100 h-100 d-flex justify-content-center align-items-center">
-        <div className="spinner-border" role="status">
-          <span className="sr-only">Loading...</span>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
@@ -55,6 +53,14 @@ function App() {
         <Route path="social-media" element={<SocialMediaManagement />} />
         <Route path="uploads" element={<Uploads />} />
         <Route path="users/list" element={<UsersList />} />
+        <Route
+          path="chats"
+          element={
+            <Suspense fallback={<Loading />}>
+              <ChatPage />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

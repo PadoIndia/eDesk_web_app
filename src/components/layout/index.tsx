@@ -16,10 +16,10 @@ const Layout = () => {
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
-
+  const isChat = pathname === "/chats";
   return (
     <div className="layout-container">
-      <Navbar onMenuClick={toggleSidebar} />
+      {!isChat && <Navbar onMenuClick={toggleSidebar} />}
 
       <div className="layout-body">
         {shouldShowSidebar && (
@@ -38,7 +38,9 @@ const Layout = () => {
         )}
 
         <main
-          className={`main-content ${shouldShowSidebar ? "with-sidebar" : ""}`}
+          className={`main-content ${shouldShowSidebar ? "with-sidebar" : ""} ${
+            isChat ? "m-0" : ""
+          }`}
         >
           <Outlet />
         </main>
