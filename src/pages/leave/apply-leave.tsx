@@ -14,6 +14,7 @@ import { useAppSelector } from "../../store/store";
 import userService from "../../services/api-services/user.service";
 import leaveSchemeService from "../../services/api-services/leave-scheme.service"; // Assuming this service exists
 import teamService from "../../services/api-services/team.service";
+import userDepartmentService from "../../services/api-services/user-department.service";
 
 interface LeaveType {
   id: number;
@@ -208,9 +209,32 @@ const ApplyLeave: React.FC = () => {
       return;
     }
 
-    const managerId = await teamService.getManagerByUserId(userDetails.userId);
+let managerId: number | null = null;
 
-    console.log("managerId", managerId);
+const teamManagerResponse = await teamService.getManagerByUserId(userDetails.userId);
+if (teamManagerResponse.data) {
+  managerId = teamManagerResponse.data;
+} else {
+  const userDepartmentResponse = await userDepartmentService.getUserDepartmentByUserId(userDetails.userId);
+  
+  if (userDepartmentResponse.data.length > 0) {
+    const departmentIds = userDepartmentResponse.data.map((dept: any) => dept.departmentId);
+    
+    for (const deptId of departmentIds) {
+      const deptManagerResponse = await userDepartmentService.getDepartmentManager(deptId);
+      
+      if (deptManagerResponse.data?.length > 0) {
+        managerId = deptManagerResponse.data[0].id;
+        break;
+      }
+    }
+  }
+}
+
+    if (!managerId) {
+      alert("No manager found to approve your leave request");
+      return;
+    }
 
     try {
       const payload: CreateLeaveRequestRequest = {
@@ -219,8 +243,7 @@ const ApplyLeave: React.FC = () => {
         endDate: data.endDate.toISOString(),
         duration,
         reason: data.reason,
-        managerId: managerId.data === null ? 1 : managerId.data,
-        hrId: userDetails.hrId || 1, // Assuming this exists in user details
+        managerId: managerId
       };
 
       console.log("leave apply payload", payload);

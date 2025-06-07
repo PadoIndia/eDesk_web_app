@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import userService from "../../../services/api-services/user.service";
 import { toast } from "react-toastify";
 import { User } from "../../../types/user.types";
-import { Department } from "../../../types/department-team.types";
+// import { Department } from "../../../types/department-team.types";
 import departmentService from "../../../services/api-services/department.service";
 import userDepartmentService from "../../../services/api-services/user-department.service";
 import leaveSchemeService from "../../../services/api-services/leave-scheme.service";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { setDepartments } from "../../../features/department.slice";
+import { AppDispatch, RootState } from "../../../store/store";
+import { useDispatch, useSelector } from "react-redux";
 
 interface UserDepartmentAssignment {
   departmentId: number;
@@ -28,10 +31,14 @@ type CreateUserDetails = {
 };
 
 const UsersList = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const departments = useSelector(
+    (state: RootState) => state.department.departments
+  );
+
   const [users, setUsers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [leaveSchemes, setLeaveSchemes] = useState<LeaveScheme[]>([]);
   const [userDepartments, setUserDepartments] = useState<
     Record<number, UserDepartmentAssignment[]>
@@ -65,12 +72,12 @@ const UsersList = () => {
 
   const weekDays = [
     "MONDAY",
-    "TUESDAY", 
+    "TUESDAY",
     "WEDNESDAY",
     "THURSDAY",
     "FRIDAY",
     "SATURDAY",
-    "SUNDAY"
+    "SUNDAY",
   ];
 
   const getUsers = async () => {
@@ -123,7 +130,7 @@ const UsersList = () => {
   const getDepartments = async () => {
     try {
       const resp = await departmentService.getDepartments();
-      setDepartments(resp.data);
+      dispatch(setDepartments(resp.data));
     } catch (error) {
       console.error(error);
       toast.error("An error occurred while fetching departments.");
@@ -196,23 +203,28 @@ const UsersList = () => {
 
   const handleDepartmentSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const departmentId = parseInt(e.target.value);
-    if (departmentId && !formData.departmentAssignments.some(dept => dept.departmentId === departmentId)) {
-      setFormData(prev => ({
+    if (
+      departmentId &&
+      !formData.departmentAssignments.some(
+        (dept) => dept.departmentId === departmentId
+      )
+    ) {
+      setFormData((prev) => ({
         ...prev,
         departmentAssignments: [
           ...prev.departmentAssignments,
-          { departmentId, isAdmin: false }
-        ]
+          { departmentId, isAdmin: false },
+        ],
       }));
     }
   };
 
   const handleRemoveDepartment = (departmentId: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       departmentAssignments: prev.departmentAssignments.filter(
-        dept => dept.departmentId !== departmentId
-      )
+        (dept) => dept.departmentId !== departmentId
+      ),
     }));
   };
 
@@ -227,18 +239,21 @@ const UsersList = () => {
     }));
   };
 
-  const handleDateChange = (field: 'dob' | 'joiningDate', date: Date | null) => {
-    if (field === 'dob') {
+  const handleDateChange = (
+    field: "dob" | "joiningDate",
+    date: Date | null
+  ) => {
+    if (field === "dob") {
       setDobDate(date);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        dob: date ? date.toISOString() : ""
+        dob: date ? date.toISOString() : "",
       }));
     } else {
       setJoiningDateValue(date);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        joiningDate: date ? date.toISOString() : ""
+        joiningDate: date ? date.toISOString() : "",
       }));
     }
   };
@@ -246,20 +261,30 @@ const UsersList = () => {
   const handleSaveUser = async () => {
     try {
       setLoading(true);
-      
+
       // Validation for new users
       if (!editingUserId) {
-        if (!formData.name || !formData.username || !formData.contact || !formData.password) {
+        if (
+          !formData.name ||
+          !formData.username ||
+          !formData.contact ||
+          !formData.password
+        ) {
           toast.error("Please fill all basic user fields");
           return;
         }
-        
+
         if (formData.departmentAssignments.length === 0) {
           toast.error("Please assign at least one department");
           return;
         }
-        
-        if (!formData.gender || !formData.dob || !formData.joiningDate || !formData.weekoff) {
+
+        if (
+          !formData.gender ||
+          !formData.dob ||
+          !formData.joiningDate ||
+          !formData.weekoff
+        ) {
           toast.error("Please fill all user details fields");
           return;
         }
@@ -369,6 +394,7 @@ const UsersList = () => {
             ...prev,
             [userId]: formData.departmentAssignments,
           }));
+          
         } catch (deptError) {
           console.error("Error updating department assignments:", deptError);
           toast.error("User saved but failed to update department assignments");
@@ -383,7 +409,9 @@ const UsersList = () => {
             dob: formData.dob,
             joiningDate: formData.joiningDate,
             weekoff: formData.weekoff,
-            ...(formData.leaveSchemeId && { leaveSchemeId: Number(formData.leaveSchemeId) })
+            ...(formData.leaveSchemeId && {
+              leaveSchemeId: Number(formData.leaveSchemeId),
+            }),
           };
 
           await userService.createUserDetails(userDetailsData);
@@ -422,9 +450,10 @@ const UsersList = () => {
 
   const getAvailableDepartments = () => {
     return departments.filter(
-      dept => !formData.departmentAssignments.some(
-        assignment => assignment.departmentId === dept.id
-      )
+      (dept) =>
+        !formData.departmentAssignments.some(
+          (assignment) => assignment.departmentId === dept.id
+        )
     );
   };
 
@@ -498,7 +527,9 @@ const UsersList = () => {
                       <div className="col-md-4">
                         <h6 className="text-primary mb-3">Basic Information</h6>
                         <div className="mb-3">
-                          <label className="form-label">Name <span className="text-danger">*</span></label>
+                          <label className="form-label">
+                            Name <span className="text-danger">*</span>
+                          </label>
                           <input
                             type="text"
                             className="form-control"
@@ -510,7 +541,10 @@ const UsersList = () => {
                           />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">Username (Email) <span className="text-danger">*</span></label>
+                          <label className="form-label">
+                            Username (Email){" "}
+                            <span className="text-danger">*</span>
+                          </label>
                           <input
                             type="email"
                             className="form-control"
@@ -525,7 +559,9 @@ const UsersList = () => {
                           />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">Contact <span className="text-danger">*</span></label>
+                          <label className="form-label">
+                            Contact <span className="text-danger">*</span>
+                          </label>
                           <input
                             type="text"
                             className="form-control"
@@ -541,7 +577,9 @@ const UsersList = () => {
                         </div>
                         {!editingUserId && (
                           <div className="mb-3">
-                            <label className="form-label">Password <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Password <span className="text-danger">*</span>
+                            </label>
                             <input
                               type="password"
                               className="form-control"
@@ -575,19 +613,26 @@ const UsersList = () => {
                       {/* User Details (only for new users) */}
                       {!editingUserId && (
                         <div className="col-md-4">
-                          <h6 className="text-primary mb-3">Personal Details</h6>
+                          <h6 className="text-primary mb-3">
+                            Personal Details
+                          </h6>
                           <div className="mb-3">
-                            <label className="form-label">Gender <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Gender <span className="text-danger">*</span>
+                            </label>
                             <select
                               className="form-select"
                               value={formData.gender}
                               onChange={(e) =>
-                                setFormData({ ...formData, gender: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  gender: e.target.value,
+                                })
                               }
                               required
                             >
                               <option value="">Select Gender</option>
-                              {genderOptions.map(option => (
+                              {genderOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                   {option.label}
                                 </option>
@@ -595,10 +640,13 @@ const UsersList = () => {
                             </select>
                           </div>
                           <div className="mb-3">
-                            <label className="form-label">Date of Birth <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Date of Birth{" "}
+                              <span className="text-danger">*</span>
+                            </label>
                             <DatePicker
                               selected={dobDate}
-                              onChange={(date) => handleDateChange('dob', date)}
+                              onChange={(date) => handleDateChange("dob", date)}
                               className="form-control"
                               placeholderText="Select date of birth"
                               dateFormat="yyyy-MM-dd"
@@ -610,10 +658,15 @@ const UsersList = () => {
                             />
                           </div>
                           <div className="mb-3">
-                            <label className="form-label">Joining Date <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Joining Date{" "}
+                              <span className="text-danger">*</span>
+                            </label>
                             <DatePicker
                               selected={joiningDateValue}
-                              onChange={(date) => handleDateChange('joiningDate', date)}
+                              onChange={(date) =>
+                                handleDateChange("joiningDate", date)
+                              }
                               className="form-control"
                               placeholderText="Select joining date"
                               dateFormat="yyyy-MM-dd"
@@ -625,17 +678,22 @@ const UsersList = () => {
                             />
                           </div>
                           <div className="mb-3">
-                            <label className="form-label">Week Off <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Week Off <span className="text-danger">*</span>
+                            </label>
                             <select
                               className="form-select"
                               value={formData.weekoff}
                               onChange={(e) =>
-                                setFormData({ ...formData, weekoff: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  weekoff: e.target.value,
+                                })
                               }
                               required
                             >
                               <option value="">Select Week Off</option>
-                              {weekDays.map(day => (
+                              {weekDays.map((day) => (
                                 <option key={day} value={day}>
                                   {day.charAt(0) + day.slice(1).toLowerCase()}
                                 </option>
@@ -646,16 +704,20 @@ const UsersList = () => {
                             <label className="form-label">Leave Scheme</label>
                             <select
                               className="form-select"
-                              value={formData.leaveSchemeId || ''}
+                              value={formData.leaveSchemeId || ""}
                               onChange={(e) =>
-                                setFormData({ 
-                                  ...formData, 
-                                  leaveSchemeId: e.target.value ? parseInt(e.target.value) : undefined 
+                                setFormData({
+                                  ...formData,
+                                  leaveSchemeId: e.target.value
+                                    ? parseInt(e.target.value)
+                                    : undefined,
                                 })
                               }
                             >
-                              <option value="">Select Leave Scheme (Optional)</option>
-                              {leaveSchemes.map(scheme => (
+                              <option value="">
+                                Select Leave Scheme (Optional)
+                              </option>
+                              {leaveSchemes.map((scheme) => (
                                 <option key={scheme.id} value={scheme.id}>
                                   {scheme.name}
                                 </option>
@@ -668,9 +730,12 @@ const UsersList = () => {
                       {/* Department Assignments */}
                       <div className={editingUserId ? "col-md-8" : "col-md-4"}>
                         <h6 className="text-primary mb-3">
-                          Department Assignments {!editingUserId && <span className="text-danger">*</span>}
+                          Department Assignments{" "}
+                          {!editingUserId && (
+                            <span className="text-danger">*</span>
+                          )}
                         </h6>
-                        
+
                         <div className="mb-3">
                           <select
                             className="form-select"
@@ -686,7 +751,7 @@ const UsersList = () => {
                           </select>
                         </div>
 
-                        <div 
+                        <div
                           className="border p-3 rounded"
                           style={{ maxHeight: "300px", overflowY: "auto" }}
                         >
@@ -696,9 +761,11 @@ const UsersList = () => {
                             </small>
                           ) : (
                             formData.departmentAssignments.map((assignment) => {
-                              const dept = departments.find(d => d.id === assignment.departmentId);
+                              const dept = departments.find(
+                                (d) => d.id === assignment.departmentId
+                              );
                               return (
-                                <div 
+                                <div
                                   key={assignment.departmentId}
                                   className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded bg-light"
                                 >
@@ -709,7 +776,11 @@ const UsersList = () => {
                                         type="checkbox"
                                         className="form-check-input"
                                         checked={assignment.isAdmin}
-                                        onChange={() => handleAdminToggle(assignment.departmentId)}
+                                        onChange={() =>
+                                          handleAdminToggle(
+                                            assignment.departmentId
+                                          )
+                                        }
                                       />
                                       <label className="form-check-label">
                                         Admin
@@ -718,7 +789,11 @@ const UsersList = () => {
                                     <button
                                       type="button"
                                       className="btn btn-sm btn-outline-danger"
-                                      onClick={() => handleRemoveDepartment(assignment.departmentId)}
+                                      onClick={() =>
+                                        handleRemoveDepartment(
+                                          assignment.departmentId
+                                        )
+                                      }
                                     >
                                       Remove
                                     </button>
@@ -749,11 +824,17 @@ const UsersList = () => {
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
                         {editingUserId ? "Updating..." : "Creating..."}
                       </>
+                    ) : editingUserId ? (
+                      "Update User"
                     ) : (
-                      editingUserId ? "Update User" : "Create User"
+                      "Create User"
                     )}
                   </button>
                 </div>

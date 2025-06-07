@@ -1,9 +1,13 @@
+import { useSelector } from "react-redux";
 import userService from "../services/api-services/user.service";
 import { Punch } from "../types/attendance.types";
 import { VerifyOtpResponse } from "../types/auth.types";
 import { EventResponse } from "../types/event.types";
 import { GroupedOutput } from "../types/sidebar.types";
 import { VideoViewDuration } from "../types/video.types";
+import { RootState } from "../store/store";
+import userDepartmentService from "../services/api-services/user-department.service";
+import teamService from "../services/api-services/team.service";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -257,3 +261,55 @@ export const getDayOfWeek = (date: Date): string => {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return days[date.getDay()];
 };
+
+export const getUserDepartments = async (userId: number) => {
+  const userResponse = await userDepartmentService.getUserDepartmentByUserId(
+    userId
+  );
+  return userResponse.data;
+};
+
+// Current user is a department manager
+export const IsDeptManager = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+
+  const isManager = userDepartments.some((dept) => dept.isAdmin);
+
+  if (isManager) return true;
+
+  return false;
+};
+
+// Current user is in Hr department
+export const IsHr = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+  const isHr = userDepartments.some((dept) => dept.department.slug === "hr");
+  if (isHr) return true;
+  return false;
+};
+
+// Current user is in Hr department and is a manager
+export const IsHrManager = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+  const isHrManager = userDepartments.some(
+    (dept) => dept.department.slug === "hr" && dept.isAdmin
+  );
+  if (isHrManager) return true;
+  return false;
+};
+
+
+export const isTeamManager = async(): Promise<boolean> => {
+  const teams = await teamService.getUserTeams();
+  const isManager = teams.data.some((team: { isAdmin: boolean }) => team.isAdmin);
+  if (isManager) return true;
+  return false;
+}
+
+// isTeamManager
