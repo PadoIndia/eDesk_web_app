@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { getShortDate } from "../../utils/helper";
 import EventModal from "./event-modal";
 import { Colors } from "../../utils/constants";
+import Search from "../../components/ui/search";
 
 type TabType = "events" | "event-groups";
 
@@ -13,6 +14,8 @@ const EventsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>("events");
   const [eventGroups, setEventGroups] = useState<EventGroupResponse[]>([]);
   const [events, setEvents] = useState<EventResponse[]>([]);
+  const [eventSearch, setEventSearch] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<EventResponse | null>(
     null
@@ -119,10 +122,18 @@ const EventsPage: React.FC = () => {
         toast.success(res.message);
         fetchEventData();
       } else toast.error(res.message);
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove group");
     }
   };
+
+  const filteredEvents = events.filter((e) =>
+    e.eventName.toLowerCase().includes(eventSearch.toLowerCase())
+  );
+
+  const filteredGroups = eventGroups.filter((g) =>
+    g.groupName.toLowerCase().includes(groupSearch.toLowerCase())
+  );
 
   return (
     <div>
@@ -166,13 +177,20 @@ const EventsPage: React.FC = () => {
                   <h2 className="h4 mb-1">Events</h2>
                   <p className="text-muted small mb-0">Manage all events</p>
                 </div>
+
                 <button
                   className="btn btn-primary"
                   onClick={handleOpenEventModal}
                 >
                   Add Event
                 </button>
+                <Search
+                  value={eventSearch}
+                  onChange={setEventSearch}
+                  placeholder="Search Events"
+                />
               </div>
+
               <div className="card-body">
                 <div className="table-responsive">
                   <table className="table table-hover">
@@ -188,10 +206,18 @@ const EventsPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {events.length > 0 ? (
-                        events.map((event) => (
+                      {filteredEvents.length > 0 ? (
+                        filteredEvents.map((event) => (
                           <tr key={event.id}>
-                            <td>{event.eventName}</td>
+                            <td>
+                              <a
+                                target="__blank"
+                                className="text-dark text-decoration-underline fw-normal"
+                                href={`/events/${event.id}`}
+                              >
+                                {event.eventName}
+                              </a>
+                            </td>
                             <td style={{ maxWidth: "200px" }}>
                               {event.eventGroupMap.length > 0 ? (
                                 event.eventGroupMap.map((group, index) => (
@@ -255,11 +281,18 @@ const EventsPage: React.FC = () => {
             }`}
           >
             <div className="card shadow-sm">
-              <div className="card-header bg-white">
-                <h2 className="h4 mb-1">Event Groups</h2>
-                <p className="text-muted small mb-0">
-                  Manage event categories and groupings
-                </p>
+              <div className="card-header bg-white d-flex  justify-content-between">
+                <div>
+                  <h2 className="h4 mb-1">Event Groups</h2>
+                  <p className="text-muted small mb-0">
+                    Manage event categories and groupings
+                  </p>
+                </div>
+                <Search
+                  value={groupSearch}
+                  onChange={setGroupSearch}
+                  placeholder="Search Groups"
+                />
               </div>
               <div className="card-body">
                 <div className="mb-3">
@@ -332,8 +365,8 @@ const EventsPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {eventGroups.length > 0 ? (
-                        eventGroups.map((group) => (
+                      {filteredGroups.length > 0 ? (
+                        filteredGroups.map((group) => (
                           <tr key={group.id}>
                             <td>{group.groupName}</td>
                             <td className="text-end">
