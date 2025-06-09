@@ -62,8 +62,10 @@ const authSlice = createSlice({
     checkAuth(state) {
       const data = decryptAndParseTokenFromStorage();
 
-      if(data){ state.isLoggedIn = true; state.userData = data; }
-      else state.isLoggedIn = false;
+      if (data) {
+        state.isLoggedIn = true;
+        state.userData = data;
+      } else state.isLoggedIn = false;
       state.isVerifying = false;
     },
   },

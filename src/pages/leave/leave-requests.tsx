@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FaSearch,
   FaFilter,
@@ -18,8 +18,8 @@ import {
   HRApproveRejectLeaveRequestRequest,
   LeaveRequestStatus,
 } from "../../types/leave.types";
-import { AppDispatch,  useAppSelector } from "../../store/store";
-import { useDispatch} from "react-redux";
+import { useAppSelector } from "../../store/store";
+// import { useDispatch } from "react-redux";
 import { IsDeptManager, IsHr, isTeamManager } from "../../utils/helper";
 
 // Updated interface to match API response structure
@@ -51,8 +51,9 @@ interface LeaveRequest {
 }
 
 const LeaveRequests = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  // const dispatch = useDispatch<AppDispatch>();
 
+  // All useState hooks first
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [othersRequests, setOthersRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,45 +67,63 @@ const LeaveRequests = () => {
     end: null,
   });
   const [activeTab, setActiveTab] = useState<"my-requests" | "others-requests">("my-requests");
+  const [isTeamManagerState, setIsTeamManagerState] = useState<boolean>(false);
 
+  // All useAppSelector hooks
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
 
-   const [IsTeamManager, setIsTeamManager] = useState<boolean>(false);
-
-    const checkTeamManager = async () => {
-      const isTeamManagerResult = await isTeamManager();
-      setIsTeamManager(isTeamManagerResult);
-    };
-
-  
-  
-  
-
+  // All static helper function calls (these don't use hooks internally that would affect order)
   const isHR = IsHr();
-  const isManager = IsTeamManager || IsDeptManager();
-  // const isHrManager = IsHrManager();
+  const isDeptManager = IsDeptManager();
+  const isManager = isTeamManagerState || isDeptManager;
 
-  const canApproveReject = () => {
+  // Memoized functions
+  const canApproveReject = useCallback(() => {
     return isHR || isManager;
-  };
+  }, [isHR, isManager]);
 
-  const showTabs = () => {
+  const showTabs = useCallback(() => {
     return isHR || isManager;
-  };
+  }, [isHR, isManager]);
 
   // Helper function to get the effective status based on user role
-  const getEffectiveStatus = (request: LeaveRequest) => {
+  const getEffectiveStatus = useCallback((request: LeaveRequest) => {
     if (isHR) {
       return request.hrStatus;
     } else if (isManager) {
       return request.managerStatus;
     }
     return request.hrStatus;
-  };
+  }, [isHR, isManager]);
 
+  // Check team manager status - separate useEffect with proper dependencies
   useEffect(() => {
+    let isMounted = true;
+    
+    const checkTeamManagerStatus = async () => {
+      try {
+        const isTeamManagerResult = await isTeamManager();
+        if (isMounted) {
+          setIsTeamManagerState(isTeamManagerResult);
+        }
+      } catch (error) {
+        console.error("Failed to check team manager status:", error);
+        if (isMounted) {
+          setIsTeamManagerState(false);
+        }
+      }
+    };
 
-    checkTeamManager();
+    checkTeamManagerStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run once on mount
+
+  // Main data fetching useEffect with proper dependencies
+  useEffect(() => {
+    let isMounted = true;
 
     const fetchUserAndRequests = async () => {
       if (!userId) return;
@@ -113,7 +132,9 @@ const LeaveRequests = () => {
 
       try {
         const myRequestsResponse = await leaveRequestService.getMyLeaveRequests();
-        setMyRequests(myRequestsResponse.data);
+        if (isMounted) {
+          setMyRequests(myRequestsResponse.data);
+        }
 
         // Fetch others' requests only if user is HR or Manager
         if (isHR || isManager) {
@@ -125,17 +146,17 @@ const LeaveRequests = () => {
               leaveRequestService.getLeaveRequestsForManagerApproval(),
               leaveRequestService.getLeaveRequestsForHRApproval(),
             ]);
-            
+
             // Combine and deduplicate requests (in case there are overlaps)
             const managerRequests = managerResponse.data;
             const hrRequests = hrResponse.data;
-            
+
             // Use Map to deduplicate by request ID
             const requestsMap = new Map();
             [...managerRequests, ...hrRequests].forEach(request => {
               requestsMap.set(request.id, request);
             });
-            
+
             allOthersRequests = Array.from(requestsMap.values());
           } else if (isManager) {
             // User is only Manager
@@ -147,22 +168,30 @@ const LeaveRequests = () => {
             allOthersRequests = response.data;
           }
 
-          setOthersRequests(allOthersRequests);
+          if (isMounted) {
+            setOthersRequests(allOthersRequests);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch leave requests:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUserAndRequests();
-  }, [userId, dispatch]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, isHR, isManager]); // Proper dependencies
 
   // Get current requests based on active tab
-  const getCurrentRequests = () => {
+  const getCurrentRequests = useCallback(() => {
     return activeTab === "my-requests" ? myRequests : othersRequests;
-  };
+  }, [activeTab, myRequests, othersRequests]);
 
   const filteredRequests = getCurrentRequests().filter((request) => {
     // Search filter - using the correct property paths
