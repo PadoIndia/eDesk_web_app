@@ -20,6 +20,8 @@ export const Colors = {
   black: "#0D1015",
   white: "#FFFFFF",
   gray: "#333A47",
+
+  lightPrimary: "#DCD8F8",
   green: "#008444",
   lightGray: "#F3F3F4",
   BGColorList: [
@@ -40,4 +42,8 @@ export const Colors = {
     "#008444",
     "#D65E25",
   ],
+  text: {
+    title: "#111B21",
+    description: "#667781",
+  },
 };

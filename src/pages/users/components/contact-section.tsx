@@ -40,53 +40,54 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({ userId }) => {
     fetchContacts();
   }, [userId]);
 
-const createNewContact = async (contactData: typeof newContact) => {
-  try {
-    const response = await userApi.createUserContact(contactData);
-    return response.data; 
-  } catch (error) {
-    console.error("Error creating contact:", error);
-    throw error;
-  }
-};
-
-const handleAddContact = async () => {
-  try {
-    if (!newContact.name?.trim() || !newContact.value?.trim()) {
-      toast.error("Please fill all contact fields");
-      return;
+  const createNewContact = async (contactData: typeof newContact) => {
+    try {
+      const response = await userApi.createUserContact(contactData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      throw error;
     }
+  };
 
-    if (
-      (newContact.contactType === "EMAIL" && !validateEmail(newContact.value)) ||
-      ((newContact.contactType === "PHONE" || newContact.contactType === "WHATSAPP") &&
-        !validatePhone(newContact.value))
-    ) {
-      toast.error("Please enter a valid contact value");
-      return;
+  const handleAddContact = async () => {
+    try {
+      if (!newContact.name?.trim() || !newContact.value?.trim()) {
+        toast.error("Please fill all contact fields");
+        return;
+      }
+
+      if (
+        (newContact.contactType === "EMAIL" &&
+          !validateEmail(newContact.value)) ||
+        ((newContact.contactType === "PHONE" ||
+          newContact.contactType === "WHATSAPP") &&
+          !validatePhone(newContact.value))
+      ) {
+        toast.error("Please enter a valid contact value");
+        return;
+      }
+
+      const createdContact = await createNewContact(newContact);
+
+      if ("id" in createdContact) {
+        setContacts([...contacts, createdContact as Contact]);
+      }
+
+      setIsAdding(false);
+      setNewContact({
+        relation: "SELF",
+        name: "",
+        value: "",
+        contactType: "PHONE",
+      });
+
+      toast.success("Contact added successfully");
+    } catch (error) {
+      console.error("Error saving contact:", error);
+      toast.error("Failed to save contact. Please try again.");
     }
-
-    const createdContact = await createNewContact(newContact);
-
-    if ('id' in createdContact) {
-      setContacts([...contacts, createdContact as Contact]);
-    }
-    
-    setIsAdding(false);
-    setNewContact({
-      relation: "SELF",
-      name: "",
-      value: "",
-      contactType: "PHONE",
-    });
-
-    toast.success("Contact added successfully");
-
-  } catch (error) {
-    console.error("Error saving contact:", error);
-    toast.error("Failed to save contact. Please try again.");
-  }
-};
+  };
 
   return (
     <div className="card shadow mb-4">

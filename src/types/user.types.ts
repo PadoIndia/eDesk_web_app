@@ -8,7 +8,7 @@ export type User = {
     id?: bigint;
     url: string | null;
   };
-  empCode?:string;
+  empCode?: string;
   status: string | null;
   isActive: boolean;
   lastSeen: Date | null;
@@ -19,7 +19,7 @@ export type UpdateUser = {
   username?: string;
   contact?: string;
   empCode?: string;
-}
+};
 
 export type UserDataDetails = {
   id: number;
@@ -54,13 +54,13 @@ export type CreateContact = {
   name: string;
   value: string;
   contactType: "EMAIL" | "WHATSAPP" | "PHONE" | "OTHER";
-}
+};
 
 export type Address = {
   id?: number;
   addressType: "PERMANENT" | "CURRENT";
   address: string;
-  landmark?: string|null;
+  landmark?: string | null;
   pincode: string;
   state: string;
   city: string;

@@ -1,0 +1,255 @@
+
+.chat-container {
+  background-color: #f0f2f5; 
+}
+
+
+.chat-sidebar {
+  min-height: 100vh;
+  transition: width 0.3s ease;
+  z-index: 1030;
+  background-color: #f0f2f5; 
+  
+  .cursor-pointer {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      opacity: 1 !important;
+      transform: scale(1.1);
+    }
+  }
+
+  .sidebar-icon {
+    position: relative;
+    &.is-active {
+      &::before {
+        content: "";
+        position: absolute;
+        background-color: #AEBAC1;
+        height: 2.8571rem; 
+        width: 2.8571rem;  
+        border-radius: 50%;
+    
+        top: 50%;
+        left: 50%;
+        opacity: 0.4;
+        transform: translate(-50%, -50%);
+      }
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      transform: translateY(-50%) scaleX(0);
+      width: 3px;
+      height: 20px;
+      background-color: #00a884; 
+      border-radius: 0 3px 3px 0;
+      transition: transform 0.2s ease;
+    }
+    
+    &:hover::after {
+      transform: translateY(-50%) scaleX(1);
+    }
+  }
+}
+
+
+.chat-list {
+  background-color: #fff; 
+  border-right: 1px solid #d0d4d6; 
+  
+  .chat-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: #f9f9f9; 
+    }
+  }
+}
+
+
+.message-bubble {
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+}
+
+
+.chat-input {
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  .reply-preview {
+    &.removing {
+      animation: slideOut 0.3s ease-in forwards;
+    }
+  }
+  background-color: #fff !important; 
+  
+  input {
+    background-color: #f9f9f9; 
+    border: none;
+    padding-left:3.4rem !important;
+    &::placeholder {
+      color: #8696a0; 
+    }
+    
+  }
+  
+  .cursor-pointer {
+    transition: color 0.2s ease;
+    color: #8696a0 !important; 
+    
+    &:hover {
+      color: #D9FDD3 !important; 
+    }
+  }
+}
+
+
+@media (max-width: 768px) {
+  .chat-list {
+    width: 280px !important;
+  }
+  
+  .chat-sidebar {
+    width: 60px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .chat-list {
+    width: 100% !important;
+  }
+  
+  .chat-sidebar {
+    width: 50px !important;
+  }
+}
+
+
+.bg-whatsapp-own {
+  
+  background-color: #DCD8F8 !important; 
+  
+  &::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: -5px;
+    rotate: 90deg;
+    border-left: 10px solid #DCD8F8;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+  }
+}
+
+.bg-whatsapp-other {
+  
+  background-color: #fff !important; 
+  
+  &::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: -5px;
+    rotate: 90deg;
+    border-left: 10px solid #fff;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+  }
+}
+
+
+
+
+.message-media {
+  img, video {
+    border-radius: 8px;
+    max-height: 200px;
+    width: auto;
+    object-fit: contain;
+  }
+}
+
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+
+.chat-header {
+  background-color: #fff !important;
+}
+
+
+.message-media img:hover,
+.message-media video:hover {
+  opacity: 0.9;
+}
+
+
+.chat-messages {
+  background-color: #E5E5E5 !important; 
+}
+
+.reply-preview-box {
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.shadow-bottom-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+
+.message-item {
+  .action-menu-icon{
+    opacity: 0  !important;
+    transition: all 0.3s ease;
+  }
+  &:hover {
+    .action-menu-icon {
+      opacity:100 !important;
+    }
+  }
+}
+
+.chat-tabs {
+  display: flex;
+  margin: 0.75rem;
+  position: relative;
+  align-items: center;
+  div {
+    padding: 0.5rem;
+    flex: 1; 
+    z-index: 1;
+    text-align: center;
+    transition: all 200ms ease-in-out;
+  &.active {
+    color:#185ee0
+  }
+  }
+}
