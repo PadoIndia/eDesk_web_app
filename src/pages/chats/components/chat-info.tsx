@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store/store";
 import { ChatParticipant } from "../../../types/chat";
 import chatService from "../../../services/api-services/chat-service";
@@ -6,20 +6,18 @@ import { removeChatParticipant } from "../../../features/chat-slice";
 import Avatar from "../../../components/avatar";
 import UserTile from "./user-tile";
 import { MdAdd } from "react-icons/md";
-import ParticipantModal from "./participant-modal";
 import Modal from "../../../components/ui/modals";
+
+const ParticipantModal = lazy(() => import("./participant-modal"));
 
 const ChatInfo = () => {
   const chat = useAppSelector((s) => s.chatReducer.chatDetails);
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
   const isGroup = chat?.type !== "STANDARD";
-  const [showAction, setShowAction] = useState(false);
   const [participant, setParticipant] = useState<ChatParticipant | null>(null);
   const isUserAdmin = chat?.participants.find(
     (i) => i.user.id == userId
   )?.isAdmin;
-  //   const users = useAppSelector((s) => s.userReducer.data);
-  const [showForm, setShowForm] = useState(false);
   const [admins, setAdmins] = useState<number[]>([]);
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [removed, setRemoved] = useState<number[]>([]);
@@ -72,24 +70,6 @@ const ChatInfo = () => {
     }
   };
 
-  const handleEditPress = () => {
-    if (isUserAdmin) {
-      if (chat?.type == "GROUP") {
-        // navigation.navigate("GroupForm", {
-        //   members: chat?.participants.map((i) => i.user.id) || [],
-        //   data: {
-        //     id: chat?.id,
-        //     name: chat?.title,
-        //     image: chat?.thumbnailImageUrl,
-        //   },
-        // });
-      } else if (chat?.type == "TASK") {
-        setShowForm(true);
-      }
-      setShowAction(false);
-    }
-  };
-
   useEffect(() => {
     if (chat) {
       setAdmins(
@@ -102,28 +82,6 @@ const ChatInfo = () => {
     <div className="bg-white min-vh-10" style={{ height: "600px" }}>
       <div className="row">
         <div className="col-12 p-0">
-          {/* Task Modal */}
-          {/* {chat?.type == "TASK" && showForm && (
-            <CreateTaskModal
-              visible={showForm}
-              onClose={() => setShowForm(false)}
-              data={{
-                deadline: chat.deadline,
-                description: chat.description,
-                id: chat.id,
-                reqiresSubmit: chat.requiresSubmit,
-                subTasks: chat.subTask,
-                title: chat.title,
-                participants: chat.participants.map((i) => i.user.id) || [],
-                admins:
-                  chat.participants
-                    .filter((i) => i.isAdmin)
-                    .map((i) => i.user.id) || [],
-              }}
-            />
-          )} */}
-
-          {/* Add Participant Modal */}
           <Modal
             isOpen={showAddParticipant}
             showCloseIcon
@@ -147,28 +105,6 @@ const ChatInfo = () => {
               bgColor="#e3f2fd"
               size={80}
             />
-
-            <div className="position-relative">
-              <button
-                className={`btn btn-link p-0 ${
-                  isGroup && isUserAdmin ? "text-dark" : "text-white"
-                }`}
-                onClick={() => isGroup && setShowAction(!showAction)}
-                disabled={!isGroup || !isUserAdmin}
-              >
-                <i className="fas fa-ellipsis-v fs-4"></i>
-              </button>
-
-              {/* Dropdown Menu */}
-              {isGroup && isUserAdmin && showAction && (
-                <div className="dropdown-menu show position-absolute end-0 mt-2">
-                  <button className="dropdown-item" onClick={handleEditPress}>
-                    <i className="fas fa-edit me-2"></i>
-                    Edit
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Title */}

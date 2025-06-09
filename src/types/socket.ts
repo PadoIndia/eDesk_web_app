@@ -1,10 +1,10 @@
-import {Socket} from 'socket.io-client';
-import {MessageResp, SubTaskResp} from './response';
-import {MessagePayload} from './queue';
+import { Socket } from "socket.io-client";
+import { MessagePayload } from "./queue";
+import { MessageResp, SubTaskResp } from "./chat";
 
 export type ChatUpdated = {
   chatId: number;
-  chatType: 'GROUP' | 'STANDARD' | 'TASK';
+  chatType: "GROUP" | "STANDARD" | "TASK";
   latestMessage: {
     messageText: string;
     sentAt: Date;
@@ -21,13 +21,13 @@ export type JoinChatPayload = {
 export interface ServerToClientEvents {
   userStatusUpdated: (payload: {
     userId: number;
-    status: 'ONLINE' | 'OFFLINE';
+    status: "ONLINE" | "OFFLINE";
   }) => void;
-  joinedChat: (payload: {message: string}) => void;
-  error: (payload: {message: string}) => void;
+  joinedChat: (payload: { message: string }) => void;
+  error: (payload: { message: string }) => void;
   chatUpdated: (payload: ChatUpdated) => void;
   newMessage: (payload: MessageResp) => void;
-  leftChat: (payload: {message: string}) => void;
+  leftChat: (payload: { message: string }) => void;
   subTaskCompleted: (payload: SubTaskResp) => void;
 }
 

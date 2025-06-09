@@ -37,7 +37,8 @@ const initialState: MessageSlice = {
 // More efficient grouping function that only performs the sort once
 const groupMessages = (
   messages: MessageResp[],
-  subTasks?: SubTaskResp[]
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _subTasks?: SubTaskResp[]
 ): MessageGroupItem[] => {
   if (messages.length === 0) return [];
 
@@ -103,6 +104,7 @@ export const fetchChatMessages = createAsyncThunk(
     { chatId, page = 1 }: { chatId: number; page?: number },
     { rejectWithValue, getState }
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state = (getState() as any).messageReducer as MessageSlice;
     const cache = state.cache[chatId];
 
@@ -151,7 +153,7 @@ export const fetchChatMessages = createAsyncThunk(
       }
 
       return rejectWithValue(response.message);
-    } catch (error) {
+    } catch {
       return rejectWithValue("Failed to fetch messages");
     }
   }

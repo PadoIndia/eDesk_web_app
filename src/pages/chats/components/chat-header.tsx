@@ -2,13 +2,19 @@ import { FaEllipsisVertical } from "react-icons/fa6";
 import Avatar from "../../../components/avatar";
 import { useAppDispatch, useAppSelector } from "../../../store/store";
 import { toast } from "react-toastify";
-import { getAllChats, updateChatStatus } from "../../../features/chat-slice";
+import {
+  getAllChats,
+  getChatDetails,
+  updateChatStatus,
+} from "../../../features/chat-slice";
 import chatService from "../../../services/api-services/chat-service";
-import { MdClose } from "react-icons/md";
+import { MdClose, MdEdit } from "react-icons/md";
 import { CiSaveUp2, CiUndo, CiUnlock } from "react-icons/ci";
-import { useState } from "react";
+import React, { ReactNode, useState } from "react";
 import Modal from "../../../components/ui/modals";
-import ChatInfo from "./chat-info";
+
+const ChatInfo = React.lazy(() => import("./chat-info"));
+const CreateTaskForm = React.lazy(() => import("./create-task-form"));
 
 const ChatHeader = () => {
   const chat = useAppSelector((s) => s.chatReducer.chatDetails);
@@ -22,6 +28,7 @@ const ChatHeader = () => {
   const requiresSubmit = chat?.requiresSubmit;
   const status = chat?.status;
   const [showInfo, setShowInfo] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const handleMarkDone = (status: "SUBMITTED" | "OPEN") => {
     if (isAdmin) {
@@ -58,8 +65,23 @@ const ChatHeader = () => {
     }
   };
 
+  const onEditSuccess = () => {
+    if (chat?.id) {
+      dispatch(getChatDetails(chat?.id));
+    }
+    setShowEdit(false);
+  };
+
   const menuOptions = () => {
-    const options = [];
+    const options: { label: string; icon: ReactNode; onClick: () => void }[] =
+      [];
+    if (isAdmin) {
+      options.push({
+        label: "Edit",
+        icon: <MdEdit size={18} />,
+        onClick: () => setShowEdit(true),
+      });
+    }
     if (status == "SUBMITTED") {
       options.push({
         label: "Undo Submit",
@@ -107,16 +129,24 @@ const ChatHeader = () => {
   if (!chat) return null;
   return (
     <div className="chat-header d-flex align-items-center justify-content-between p-3 ">
-      {showInfo && (
+      <Modal
+        showCloseIcon
+        isOpen={showInfo}
+        title={chat.title}
+        onClose={() => setShowInfo(false)}
+      >
+        <ChatInfo />
+      </Modal>
+      {showEdit && (
         <Modal
-          showCloseIcon
-          isOpen={showInfo}
-          title={chat.title}
-          onClose={() => setShowInfo(false)}
+          isOpen={showEdit}
+          title="Update Task"
+          onClose={() => setShowEdit(false)}
         >
-          <ChatInfo />
+          <CreateTaskForm id={chat.id} onSuccess={onEditSuccess} />
         </Modal>
       )}
+
       <div className="d-flex align-items-center">
         <Avatar title={chat?.title || ""} imageUrl={chat?.thumbnailImageUrl} />
         <div className="ms-3">

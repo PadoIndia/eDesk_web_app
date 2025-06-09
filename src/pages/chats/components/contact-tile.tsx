@@ -57,7 +57,10 @@ const ContactTile = ({
 
       {/* Admin Toggle */}
       {isSelected && onToggleAdmin && (
-        <div className="d-flex align-items-center me-2">
+        <div
+          className="d-flex align-items-center me-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <small className="text-dark me-2">Admin</small>
           <div className="form-check form-switch">
             <input
@@ -65,7 +68,10 @@ const ContactTile = ({
               type="checkbox"
               role="switch"
               checked={isAdmin}
-              onChange={() => onToggleAdmin(item)}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleAdmin(item);
+              }}
               style={{
                 backgroundColor: isAdmin ? "#0A8D48" : "#767577",
                 borderColor: isAdmin ? "#0A8D48" : "#767577",

@@ -79,13 +79,13 @@ export type ChatPayload = {
   thumbnailImgId?: number;
   participants: number[];
   admins: number[];
-  description?: string;
-  presetId?: number;
+  description: string | null;
+  taskPresetId: number | null;
   subTasks?: string[];
   type: ChatType;
-  deadline?: Date;
-  requiresSubmit?: boolean;
-  taskMessageId?: BigInt;
+  deadline: Date | null;
+  requiresSubmit: boolean;
+  taskMessageId?: bigint;
   status?: ChatStatus;
 };
 
@@ -108,7 +108,8 @@ export type SingleChatResp = {
   subTask: SubTaskResp[];
   thumbnailImageUrl: string | null;
   participants: ChatParticipant[];
-  taskMessageId: BigInt | null;
+  taskMessageId: bigint | null;
+  taskPresetId: null | number;
 };
 
 export type MessageResp = {

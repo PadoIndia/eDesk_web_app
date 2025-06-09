@@ -33,6 +33,9 @@ const useSocketHandler = (
           type: "TASK",
           requiresSubmit: true,
           taskMessageId: message.id,
+          deadline: new Date(),
+          description: "",
+          taskPresetId: null,
         })
         .then((res) => {
           if (res.status === "success") {
