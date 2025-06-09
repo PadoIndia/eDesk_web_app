@@ -3,7 +3,7 @@ import { WpCog, WpMessages } from "../../../utils/icons";
 import { FaPlusCircle, FaUserCircle } from "react-icons/fa";
 import Modal from "../../../components/ui/modals";
 import { useAppDispatch } from "../../../store/store";
-import { getAllChats } from "../../../features/chat-slice";
+import { getAllChats, getChatDetails } from "../../../features/chat-slice";
 import { MdHome } from "react-icons/md";
 
 const CreateTaskForm = React.lazy(() => import("./create-task-form"));
@@ -12,9 +12,12 @@ const Sidebar = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const dispatch = useAppDispatch();
 
-  const onSuccess = () => {
+  const onSuccess = (id?: number) => {
     dispatch(getAllChats("TASK"));
     setShowTaskModal(false);
+    if (id) {
+      dispatch(getChatDetails(id));
+    }
   };
 
   return (

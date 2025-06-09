@@ -9,7 +9,7 @@ import ContactTile from "./contact-tile";
 
 interface Props {
   id?: number;
-  onSuccess: () => void;
+  onSuccess: (id?: number) => void;
 }
 
 type TaskPayload = {
@@ -187,7 +187,7 @@ const CreateTaskForm: React.FC<Props> = ({ id, onSuccess }) => {
       chatService.createNewChat({ ...taskData, type: "TASK" }).then((res) => {
         if (res.status === "success") {
           toast.success(res.message);
-          onSuccess();
+          onSuccess(res.data);
           setPayload({
             title: "",
             deadline: null,

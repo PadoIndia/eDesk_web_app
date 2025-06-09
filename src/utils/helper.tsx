@@ -1,3 +1,4 @@
+import { mediaBaseUrl } from "../store/config";
 import { VerifyOtpResponse } from "../types/auth.types";
 import { MediaType } from "../types/chat";
 import { EventResponse } from "../types/event.types";
@@ -287,4 +288,10 @@ export const renderMediaIcon = (type: MediaType) => {
     default:
       return null;
   }
+};
+
+export const getMediaUrl = (url?: string) => {
+  if (!url) return url;
+  if (url.toString().startsWith("http")) return url;
+  return mediaBaseUrl + url;
 };

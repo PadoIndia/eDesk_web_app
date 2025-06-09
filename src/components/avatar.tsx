@@ -1,5 +1,6 @@
 import React from "react";
 import { Colors } from "../utils/constants";
+import { getMediaUrl } from "../utils/helper";
 
 interface AvatarProps {
   title: string;
@@ -18,9 +19,12 @@ const Avatar: React.FC<AvatarProps> = ({
 
   return imageUrl ? (
     <img
-      src={imageUrl}
+      src={getMediaUrl(imageUrl)}
       alt={title}
       className="rounded-circle"
+      style={{
+        objectFit: "cover",
+      }}
       width={size}
       height={size}
     />
