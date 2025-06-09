@@ -24,8 +24,52 @@ const ChatList = () => {
   const closedRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef<HTMLDivElement>(null);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const originalTitleRef = useRef<string>("");
+
   useEffect(() => {
     dispatch(getAllChats("TASK"));
+
+    originalTitleRef.current = document.title;
+
+    try {
+      audioRef.current = new Audio("/notification-sound.mp3");
+      audioRef.current.preload = "auto";
+      audioRef.current.volume = 0.5;
+
+      audioRef.current.onerror = () => {
+        console.warn("Could not load notification sound");
+      };
+    } catch (error) {
+      console.warn("Audio initialization failed:", error);
+    }
+
+    return () => {
+      document.title = originalTitleRef.current;
+    };
+  }, []);
+
+  const totalUnreadMessages = chats.reduce((total, chat) => {
+    return total + (chat.unreadCount || 0);
+  }, 0);
+
+  useEffect(() => {
+    if (totalUnreadMessages > 0) {
+      document.title = `(${totalUnreadMessages}) ${originalTitleRef.current}`;
+    } else {
+      document.title = originalTitleRef.current;
+    }
+  }, [totalUnreadMessages]);
+
+  const playNotificationSound = useCallback(async () => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0; // Reset to start
+        await audioRef.current.play();
+      }
+    } catch (error) {
+      console.log("Error playing notification sound:", error);
+    }
   }, []);
 
   const handleChatClick = useCallback((id: number) => {
@@ -37,15 +81,20 @@ const ChatList = () => {
     if (socket && userId) {
       socket.on("chatUpdated", (data: ChatUpdated) => {
         const isSelf = data.latestMessage.createdById === userId;
+
         dispatch(addMessage(data.msg));
         dispatch(updateLatestMessage({ ...data, isSelf }));
+
+        if (!isSelf) {
+          playNotificationSound();
+        }
       });
 
       return () => {
         socket?.off("chatUpdated");
       };
     }
-  }, [socket, userId]);
+  }, [socket, userId, playNotificationSound]);
 
   const filteredChats = chats.filter(
     (chat) =>
