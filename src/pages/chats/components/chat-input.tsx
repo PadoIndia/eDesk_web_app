@@ -1,12 +1,11 @@
 import { FaTimes } from "react-icons/fa";
-import { FaImage, FaFilePdf, FaFile } from "react-icons/fa";
 import { Colors } from "../../../utils/constants";
-import { MediaType, MessageResp } from "../../../types/chat";
+import { MessageResp } from "../../../types/chat";
 import { useAppDispatch } from "../../../store/store";
 import { setReply } from "../../../features/reply-slice";
 import { MdAdd } from "react-icons/md";
-import { ChangeEvent, useRef } from "react";
-import { generateSHA256 } from "../../../utils/helper";
+import { ChangeEvent, useEffect, useRef } from "react";
+import { generateSHA256, renderMediaIcon } from "../../../utils/helper";
 import uploadService from "../../../services/api-services/upload-service";
 import { setMediaData } from "../../../features/media-slice";
 import { MediaReducer } from "../../../types/features";
@@ -20,23 +19,9 @@ type Props = {
 const ChatInput = ({ replyMessage, chatId, onMessageSend }: Props) => {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const inputRef = useRef<HTMLInputElement>(null);
   const onCancelReply = () => {
     dispatch(setReply(null));
-  };
-
-  const renderMediaIcon = (type: MediaType) => {
-    switch (type) {
-      case "IMAGE":
-      case "VIDEO":
-        return <FaImage size={16} style={{ color: "#8696a0" }} />;
-      case "PDF":
-        return <FaFilePdf size={16} style={{ color: "#8696a0" }} />;
-      case "DOCUMENT":
-        return <FaFile size={16} style={{ color: "#8696a0" }} />;
-      default:
-        return null;
-    }
   };
 
   const onFileSelect = () => {
@@ -76,6 +61,12 @@ const ChatInput = ({ replyMessage, chatId, onMessageSend }: Props) => {
       e.target.value = "";
     }
   };
+
+  useEffect(() => {
+    if (replyMessage) {
+      inputRef.current?.focus();
+    }
+  }, [replyMessage]);
 
   return (
     <div className="chat-input position-absolute bottom-0 start-0 end-0 p-2 px-3">
@@ -132,6 +123,7 @@ const ChatInput = ({ replyMessage, chatId, onMessageSend }: Props) => {
             onClick={onFileSelect}
           />
           <input
+            ref={inputRef}
             type="text"
             className="form-control py-3 px-2"
             placeholder="Type a message"

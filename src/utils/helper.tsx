@@ -1,4 +1,5 @@
 import { VerifyOtpResponse } from "../types/auth.types";
+import { MediaType } from "../types/chat";
 import { EventResponse } from "../types/event.types";
 import { GroupedOutput } from "../types/sidebar.types";
 import { VideoViewDuration } from "../types/video.types";
@@ -13,6 +14,9 @@ import {
   FaBusinessTime,
   FaMapMarkerAlt,
   FaFileAlt,
+  FaImage,
+  FaFilePdf,
+  FaFile,
 } from "react-icons/fa";
 
 export const getOperatingSystem = () => {
@@ -270,3 +274,17 @@ export async function generateSHA256(file: File) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+export const renderMediaIcon = (type: MediaType) => {
+  switch (type) {
+    case "IMAGE":
+    case "VIDEO":
+      return <FaImage size={16} style={{ color: "#8696a0" }} />;
+    case "PDF":
+      return <FaFilePdf size={16} style={{ color: "#8696a0" }} />;
+    case "DOCUMENT":
+      return <FaFile size={16} style={{ color: "#8696a0" }} />;
+    default:
+      return null;
+  }
+};

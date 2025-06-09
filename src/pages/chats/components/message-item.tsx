@@ -6,10 +6,13 @@ import { FaRegFilePdf } from "react-icons/fa";
 import { LuCircleChevronDown } from "react-icons/lu";
 import { useAppDispatch } from "../../../store/store";
 import { setReply } from "../../../features/reply-slice";
+import { Colors } from "../../../utils/constants";
+import { renderMediaIcon } from "../../../utils/helper";
 
 type Props = {
   message: MessageResp;
   userId: number;
+  onReplyPress: (id: bigint) => void;
   handleMediaClick: (media: {
     type: MediaType;
     url: string;
@@ -17,7 +20,12 @@ type Props = {
   }) => void;
 };
 
-const MessageItem = ({ message, userId, handleMediaClick }: Props) => {
+const MessageItem = ({
+  message,
+  userId,
+  handleMediaClick,
+  onReplyPress,
+}: Props) => {
   const isOwnMessage = message.userId === userId;
   const messageTime = format(new Date(message.sentAt), "HH:mm");
   const hasMedia = message.media && message.media.type !== "NONE";
@@ -26,11 +34,13 @@ const MessageItem = ({ message, userId, handleMediaClick }: Props) => {
   const allDelivered = message.status.every(
     (i) => i.status === "DELIVERED" || i.status === "READ"
   );
+  const replyMessage = message.parentMessage;
 
   return (
     <div
+      id={`message-${message.id}`}
       key={String(message.id)}
-      className={`message-item d-flex mb-2  ${
+      className={`message-item position-relative d-flex mb-2  ${
         isOwnMessage ? "justify-content-end" : "justify-content-start"
       }`}
     >
@@ -62,6 +72,37 @@ const MessageItem = ({ message, userId, handleMediaClick }: Props) => {
         {!isOwnMessage && (
           <div className="fw-semibold small text-primary">
             {message.user?.name}
+          </div>
+        )}
+        {replyMessage && (
+          <div
+            className="reply-preview rounded"
+            style={{
+              backgroundColor: "#fff",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#f9f9f9",
+                padding: "0.5rem",
+                borderLeft: `4px solid ${Colors.primary}`,
+              }}
+              onClick={() => onReplyPress(replyMessage.id)}
+              className="d-flex rounded px-3 mb-1 justify-content-between align-items-start"
+            >
+              <div>
+                <div style={{ color: Colors.primary, fontSize: "0.875rem" }}>
+                  {replyMessage.userId ? replyMessage.user.name : "You"}
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  {replyMessage.media &&
+                    renderMediaIcon(replyMessage.media.type)}
+                  <span style={{ color: "#8696a0", fontSize: "0.875rem" }}>
+                    {replyMessage.messageText || "Media"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -99,9 +140,9 @@ const MessageItem = ({ message, userId, handleMediaClick }: Props) => {
                   })
                 }
               >
-                <img
+                <video
+                  autoPlay={false}
                   src={message.media.thumbnailUrl}
-                  alt={message.media.name}
                   className="img-fluid rounded"
                   style={{ maxHeight: "200px" }}
                 />

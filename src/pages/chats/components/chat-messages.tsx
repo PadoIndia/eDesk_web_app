@@ -1,11 +1,13 @@
 import { MessageGroupItem } from "../../../features/message-slice";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import MediaModal from "./media-modal";
 import { MediaType, SubTaskResp } from "../../../types/chat";
 import MessageItem from "./message-item";
 import MediaPlaceholder from "./message-placeholder";
 import { useAppSelector } from "../../../store/store";
 import { MdPushPin } from "react-icons/md";
+import Modal from "../../../components/ui/modals";
+import { Colors } from "../../../utils/constants";
 
 function isSeparator(
   item: MessageGroupItem
@@ -33,6 +35,7 @@ const ChatMessages = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const subtasks = useAppSelector((s) => s.messageReducer?.subTasks) || [];
+  const [showSubTask, setShowSubTask] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{
     type: MediaType;
     url: string;
@@ -70,14 +73,26 @@ const ChatMessages = ({
   const handleCloseModal = () => {
     setModalOpen(false);
   };
+  const onReplyPress = useCallback((id: bigint) => {
+    const elem = document.getElementById(`message-${id}`);
+    const container = messagesContainerRef.current;
 
-  const scrollToSubTasks = () => {
-    if (messagesContainerRef)
-      messagesContainerRef.current?.scrollTo({
-        top: -messagesContainerRef.current.scrollHeight,
+    if (elem && container) {
+      const offsetTop = elem.offsetTop;
+      container.scrollTo({
+        top: offsetTop - 300,
         behavior: "smooth",
       });
-  };
+      elem.style.backgroundColor = Colors.lightGray;
+      const timeout = setTimeout(
+        () => (elem.style.backgroundColor = "transparent"),
+        1000
+      );
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
 
   return (
     <>
@@ -86,8 +101,36 @@ const ChatMessages = ({
         onClose={handleCloseModal}
         media={selectedMedia}
       />
+      <Modal
+        title="SubTasks"
+        onClose={() => setShowSubTask(false)}
+        isOpen={showSubTask}
+      >
+        <div className="ps-2">
+          {subtasks.length > 0
+            ? subtasks.map((subtask) => (
+                <div className="d-flex gap-2">
+                  <input
+                    className=""
+                    onChange={(e) =>
+                      toggleSubTask({
+                        ...subtask,
+                        value: !e.target.checked,
+                      })
+                    }
+                    type="checkbox"
+                    checked={!!subtask.value}
+                    name=""
+                    id=""
+                  />
+                  <label htmlFor="">{subtask.key}</label>
+                </div>
+              ))
+            : "No SubTasks"}
+        </div>
+      </Modal>
       <div
-        onClick={scrollToSubTasks}
+        onClick={() => setShowSubTask(true)}
         style={{
           height: 30,
           right: 30,
@@ -134,38 +177,13 @@ const ChatMessages = ({
 
           return (
             <MessageItem
+              onReplyPress={onReplyPress}
               userId={userId}
               handleMediaClick={handleMediaClick}
               message={message}
             />
           );
         })}
-        <div
-          id="subtask-container"
-          className="w-50 bg-white d-flex flex-column  justify-content-center rounded shadow  p-3"
-        >
-          <h5>SubTasks</h5>
-          <div className="ps-2">
-            {subtasks.map((subtask) => (
-              <div className="d-flex gap-2">
-                <input
-                  className=""
-                  onChange={(e) =>
-                    toggleSubTask({
-                      ...subtask,
-                      value: !e.target.checked,
-                    })
-                  }
-                  type="checkbox"
-                  checked={!!subtask.value}
-                  name=""
-                  id=""
-                />
-                <label htmlFor="">{subtask.key}</label>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </>
   );
