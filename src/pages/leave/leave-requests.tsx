@@ -10,7 +10,6 @@ import {
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import "../../App.css";
 import Badge from "../../components/badge";
 import leaveRequestService from "../../services/api-services/leave-request.service";
 import {
@@ -19,7 +18,6 @@ import {
   LeaveRequestStatus,
 } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
-// import { useDispatch } from "react-redux";
 import { IsDeptManager, IsHr, isTeamManager } from "../../utils/helper";
 
 // Updated interface to match API response structure
@@ -66,7 +64,9 @@ const LeaveRequests = () => {
     start: null,
     end: null,
   });
-  const [activeTab, setActiveTab] = useState<"my-requests" | "others-requests">("my-requests");
+  const [activeTab, setActiveTab] = useState<"my-requests" | "others-requests">(
+    "my-requests"
+  );
   const [isTeamManagerState, setIsTeamManagerState] = useState<boolean>(false);
 
   // All useAppSelector hooks
@@ -87,19 +87,22 @@ const LeaveRequests = () => {
   }, [isHR, isManager]);
 
   // Helper function to get the effective status based on user role
-  const getEffectiveStatus = useCallback((request: LeaveRequest) => {
-    if (isHR) {
+  const getEffectiveStatus = useCallback(
+    (request: LeaveRequest) => {
+      if (isHR) {
+        return request.hrStatus;
+      } else if (isManager) {
+        return request.managerStatus;
+      }
       return request.hrStatus;
-    } else if (isManager) {
-      return request.managerStatus;
-    }
-    return request.hrStatus;
-  }, [isHR, isManager]);
+    },
+    [isHR, isManager]
+  );
 
   // Check team manager status - separate useEffect with proper dependencies
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkTeamManagerStatus = async () => {
       try {
         const isTeamManagerResult = await isTeamManager();
@@ -131,7 +134,8 @@ const LeaveRequests = () => {
       setLoading(true);
 
       try {
-        const myRequestsResponse = await leaveRequestService.getMyLeaveRequests();
+        const myRequestsResponse =
+          await leaveRequestService.getMyLeaveRequests();
         if (isMounted) {
           setMyRequests(myRequestsResponse.data);
         }
@@ -153,18 +157,20 @@ const LeaveRequests = () => {
 
             // Use Map to deduplicate by request ID
             const requestsMap = new Map();
-            [...managerRequests, ...hrRequests].forEach(request => {
+            [...managerRequests, ...hrRequests].forEach((request) => {
               requestsMap.set(request.id, request);
             });
 
             allOthersRequests = Array.from(requestsMap.values());
           } else if (isManager) {
             // User is only Manager
-            const response = await leaveRequestService.getLeaveRequestsForManagerApproval();
+            const response =
+              await leaveRequestService.getLeaveRequestsForManagerApproval();
             allOthersRequests = response.data;
           } else if (isHR) {
             // User is only HR
-            const response = await leaveRequestService.getLeaveRequestsForHRApproval();
+            const response =
+              await leaveRequestService.getLeaveRequestsForHRApproval();
             allOthersRequests = response.data;
           }
 
@@ -247,7 +253,11 @@ const LeaveRequests = () => {
         othersRequests.map((req) => {
           if (req.id === id) {
             if (isHR && isManager) {
-              return { ...req, hrStatus: "APPROVED", managerStatus: "APPROVED" };
+              return {
+                ...req,
+                hrStatus: "APPROVED",
+                managerStatus: "APPROVED",
+              };
             } else if (isHR) {
               return { ...req, hrStatus: "APPROVED" };
             } else if (isManager) {
@@ -291,7 +301,11 @@ const LeaveRequests = () => {
         othersRequests.map((req) => {
           if (req.id === id) {
             if (isHR && isManager) {
-              return { ...req, hrStatus: "REJECTED", managerStatus: "REJECTED" };
+              return {
+                ...req,
+                hrStatus: "REJECTED",
+                managerStatus: "REJECTED",
+              };
             } else if (isHR) {
               return { ...req, hrStatus: "REJECTED" };
             } else if (isManager) {
@@ -401,7 +415,9 @@ const LeaveRequests = () => {
                           selectsEnd
                           startDate={dateFilter.start}
                           endDate={dateFilter.end}
-                          {...(dateFilter.start && { minDate: dateFilter.start })}
+                          {...(dateFilter.start && {
+                            minDate: dateFilter.start,
+                          })}
                           className="form-control form-control-sm"
                           placeholderText="End date"
                         />
@@ -418,7 +434,9 @@ const LeaveRequests = () => {
             <ul className="nav nav-tabs card-header-tabs">
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "my-requests" ? "active" : ""}`}
+                  className={`nav-link ${
+                    activeTab === "my-requests" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("my-requests")}
                 >
                   My Requests ({myRequests.length})
@@ -426,7 +444,9 @@ const LeaveRequests = () => {
               </li>
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "others-requests" ? "active" : ""}`}
+                  className={`nav-link ${
+                    activeTab === "others-requests" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("others-requests")}
                 >
                   Team Requests ({othersRequests.length})
@@ -529,7 +549,8 @@ const LeaveRequests = () => {
         <div className="card-footer bg-light">
           <div className="d-flex justify-content-between align-items-center">
             <small className="text-muted">
-              Showing {filteredRequests.length} of {getCurrentRequests().length} requests
+              Showing {filteredRequests.length} of {getCurrentRequests().length}{" "}
+              requests
             </small>
             <nav>
               <ul className="pagination pagination-sm mb-0">

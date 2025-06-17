@@ -15,6 +15,7 @@ import userService from "../../services/api-services/user.service";
 import leaveSchemeService from "../../services/api-services/leave-scheme.service"; // Assuming this service exists
 import teamService from "../../services/api-services/team.service";
 import userDepartmentService from "../../services/api-services/user-department.service";
+import { UserDetails } from "../../types/user.types";
 
 interface LeaveType {
   id: number;
@@ -23,19 +24,6 @@ interface LeaveType {
   description: string;
   maxDays?: number;
   remainingDays?: number;
-}
-
-interface UserDataDetails {
-  id: number;
-  gender: string;
-  dob: string;
-  joiningDate: string;
-  createdOn: string;
-  leaveSchemeId?: number;
-  updatedOn: string;
-  userId: number;
-  weekoff: string;
-  hrId?: number;
 }
 
 interface LeaveScheme {
@@ -56,7 +44,7 @@ interface FormData {
 }
 
 const ApplyLeave: React.FC = () => {
-  const [userDetails, setUserDetails] = useState<UserDataDetails | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [leaveScheme, setLeaveScheme] = useState<LeaveScheme | null>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,17 +85,15 @@ const ApplyLeave: React.FC = () => {
         setError(null);
 
         // Fetch user details
-        const userDetailsResponse = await userService.getUserDetailsById(
-          userId
-        );
+        const resp = await userService.getUserById(userId);
 
-        console.log("user details response", userDetailsResponse);
+        console.log("user details response", resp);
 
-        if (!userDetailsResponse.status || !userDetailsResponse.data) {
+        if (!resp.status || !resp.data) {
           throw new Error("Failed to fetch user details");
         }
 
-        const userDetailsData = userDetailsResponse.data;
+        const userDetailsData = resp.data.userDetails;
         setUserDetails(userDetailsData);
 
         // Fetch leave scheme if leaveSchemeId exists
@@ -204,32 +190,36 @@ const ApplyLeave: React.FC = () => {
   const duration = calculateDuration();
 
   const onSubmit = async (data: FormData) => {
-    if (!userDetails) {
+    if (!userDetails || !userId) {
       alert("User details not available");
       return;
     }
 
-let managerId: number | null = null;
+    let managerId: number | null = null;
 
-const teamManagerResponse = await teamService.getManagerByUserId(userDetails.userId);
-if (teamManagerResponse.data) {
-  managerId = teamManagerResponse.data;
-} else {
-  const userDepartmentResponse = await userDepartmentService.getUserDepartmentByUserId(userDetails.userId);
-  
-  if (userDepartmentResponse.data.length > 0) {
-    const departmentIds = userDepartmentResponse.data.map((dept: any) => dept.departmentId);
-    
-    for (const deptId of departmentIds) {
-      const deptManagerResponse = await userDepartmentService.getDepartmentManager(deptId);
-      
-      if (deptManagerResponse.data?.length > 0) {
-        managerId = deptManagerResponse.data[0].id;
-        break;
+    const teamManagerResponse = await teamService.getManagerByUserId(userId);
+    if (teamManagerResponse.data) {
+      managerId = teamManagerResponse.data;
+    } else {
+      const userDepartmentResponse =
+        await userDepartmentService.getUserDepartmentByUserId(userId);
+
+      if (userDepartmentResponse.data.length > 0) {
+        const departmentIds = userDepartmentResponse.data.map(
+          (dept: any) => dept.departmentId
+        );
+
+        for (const deptId of departmentIds) {
+          const deptManagerResponse =
+            await userDepartmentService.getDepartmentManager(deptId);
+
+          if (deptManagerResponse.data?.length > 0) {
+            managerId = deptManagerResponse.data[0].id;
+            break;
+          }
+        }
       }
     }
-  }
-}
 
     if (!managerId) {
       alert("No manager found to approve your leave request");
@@ -243,7 +233,7 @@ if (teamManagerResponse.data) {
         endDate: data.endDate.toISOString(),
         duration,
         reason: data.reason,
-        managerId: managerId
+        managerId: managerId,
       };
 
       console.log("leave apply payload", payload);

@@ -7,7 +7,8 @@ import { AppDispatch, RootState } from "../../../store/store";
 import { setDepartments } from "../../../features/department.slice";
 
 const TeamForm = () => {
-  const departments = useSelector((state: RootState) => state.department.departments) || [];
+  const departments =
+    useSelector((state: RootState) => state.department.departments) || [];
   const [selectedDept, setSelectedDept] = useState<number | "">("");
   const [teamName, setTeamName] = useState("");
   const [responsibilities, setResponsibilities] = useState("");

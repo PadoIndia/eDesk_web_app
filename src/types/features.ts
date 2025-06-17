@@ -5,7 +5,7 @@ import {
   SingleChatResp,
   SubTaskResp,
 } from "./chat";
-import { User, UserDataDetails } from "./user.types";
+import { AdminUser, User } from "./user.types";
 
 export type AuthReducer = {
   loggedIn: boolean;
@@ -32,7 +32,7 @@ export type UserReducer = {
   isLoading: boolean;
   data: User[] | null;
   errors: unknown;
-  current: UserDataDetails | null;
+  current: AdminUser | null;
 };
 
 export type TaskReducer = {

@@ -1,35 +1,34 @@
-// components/DocumentsSection.tsx
 import React, { useState, useEffect } from "react";
 import { Document } from "../../../types/user.types";
-import { FaPlus, FaTimes, FaSave, FaSpinner, FaFilePdf} from "react-icons/fa";
+import { FaPlus, FaTimes, FaSave, FaSpinner, FaFilePdf } from "react-icons/fa";
 import { getDocumentTypeIcon, generateSHA256 } from "../../../utils/helper.tsx";
 import { toast } from "react-toastify";
 import generalService from "../../../services/api-services/general.service.ts";
-import userApi from "../../../services/api-services/user.service.ts";
+import userService from "../../../services/api-services/user.service.ts";
 
-export const DocumentsSection: React.FC = () => {
+export const DocumentsSection: React.FC<{ userId: number }> = ({ userId }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [newDocument, setNewDocument] = useState<Omit<Document, "id" | "fileId">>({
+  const [newDocument, setNewDocument] = useState<
+    Omit<Document, "id" | "fileId">
+  >({
     title: "",
     documentType: "AADHAR",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-  // New state for document preview
+
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Fetch documents on component mount
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
         setIsFetching(true);
-        const response = await userApi.getUserDocuments();
+        const response = await userService.getUserDocuments(userId);
         if (response.data) {
-          setDocuments(response.data);
+          setDocuments(response.data || []);
         }
       } catch (error) {
         console.error("Failed to fetch documents", error);
@@ -57,29 +56,24 @@ export const DocumentsSection: React.FC = () => {
 
       setIsLoading(true);
 
-      // Upload file to S3 and get fileId
       const fileHash = await generateSHA256(selectedFile);
       const uploadResponse = await generalService.uploadToS3([
-        { image: selectedFile, hash: fileHash }
+        { image: selectedFile, hash: fileHash },
       ]);
-      
+
       const fileId = uploadResponse.data[0].id;
 
-      // Create document payload with required fields
       const documentPayload = {
         title: newDocument.title,
         fileId: fileId,
-        documentType: newDocument.documentType
+        documentType: newDocument.documentType,
       };
 
-      // Save document metadata to backend
-      const response = await userApi.createUserDocument(documentPayload);
+      const response = await userService.createUserDocument(documentPayload);
       const savedDocument = response.data;
-      
-      // Update local state with saved document
+
       setDocuments([...documents, savedDocument]);
 
-      // Reset form
       setIsAdding(false);
       setNewDocument({ title: "", documentType: "AADHAR" });
       setSelectedFile(null);
@@ -92,27 +86,25 @@ export const DocumentsSection: React.FC = () => {
     }
   };
 
-  // Handle document preview
   const handlePreview = (doc: Document) => {
     setPreviewDocument(doc);
     setIsPreviewOpen(true);
   };
 
-  // Render document preview based on file type
   const renderDocumentPreview = () => {
     if (!previewDocument || !previewDocument.file) return null;
-    
-    const mimeType = previewDocument.file.mimeType || '';
-    const url = previewDocument.file.url || '';
 
-    if (mimeType.includes('pdf')) {
+    const mimeType = previewDocument.file.mimeType || "";
+    const url = previewDocument.file.url || "";
+
+    if (mimeType.includes("pdf")) {
       return (
         <div className="d-flex flex-column align-items-center">
           <FaFilePdf className="text-danger" size={48} />
           <p className="mt-2">PDF Document</p>
-          <a 
-            href={url} 
-            target="_blank" 
+          <a
+            href={url}
+            target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary mt-2"
           >
@@ -120,14 +112,14 @@ export const DocumentsSection: React.FC = () => {
           </a>
         </div>
       );
-    } else if (mimeType.includes('image')) {
+    } else if (mimeType.includes("image")) {
       return (
         <div className="text-center">
-          <img 
-            src={url} 
-            alt={previewDocument.title} 
+          <img
+            src={url}
+            alt={previewDocument.title}
             className="img-fluid rounded"
-            style={{ maxHeight: '70vh' }}
+            style={{ maxHeight: "70vh" }}
           />
         </div>
       );
@@ -136,9 +128,9 @@ export const DocumentsSection: React.FC = () => {
         <div className="d-flex flex-column align-items-center">
           <FaFilePdf className="text-primary" size={48} />
           <p className="mt-2">Document File</p>
-          <a 
-            href={url} 
-            target="_blank" 
+          <a
+            href={url}
+            target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary mt-2"
           >
@@ -153,14 +145,17 @@ export const DocumentsSection: React.FC = () => {
     <div className="card shadow">
       {/* Preview Modal */}
       {isPreviewOpen && previewDocument && (
-        <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal"
+          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">{previewDocument.title}</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
+                <button
+                  type="button"
+                  className="btn-close"
                   onClick={() => setIsPreviewOpen(false)}
                 ></button>
               </div>
@@ -168,9 +163,9 @@ export const DocumentsSection: React.FC = () => {
                 {renderDocumentPreview()}
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                <button
+                  type="button"
+                  className="btn btn-secondary"
                   onClick={() => setIsPreviewOpen(false)}
                 >
                   Close
@@ -278,7 +273,7 @@ export const DocumentsSection: React.FC = () => {
         ) : documents.length === 0 ? (
           <div className="text-center py-5">
             <p>No documents found</p>
-            <button 
+            <button
               className="btn btn-primary mt-2"
               onClick={() => setIsAdding(true)}
             >
@@ -296,7 +291,9 @@ export const DocumentsSection: React.FC = () => {
                         {getDocumentTypeIcon()}
                         <div>
                           <h5 className="mb-0">{doc.title}</h5>
-                          <small className="text-muted">{doc.documentType}</small>
+                          <small className="text-muted">
+                            {doc.documentType}
+                          </small>
                         </div>
                       </div>
                     </div>

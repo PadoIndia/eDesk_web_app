@@ -12,6 +12,7 @@ const EventsPage = React.lazy(() => import("./pages/events"));
 const VideoSearchPage = React.lazy(() => import("./pages/search"));
 const SocialMediaManagement = React.lazy(() => import("./pages/social-media"));
 const Uploads = React.lazy(() => import("./pages/uploads"));
+
 const UsersList = React.lazy(
   () => import("./pages/users/components/user-list")
 );

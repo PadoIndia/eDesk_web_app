@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
-import {
-  FaCalendarAlt,
-  FaPlus,
-} from "react-icons/fa";
+import { useState, useEffect, lazy } from "react";
+import { FaCalendarAlt, FaPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import leaveRequestService from "../../services/api-services/leave-request.service";
 import leaveTransactionService from "../../services/api-services/leave-transaction.service";
 import { useAppSelector } from "../../store/store";
-import LeaveBalanceComponent from "./leave-dashboard-components/leave-balance";
 import RecentLeaveRequestsComponent from "./leave-dashboard-components/recent-leave-request";
+const LeaveBalanceComponent = lazy(
+  () => import("./leave-dashboard-components/leave-balance")
+);
 
 interface LeaveBalance {
   id: number;
@@ -41,18 +40,20 @@ const LeaveDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
-      
+
       setLoading(true);
       try {
         // Fetch leave balance - corrected API call
-        const balanceRes = await leaveTransactionService.getLeaveBalance(userId);
+        const balanceRes = await leaveTransactionService.getLeaveBalance(
+          userId
+        );
         setLeaveBalance(balanceRes.data);
-        
+
         // Fetch recent requests - corrected parameters structure
         const requestsRes = await leaveRequestService.getMyLeaveRequests({
           limit: 3,
           sortBy: "submittedOn",
-          sortOrder: "desc"
+          sortOrder: "desc",
         });
         setRecentRequests(requestsRes.data);
       } catch (error) {
@@ -91,20 +92,20 @@ const LeaveDashboard = () => {
           </Link>
         </div>
       </div>
-      
+
       <div className="row g-4">
         {/* Leave Balance Component */}
         <div className="col-md-6">
-          <LeaveBalanceComponent 
-            leaveBalance={leaveBalance} 
+          <LeaveBalanceComponent
+            leaveBalance={leaveBalance}
             loading={loading}
           />
         </div>
 
         {/* Recent Leave Requests Component */}
         <div className="col-md-6">
-          <RecentLeaveRequestsComponent 
-            recentRequests={recentRequests} 
+          <RecentLeaveRequestsComponent
+            recentRequests={recentRequests}
             loading={loading}
           />
         </div>

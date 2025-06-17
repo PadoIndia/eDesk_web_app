@@ -1,7 +1,8 @@
 import Sidebar from "./components/chat-sidebar";
 import ChatList from "./components/chat-list";
 import { useAppSelector } from "../../store/store";
-import ChatScreen from "./components/chat-screen";
+import { lazy } from "react";
+const ChatScreen = lazy(() => import("./components/chat-screen"));
 
 const Chats = () => {
   const chatId = useAppSelector((s) => s.chatReducer.chatDetails?.id);

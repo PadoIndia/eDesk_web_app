@@ -339,9 +339,9 @@ export const formatTime = (hh: number, mm: number): string => {
 };
 
 export const getWeekOff = async (userId: number): Promise<string> => {
-  const response = await userService.getUserDetailsById(userId);
-  const weekoff = response.data.weekoff;
-  return weekoff;
+  const response = await userService.getUserById(userId);
+  const weekoff = response.data.userDetails.weekoff;
+  return weekoff || "";
 };
 
 export const calculateWorkingHours = (punches: Punch[]): string => {

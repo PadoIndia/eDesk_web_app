@@ -2,41 +2,33 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import userApi from "../../services/api-services/user.service";
-import { UpdateUser, User, UserDataDetails } from "../../types/user.types";
-import {ProfileSection} from "./components/profile-section";
+import { UpdateSelfPayload, User, UserDetails } from "../../types/user.types";
+import { ProfileSection } from "./components/profile-section";
 import { ContactsSection } from "./components/contact-section";
 import { AddressesSection } from "./components/address-section";
 import { DocumentsSection } from "./components/document-section";
+import userService from "../../services/api-services/user.service";
 
-
-
-const UserDetails = () => {
+const UserFullDetails = () => {
   const { userId } = useParams();
   const [userData, setUserData] = useState<User>({} as User);
-  const [userDetails, setUserDetails] = useState<UserDataDetails>(
-    {} as UserDataDetails
+  const [userDetails, setUserDetails] = useState<UserDetails>(
+    {} as UserDetails
   );
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState({
-    name: "",
-    username: "",
-    contact: "",
-  });
+  const [draft, setDraft] = useState<UpdateSelfPayload>({});
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         if (!userId) return;
-
-        const [userResponse, detailsResponse] = await Promise.all([
-          userApi.getUserById(Number(userId)),
-          userApi.getUserDetailsById(Number(userId)),
-        ]);
-
-        setUserData(userResponse.data);
-        setUserDetails(detailsResponse.data);
-        initializeDraft(userResponse.data);
+        const resp = await userService.getUserById(Number(userId));
+        if (resp.status === "success") {
+          const { userDetails, userDepartment, ...data } = resp.data;
+          setUserData(data);
+          setUserDetails(userDetails);
+          initializeDraft(resp.data);
+        } else toast.error(resp.message);
       } catch (error) {
         handleFetchError(error);
       }
@@ -48,53 +40,28 @@ const UserDetails = () => {
   const initializeDraft = (user: User) => {
     setDraft({
       name: user.name || "",
-      username: user.username || "",
-      contact: user.contact || "",
     });
   };
 
-const handleFetchError = (error: unknown) => {
+  const handleFetchError = (error: unknown) => {
     console.error("Error fetching user data:", error);
     toast.error("Failed to load user data");
   };
 
   const handleSave = async () => {
-  if (!validateForm()) return;
+    try {
+      const response = await userService.updateSelf(draft);
 
-  const updatedUser: UpdateUser = {
-    ...draft, // override name, username, contact
-  };
-
-  try {
-    const response = await userApi.updateUser(userData.id, updatedUser);
-    
-    if (response.status === "success") {
-      setUserData(prev => ({
-        ...prev,
-        ...updatedUser
-      }));
-      setIsEditing(false);
-      toast.success("Changes saved successfully");
-    } else {
-      toast.error(response?.message || "Failed to save changes");
+      if (response.status === "success") {
+        setIsEditing(false);
+        toast.success("Changes saved successfully");
+      } else {
+        toast.error(response?.message || "Failed to save changes");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("An error occurred while saving changes");
     }
-  } catch (error) {
-    console.error("Update error:", error);
-    toast.error("An error occurred while saving changes");
-  }
-};
-
-
-
-
-  const validateForm = () => {
-    const isValid =
-      draft.name?.trim() &&
-      /^\S+@\S+\.\S+$/.test(draft.username) &&
-      /^\+?\d{10,15}$/.test(draft.contact);
-
-    if (!isValid) toast.error("Please enter valid Name, Email, and Contact");
-    return isValid;
   };
 
   const handleCancel = () => {
@@ -121,9 +88,9 @@ const handleFetchError = (error: unknown) => {
 
       <AddressesSection userId={Number(userId)} />
 
-      <DocumentsSection />
+      <DocumentsSection userId={Number(userId)} />
     </div>
   );
 };
 
-export default UserDetails;
+export default UserFullDetails;

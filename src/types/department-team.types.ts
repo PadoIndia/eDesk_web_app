@@ -7,10 +7,25 @@ export interface Department {
   id: number;
   name: string;
   slug: string;
-  responsibilities?: string;
+  responsibilities: string | null;
   createdOn: Date;
-  updatedOn?: Date;
-  teams?: Team[]; 
+  updatedOn: Date | null;
+  teams?: Team[];
+}
+
+export interface DepartmentResponse {
+  id: number;
+  name: string;
+  createdOn: Date;
+  updatedOn: Date | null;
+  slug: string;
+  responsibilities: string | null;
+  teams: Team[];
+}
+
+export interface UpdateUserDepartmentPayload {
+  isAdmin: boolean;
+  departmentId: number;
 }
 
 export interface DepartmentTeamLink {

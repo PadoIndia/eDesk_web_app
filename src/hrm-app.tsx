@@ -1,26 +1,42 @@
 import { Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/dashboard/dashboard";
-import HrmNavbar from "./components/layout/navbar/hrm-index";
-import HrmSidebar from "./components/layout/sidebar/hrm-index";
-import Attendance from "./pages/attendance/attendance";
-import DepartmentManagement from "./pages/department/department-management";
-import LeaveDashboard from "./pages/leave/leave-dashboard-page";
-import ApplyLeave from "./pages/leave/apply-leave";
-import LeaveRequests from "./pages/leave/leave-requests";
-import LeaveTransactions from "./pages/leave/leave-transaction";
-import LeaveConfiguration from "./pages/leave/leave-configuration";
-import UserLeaveBalances from "./pages/leave/user-leave-balance";
-import UserDetails from "./pages/users/user-details";
-import UserEditForm from "./pages/users/user-edit-form";
 import { useEffect } from "react";
 import { AppDispatch, useAppSelector } from "./store/store";
 import { useDispatch } from "react-redux";
 import { setUserDepartments } from "./features/user-department.slice";
 import { getUserDepartments } from "./utils/helper";
+import React from "react";
+
+const Dashboard = React.lazy(() => import("./pages/dashboard/dashboard"));
+const HrmNavbar = React.lazy(
+  () => import("./components/layout/navbar/hrm-index")
+);
+const HrmSidebar = React.lazy(
+  () => import("./components/layout/sidebar/hrm-index")
+);
+const Attendance = React.lazy(() => import("./pages/attendance/attendance"));
+const DepartmentManagement = React.lazy(
+  () => import("./pages/department/department-management")
+);
+const LeaveDashboard = React.lazy(
+  () => import("./pages/leave/leave-dashboard-page")
+);
+const ApplyLeave = React.lazy(() => import("./pages/leave/apply-leave"));
+const LeaveRequests = React.lazy(() => import("./pages/leave/leave-requests"));
+const LeaveTransactions = React.lazy(
+  () => import("./pages/leave/leave-transaction")
+);
+const LeaveConfiguration = React.lazy(
+  () => import("./pages/leave/leave-configuration")
+);
+const UserLeaveBalances = React.lazy(
+  () => import("./pages/leave/user-leave-balance")
+);
+const UserDetails = React.lazy(() => import("./pages/users/user-details"));
+const UserEditForm = React.lazy(() => import("./pages/users/user-edit-form"));
 
 function HrmApp() {
-    const dispatch = useDispatch<AppDispatch>();
-    const userId = useAppSelector((state) => state.auth.userData?.user.id);
+  const dispatch = useDispatch<AppDispatch>();
+  const userId = useAppSelector((state) => state.auth.userData?.user.id);
   useEffect(() => {
     const fetchDepartments = async () => {
       if (!userId) return;

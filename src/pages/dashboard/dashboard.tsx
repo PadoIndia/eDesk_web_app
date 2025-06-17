@@ -1,9 +1,8 @@
-// pages/Dashboard.jsx
 import { Link } from "react-router-dom";
 import { FaUser, FaInfoCircle } from "react-icons/fa";
 import { ChangeEvent, useEffect, useState } from "react";
-import userApi from "../../services/api-services/user.service";
 import { useAppSelector } from "../../store/store";
+import userService from "../../services/api-services/user.service";
 
 // Add the User type
 type User = {
@@ -21,7 +20,7 @@ type User = {
 };
 
 const Dashboard = () => {
-  const defaultUser: User = {
+  const [userData, setUserData] = useState<User>({
     profileImg: {
       id: undefined,
       url: null,
@@ -33,18 +32,16 @@ const Dashboard = () => {
     isActive: false,
     lastSeen: null,
     contact: "",
-  };
+  });
 
-  const [userData, setUserData] = useState<User>(defaultUser);
-
-  const userId = useAppSelector(s => s.auth.userData?.user.id);
-  console.log(useAppSelector(s => s.auth.userData));
+  const userId = useAppSelector((s) => s.auth.userData?.user.id);
+  console.log(useAppSelector((s) => s.auth.userData));
 
   useEffect(() => {
     try {
       if (!userId) return;
 
-      userApi
+      userService
         .getUserById(userId)
         .then((res) => setUserData(res.data))
         .catch((err) => console.error(err));

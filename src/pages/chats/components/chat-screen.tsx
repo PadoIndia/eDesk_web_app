@@ -105,6 +105,7 @@ const ChatScreen = ({ id }: { id: number }) => {
   );
 
   if (!userId) return null;
+
   return (
     <>
       <ChatHeader />

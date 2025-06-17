@@ -1,17 +1,22 @@
-// components/ProfileSection.tsx
 import React from "react";
-import { User, UserDataDetails } from "../../../types/user.types.ts";
+import {
+  TGender,
+  UpdateSelfPayload,
+  User,
+  UserDetails,
+} from "../../../types/user.types.ts";
 import { DetailItem } from "./details-items.tsx";
-import {FaUser, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { FaUser, FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import { formatDate, getDetailIcon } from "../../../utils/helper.tsx";
+import { GENDERS } from "../../../utils/constants.ts";
 
 interface ProfileSectionProps {
   userData: User;
-  userDetails: UserDataDetails;
+  userDetails: UserDetails;
   isEditing: boolean;
-  draft: { name: string; username: string; contact: string };
+  draft: UpdateSelfPayload;
   onEditToggle: () => void;
-  onDraftChange: (draft: { name: string; username: string; contact: string }) => void;
+  onDraftChange: React.Dispatch<React.SetStateAction<UpdateSelfPayload>>;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -26,7 +31,6 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   onSave,
   onCancel,
 }) => (
-  
   <div className="card shadow mb-4">
     <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
       <h3 className="mb-0 d-flex align-items-center gap-3">
@@ -83,57 +87,44 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               label="Full Name"
               value={isEditing ? undefined : userData.name || undefined}
               editValue={draft.name}
-              onChange={(val) => onDraftChange({ ...draft, name: val })}
-              isEditing={isEditing}
-            />
-            <DetailItem
-              icon={getDetailIcon("Email")}
-              label="Email"
-              value={isEditing ? undefined : userData.username}
-              editValue={draft.username}
-              onChange={(val) => onDraftChange({ ...draft, username: val })}
-              isEditing={isEditing}
-            />
-            <DetailItem
-              icon={getDetailIcon("Contact")}
-              label="Contact"
-              value={isEditing ? undefined : (userData.contact ? userData.contact.slice(-10) : undefined)}
-              editValue={draft.contact}
-              onChange={(val) => onDraftChange({ ...draft, contact: val })}
+              onChange={(val) => onDraftChange({ ...draft, name: val || "" })}
               isEditing={isEditing}
             />
             <DetailItem
               icon={getDetailIcon("Date of Birth")}
               label="Date of Birth"
-              value={formatDate(userDetails.dob)}
+              inputType="date"
+              isEditing={isEditing}
+              value={formatDate(userDetails?.dob || "")}
+              onChange={(e) => onDraftChange((prev) => ({ ...prev, dob: e }))}
             />
             <DetailItem
               icon={getDetailIcon("Gender")}
               label="Gender"
-              value={userDetails.gender}
+              inputType="select"
+              options={Object.create(GENDERS)}
+              value={userDetails?.gender}
+              onChange={(e) =>
+                onDraftChange((prev) => ({ ...prev, gender: e as TGender }))
+              }
+              isEditing={isEditing}
             />
             <DetailItem
               icon={getDetailIcon("Joining Date")}
               label="Joining Date"
-              value={formatDate(userDetails.joiningDate)}
+              value={userDetails?.joiningDate}
             />
             <DetailItem
               label="Status"
               value={userData.status || undefined}
-              badgeClass={userData.status === "Active" ? "bg-success" : "bg-danger"}
+              badgeClass={
+                userData.status === "Active" ? "bg-success" : "bg-danger"
+              }
             />
-            <DetailItem
-              label="Created On"
-              value={formatDate(userDetails.createdOn)}
-            />
-            <DetailItem
-              label="Last Updated"
-              value={formatDate(userDetails.updatedOn)}
-            />
-            <DetailItem label="Weekly Off" value={userDetails.weekoff} />
+            <DetailItem label="Weekly Off" value={userDetails?.weekoff} />
             <DetailItem
               label="Leave Scheme"
-              value={userDetails.leaveSchemeId?.toString()}
+              value={userDetails?.leaveSchemeId?.toString()}
             />
           </div>
 

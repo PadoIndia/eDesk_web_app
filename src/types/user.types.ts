@@ -1,25 +1,64 @@
-// types.ts
 export type User = {
   id: number;
-  name: string | null;
+  name: string;
   username: string;
   contact: string;
-  password?: string;
+  password: string | null;
   profileImg: {
     id?: bigint;
     url: string | null;
   };
-  empCode?: string;
+  empCode: string | null;
   status: string | null;
   isActive: boolean;
   lastSeen: Date | null;
 };
 
-export type UpdateUser = {
+export type TGender = "MALE" | "FEMALE" | "OTHER";
+
+export type AdminUser = Prettify<
+  User & {
+    userDetails: UserDetails;
+    userDepartment: UserDepartmentResp[];
+  }
+>;
+export type UserDepartmentResp = {
+  department: { name: string };
+  isAdmin: boolean;
+  departmentId: number;
+};
+
+export type UserInfo = Prettify<
+  Omit<User, "id" | "profileImg" | "lastSeen" | "status">
+>;
+
+export type UserDetails = {
+  joiningDate: string;
+  dob: string | null;
+  gender: TGender;
+  leaveSchemeId: number | null;
+  weekoff?: string;
+};
+
+export type CreateUserPayload = Prettify<
+  UserInfo & {
+    userDetails: UserDetails;
+    departments: { isAdmin: boolean; departmentId: number }[];
+  }
+>;
+
+export type UpdateUserPayload = Prettify<
+  Omit<CreateUserPayload, "departments">
+>;
+
+export type UpdateSelfPayload = {
   name?: string;
-  username?: string;
-  contact?: string;
-  empCode?: string;
+  profileImgId?: number;
+  status?: "ONLINE" | "OFFLINE";
+  lastSeen?: string;
+  notificationToken?: string;
+  dob?: string;
+  gender?: TGender;
 };
 
 export type UserDataDetails = {
@@ -40,7 +79,7 @@ export type CreateUserDetails = {
   joiningDate: string;
   leaveSchemeId?: number;
   weekoff: string;
-}
+};
 
 export type Contact = {
   id: number;
@@ -85,8 +124,6 @@ export type DetailItemProps = {
   isEditing?: boolean;
   badgeClass?: string;
 };
-
-
 
 export interface FileDetails {
   id: string;

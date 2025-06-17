@@ -1,13 +1,16 @@
+import { BASE_URL } from "../../store/config";
 import { ApiResponse } from "../../types/axios.types";
+import { UpdateUserDepartmentPayload } from "../../types/department-team.types";
 import {
   Address,
   Contact,
   CreateContact,
-  CreateUserDetails,
-  UpdateUser,
   User,
-  UserDataDetails,
-  Document
+  Document,
+  AdminUser,
+  CreateUserPayload,
+  UpdateUserPayload,
+  UpdateSelfPayload,
 } from "../../types/user.types";
 import ApiService from "./api-service";
 
@@ -18,43 +21,28 @@ class UserService extends ApiService {
   getAllUsers(): ApiResponse<User[]> {
     return this.getData(``);
   }
-  getUserById(id: number): ApiResponse<User> {
+  getUserById(id: number): ApiResponse<AdminUser> {
     return this.getData(`/${id}`);
   }
-  updateUser(id: number, user: UpdateUser): ApiResponse<UpdateUser> {
+
+  updateUser(id: number, user: UpdateUserPayload): ApiResponse<number> {
     return this.putData(`/${id}`, user);
   }
-  createUser(user: Partial<User>): ApiResponse<User> {
+  updateSelf(user: UpdateSelfPayload): ApiResponse<number> {
+    return this.putData(BASE_URL + "/users", user);
+  }
+  createUser(user: CreateUserPayload): ApiResponse<User> {
     return this.postData(``, user);
   }
 
-  //////////////////////// User Details ////////////////////////
-  getUserDetailsById(id: number): ApiResponse<UserDataDetails> {
-    return this.getData(`/details/${id}`);
-  }
-
-  getUserDetails():ApiResponse<UserDataDetails[]> {
-    return this.getData(`/details`);
-  }
-
-  createUserDetails(data: CreateUserDetails): ApiResponse{
-    console.log("this is create user details api", data);
-    
-    return this.postData(`/details`, data);
-  }
-
-  /////////////////////// User Contacts ///////////////////////
   getUserContactsById(id: number): ApiResponse<Contact> {
     return this.getData(`/contacts/${id}`);
   }
 
   createUserContact(conatct: CreateContact): ApiResponse<CreateContact> {
-      console.log("contact details",conatct);
-      
+    console.log("contact details", conatct);
     return this.postData(`/contacts`, conatct);
   }
-
-  //////////////////////// User Address ///////////////////////
 
   getUserAddressById(id: number): ApiResponse<Address> {
     return this.getData(`/address/${id}`);
@@ -63,17 +51,21 @@ class UserService extends ApiService {
   createUserAddress(address: Address): ApiResponse<Address> {
     return this.postData(`/address`, address);
   }
-  
-  /////////////////////// User Document ///////////////////////
-  
-  createUserDocument(document:Document): ApiResponse{
+
+  createUserDocument(document: Document): ApiResponse {
     return this.postData(`/documents`, document);
   }
 
-  getUserDocuments(): ApiResponse<Document[]> {
-    return this.getData(`/documents`);
+  getUserDocuments(userId: number): ApiResponse<Document[]> {
+    return this.getData(`/${userId}/documents`);
   }
 
+  updateUserDepartments(
+    userId: number,
+    data: UpdateUserDepartmentPayload[]
+  ): ApiResponse<number[]> {
+    return this.postData(`/${userId}/departments`, data);
+  }
 }
 
 export default new UserService();

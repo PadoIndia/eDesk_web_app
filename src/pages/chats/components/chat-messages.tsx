@@ -1,13 +1,14 @@
 import { MessageGroupItem } from "../../../features/message-slice";
-import { useRef, useEffect, useState, useCallback } from "react";
-import MediaModal from "./media-modal";
+import { useRef, useEffect, useState, useCallback, lazy } from "react";
 import { MediaType, SubTaskResp } from "../../../types/chat";
-import MessageItem from "./message-item";
 import MediaPlaceholder from "./message-placeholder";
 import { useAppSelector } from "../../../store/store";
 import { MdPushPin } from "react-icons/md";
 import Modal from "../../../components/ui/modals";
 import { Colors } from "../../../utils/constants";
+
+const MediaModal = lazy(() => import("./media-modal"));
+const MessageItem = lazy(() => import("./message-item"));
 
 function isSeparator(
   item: MessageGroupItem

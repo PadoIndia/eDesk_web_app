@@ -23,7 +23,7 @@ export const getAvailableUsers = createAsyncThunk(
 export const getUserDetails = createAsyncThunk(
   `users/current`,
   async (id: number, { rejectWithValue }) => {
-    const res = await userService.getUserDetailsById(id);
+    const res = await userService.getUserById(id);
     if (res.status == "success") {
       return res.data;
     }
