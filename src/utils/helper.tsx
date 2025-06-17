@@ -15,10 +15,19 @@ import {
   FaBusinessTime,
   FaMapMarkerAlt,
   FaFileAlt,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaHourglassHalf,
   FaImage,
   FaFilePdf,
   FaFile,
 } from "react-icons/fa";
+import { Punch } from "../types/attendance.types";
+import { RootState } from "../store/store";
+import userDepartmentService from "../services/api-services/user-department.service";
+import teamService from "../services/api-services/team.service";
+import { useSelector } from "react-redux";
+import userService from "../services/api-services/user.service";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -269,6 +278,31 @@ export const validatePhone = (phone: string) => /^\+?\d{10,15}$/.test(phone);
 export const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString();
 
+export const getPunchApprovalIcon = (
+  punch: Punch
+): React.ReactElement | null => {
+  if (punch.type !== "MANUAL") return null;
+
+  if (punch.isApproved === true) {
+    return (
+      <FaCheckCircle
+        className="text-success ms-2"
+        title={`Approved by ${punch.approvedBy || "Admin"}`}
+      />
+    );
+  } else if (punch.isApproved === false && punch.approvedBy) {
+    return (
+      <FaTimesCircle
+        className="text-danger ms-2"
+        title={`Rejected: ${punch.missPunchReason || "No reason provided"}`}
+      />
+    );
+  } else {
+    return (
+      <FaHourglassHalf className="text-warning ms-2" title="Pending Approval" />
+    );
+  }
+};
 export async function generateSHA256(file: File) {
   const buffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
@@ -294,4 +328,137 @@ export const getMediaUrl = (url?: string) => {
   if (!url) return url;
   if (url.toString().startsWith("http")) return url;
   return mediaBaseUrl + url;
+};
+
+export const getDaysInMonth = (month: number, year: number): number => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+export const formatTime = (hh: number, mm: number): string => {
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+};
+
+export const getWeekOff = async (userId: number): Promise<string> => {
+  const response = await userService.getUserDetailsById(userId);
+  const weekoff = response.data.weekoff;
+  return weekoff;
+};
+
+export const calculateWorkingHours = (punches: Punch[]): string => {
+  const validPunches = punches.filter(
+    (p) => p.isApproved !== false || !p.approvedBy
+  );
+
+  if (validPunches.length % 2 !== 0 || validPunches.length === 0) return "—";
+
+  // Punches are already sorted, so we can calculate directly
+  let totalMinutes = 0;
+
+  for (let i = 0; i < validPunches.length; i += 2) {
+    if (i + 1 < validPunches.length) {
+      const inTime = validPunches[i];
+      const outTime = validPunches[i + 1];
+      totalMinutes +=
+        (outTime.hh ?? 0) * 60 +
+        (outTime.mm ?? 0) -
+        ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
+    }
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+};
+
+export const calculateWorkingMinutes = (punches: Punch[]): number => {
+  const validPunches = punches.filter(
+    (p) => p.isApproved !== false || !p.approvedBy
+  );
+
+  if (validPunches.length % 2 !== 0 || validPunches.length === 0) return 0;
+
+  let totalMinutes = 0;
+
+  for (let i = 0; i < validPunches.length; i += 2) {
+    if (i + 1 < validPunches.length) {
+      const inTime = validPunches[i];
+      const outTime = validPunches[i + 1];
+      totalMinutes +=
+        (outTime.hh ?? 0) * 60 +
+        (outTime.mm ?? 0) -
+        ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
+    }
+  }
+
+  return totalMinutes;
+};
+
+export const getLeaveTypeFromComment = (comment: string): string => {
+  const commentLower = comment.toLowerCase();
+  if (commentLower.includes("sick") || commentLower.includes("medical"))
+    return "SL";
+  if (commentLower.includes("casual")) return "CL";
+  if (commentLower.includes("paid")) return "PL";
+  if (commentLower.includes("unpaid")) return "UL";
+  if (commentLower.includes("compensatory") || commentLower.includes("comp"))
+    return "CO";
+  if (commentLower.includes("earned")) return "EL";
+  // Default to casual leave if can't determine
+  return "CL";
+};
+
+export const getDayOfWeek = (date: Date): string => {
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return days[date.getDay()];
+};
+
+export const getUserDepartments = async (userId: number) => {
+  const userResponse = await userDepartmentService.getUserDepartmentByUserId(
+    userId
+  );
+  return userResponse.data;
+};
+
+// Current user is a department manager
+export const IsDeptManager = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+
+  const isManager = userDepartments.some((dept) => dept.isAdmin);
+
+  if (isManager) return true;
+
+  return false;
+};
+
+// Current user is in Hr department
+export const IsHr = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+  const isHr = userDepartments.some((dept) => dept.department.slug === "hr");
+  if (isHr) return true;
+  return false;
+};
+
+// Current user is in Hr department and is a manager
+export const IsHrManager = (): boolean => {
+  const userDepartments = useSelector(
+    (state: RootState) => state.userDepartment.userDepartments
+  );
+  const isHrManager = userDepartments.some(
+    (dept) => dept.department.slug === "hr" && dept.isAdmin
+  );
+  if (isHrManager) return true;
+  return false;
+};
+
+export const isTeamManager = async (): Promise<boolean> => {
+  const teams = await teamService.getUserTeams();
+  const isManager = teams.data.some(
+    (team: { isAdmin: boolean }) => team.isAdmin
+  );
+  if (isManager) return true;
+  return false;
 };

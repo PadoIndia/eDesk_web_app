@@ -7,6 +7,7 @@ import {
   UpdateUser,
   User,
   UserDataDetails,
+  Document
 } from "../../types/user.types";
 import ApiService from "./api-service";
 
@@ -65,9 +66,14 @@ class UserService extends ApiService {
   
   /////////////////////// User Document ///////////////////////
   
-  createUserDocument(document:Document): ApiResponse<Document>{
+  createUserDocument(document:Document): ApiResponse{
     return this.postData(`/documents`, document);
   }
+
+  getUserDocuments(): ApiResponse<Document[]> {
+    return this.getData(`/documents`);
+  }
+
 }
 
 export default new UserService();

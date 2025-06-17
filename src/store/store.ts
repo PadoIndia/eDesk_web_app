@@ -5,6 +5,7 @@ import videoSlice from "../features/video.slice";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import departmentSlice from "../features/department.slice";
+import userDepartmentSlice from "../features/user-department.slice";
 
 import chatSlice from "../features/chat-slice";
 import userSlice from "../features/user-slice";
@@ -23,6 +24,7 @@ const reducers = combineReducers({
   auth: authSlice,
   video: videoSlice,
   department: departmentSlice,
+  userDepartment: userDepartmentSlice,
   chatReducer: chatSlice,
   userReducer: userSlice,
   taskReducer: taskSlice,

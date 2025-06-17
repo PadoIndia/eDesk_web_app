@@ -70,6 +70,7 @@ const UserEditForm = () => {
         // Navigate after a short delay so toast is visible
         setTimeout(() => navigate(`/users/${userId}`), 1500);
       } catch (err) {
+        console.error('Update error:', err);
         toast.error('Failed to update user details');
       }
     }

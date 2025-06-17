@@ -1,29 +1,46 @@
 // components/DocumentsSection.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Document } from "../../../types/user.types";
-import { FaPlus, FaTimes, FaTrash, FaSave, FaSpinner } from "react-icons/fa";
-import { getDocumentTypeIcon } from "../../../utils/helper.tsx";
+import { FaPlus, FaTimes, FaSave, FaSpinner, FaFilePdf} from "react-icons/fa";
+import { getDocumentTypeIcon, generateSHA256 } from "../../../utils/helper.tsx";
 import { toast } from "react-toastify";
 import generalService from "../../../services/api-services/general.service.ts";
-// import userApi from "../../services/api-services/user.service.ts";
+import userApi from "../../../services/api-services/user.service.ts";
 
-interface DocumentsSectionProps {
-  userId: number;
-}
-
-export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
-  userId,
-}) => {
+export const DocumentsSection: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [newDocument, setNewDocument] = useState<
-    Omit<Document, "id" | "fileId">
-  >({
+  const [isFetching, setIsFetching] = useState(true);
+  const [newDocument, setNewDocument] = useState<Omit<Document, "id" | "fileId">>({
     title: "",
     documentType: "AADHAR",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // New state for document preview
+  const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Fetch documents on component mount
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setIsFetching(true);
+        const response = await userApi.getUserDocuments();
+        if (response.data) {
+          setDocuments(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch documents", error);
+        toast.error("Failed to load documents");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,24 +57,29 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 
       setIsLoading(true);
 
-      // Upload the file
-      const formData = new FormData();
-      formData.append("document", selectedFile);
-
-      const response = await generalService.uploadToS3(selectedFile);
-      console.log(response,"sadadsasd");
+      // Upload file to S3 and get fileId
+      const fileHash = await generateSHA256(selectedFile);
+      const uploadResponse = await generalService.uploadToS3([
+        { image: selectedFile, hash: fileHash }
+      ]);
       
-      // const fileId = uploadResponse.data.fileIds[0].id;
+      const fileId = uploadResponse.data[0].id;
 
-      // console.log("log", fileId);
+      // Create document payload with required fields
+      const documentPayload = {
+        title: newDocument.title,
+        fileId: fileId,
+        documentType: newDocument.documentType
+      };
 
-      formData.append("documentType", newDocument.documentType);
-      formData.append("title", newDocument.title);
-      formData.append("userId", userId.toString());
+      // Save document metadata to backend
+      const response = await userApi.createUserDocument(documentPayload);
+      const savedDocument = response.data;
+      
+      // Update local state with saved document
+      setDocuments([...documents, savedDocument]);
 
-      // const response = await userApi.uploadUserDocument(formData);
-
-      // setDocuments([...documents, response.data]);
+      // Reset form
       setIsAdding(false);
       setNewDocument({ title: "", documentType: "AADHAR" });
       setSelectedFile(null);
@@ -70,14 +92,101 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
     }
   };
 
+  // Handle document preview
+  const handlePreview = (doc: Document) => {
+    setPreviewDocument(doc);
+    setIsPreviewOpen(true);
+  };
+
+  // Render document preview based on file type
+  const renderDocumentPreview = () => {
+    if (!previewDocument || !previewDocument.file) return null;
+    
+    const mimeType = previewDocument.file.mimeType || '';
+    const url = previewDocument.file.url || '';
+
+    if (mimeType.includes('pdf')) {
+      return (
+        <div className="d-flex flex-column align-items-center">
+          <FaFilePdf className="text-danger" size={48} />
+          <p className="mt-2">PDF Document</p>
+          <a 
+            href={url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="btn btn-primary mt-2"
+          >
+            Download PDF
+          </a>
+        </div>
+      );
+    } else if (mimeType.includes('image')) {
+      return (
+        <div className="text-center">
+          <img 
+            src={url} 
+            alt={previewDocument.title} 
+            className="img-fluid rounded"
+            style={{ maxHeight: '70vh' }}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div className="d-flex flex-column align-items-center">
+          <FaFilePdf className="text-primary" size={48} />
+          <p className="mt-2">Document File</p>
+          <a 
+            href={url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="btn btn-primary mt-2"
+          >
+            Download File
+          </a>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="card shadow">
+      {/* Preview Modal */}
+      {isPreviewOpen && previewDocument && (
+        <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{previewDocument.title}</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setIsPreviewOpen(false)}
+                ></button>
+              </div>
+              <div className="modal-body text-center">
+                {renderDocumentPreview()}
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setIsPreviewOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
         <h3 className="mb-0">Documents</h3>
         <button
           className="btn btn-light"
           onClick={() => setIsAdding(!isAdding)}
-          disabled={isLoading}
+          disabled={isLoading || isFetching}
         >
           {isAdding ? <FaTimes /> : <FaPlus />} Add Document
         </button>
@@ -161,43 +270,50 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
           </div>
         )}
 
-        <div className="row g-3">
-          {documents.map((doc) => (
-            <div key={doc.id} className="col-md-4">
-              <div className="card h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between">
-                    <div className="d-flex align-items-center gap-2">
-                      {getDocumentTypeIcon()}
-                      <div>
-                        <h5 className="mb-0">{doc.title}</h5>
-                        <small className="text-muted">{doc.documentType}</small>
+        {isFetching ? (
+          <div className="text-center py-5">
+            <FaSpinner className="fa-spin fa-2x" />
+            <p>Loading documents...</p>
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="text-center py-5">
+            <p>No documents found</p>
+            <button 
+              className="btn btn-primary mt-2"
+              onClick={() => setIsAdding(true)}
+            >
+              <FaPlus /> Add Your First Document
+            </button>
+          </div>
+        ) : (
+          <div className="row g-3">
+            {documents.map((doc) => (
+              <div key={doc.id} className="col-md-4">
+                <div className="card h-100">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                      <div className="d-flex align-items-center gap-2">
+                        {getDocumentTypeIcon()}
+                        <div>
+                          <h5 className="mb-0">{doc.title}</h5>
+                          <small className="text-muted">{doc.documentType}</small>
+                        </div>
                       </div>
                     </div>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() =>
-                        setDocuments(documents.filter((d) => d.id !== doc.id))
-                      }
-                    >
-                      <FaTrash />
-                    </button>
+                    {doc.file && (
+                      <button
+                        className="btn btn-sm btn-outline-primary mt-2"
+                        onClick={() => handlePreview(doc)}
+                      >
+                        View Document
+                      </button>
+                    )}
                   </div>
-                  {doc.fileId && (
-                    <a
-                      // href={doc.fileId.toString()} here we have to put a get request later
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-sm btn-outline-primary mt-2"
-                    >
-                      View Document
-                    </a>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

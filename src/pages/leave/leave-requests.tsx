@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FaSearch,
   FaFilter,
@@ -19,7 +19,8 @@ import {
   LeaveRequestStatus,
 } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
-import userDepartmentService from "../../services/api-services/user-department.service";
+// import { useDispatch } from "react-redux";
+import { IsDeptManager, IsHr, isTeamManager } from "../../utils/helper";
 
 // Updated interface to match API response structure
 interface LeaveRequest {
@@ -49,26 +50,10 @@ interface LeaveRequest {
   };
 }
 
-interface Department {
-  id: number;
-  name: string;
-  responsibilities: string;
-  slug: string;
-  createdOn: string;
-  updatedOn: string;
-}
-
-interface UserDepartment {
-  id: number;
-  userId: number;
-  departmentId: number;
-  isAdmin: boolean;
-  createdOn: string;
-  updatedOn: string;
-  department: Department;
-}
-
 const LeaveRequests = () => {
+  // const dispatch = useDispatch<AppDispatch>();
+
+  // All useState hooks first
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [othersRequests, setOthersRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,121 +66,132 @@ const LeaveRequests = () => {
     start: null,
     end: null,
   });
-  const [userDepartments, setUserDepartments] = useState<UserDepartment[]>([]);
   const [activeTab, setActiveTab] = useState<"my-requests" | "others-requests">("my-requests");
+  const [isTeamManagerState, setIsTeamManagerState] = useState<boolean>(false);
 
+  // All useAppSelector hooks
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
 
-  // Helper functions to determine user permissions
-  const isHR = () => {
-    return userDepartments.some(
-      (dept) =>
-        dept.department.name.toLowerCase() === "hr" ||
-        dept.department.slug.toLowerCase() === "hr"
-    );
-  };
+  // All static helper function calls (these don't use hooks internally that would affect order)
+  const isHR = IsHr();
+  const isDeptManager = IsDeptManager();
+  const isManager = isTeamManagerState || isDeptManager;
 
-  const isManager = () => {
-    return userDepartments.some((dept) => dept.isAdmin === true);
-  };
+  // Memoized functions
+  const canApproveReject = useCallback(() => {
+    return isHR || isManager;
+  }, [isHR, isManager]);
 
-
-  const canApproveReject = () => {
-    return isHR() || isManager();
-  };
-
-  const showTabs = () => {
-    return isHR() || isManager();
-  };
+  const showTabs = useCallback(() => {
+    return isHR || isManager;
+  }, [isHR, isManager]);
 
   // Helper function to get the effective status based on user role
-  const getEffectiveStatus = (request: LeaveRequest) => {
-    if (isHR()) {
+  const getEffectiveStatus = useCallback((request: LeaveRequest) => {
+    if (isHR) {
       return request.hrStatus;
-    } else if (isManager()) {
+    } else if (isManager) {
       return request.managerStatus;
     }
-    // For regular users, show the overall status (you might need to determine this based on your business logic)
-    // For now, showing manager status as it's the first approval step
     return request.hrStatus;
-  };
+  }, [isHR, isManager]);
 
+  // Check team manager status - separate useEffect with proper dependencies
   useEffect(() => {
+    let isMounted = true;
+    
+    const checkTeamManagerStatus = async () => {
+      try {
+        const isTeamManagerResult = await isTeamManager();
+        if (isMounted) {
+          setIsTeamManagerState(isTeamManagerResult);
+        }
+      } catch (error) {
+        console.error("Failed to check team manager status:", error);
+        if (isMounted) {
+          setIsTeamManagerState(false);
+        }
+      }
+    };
+
+    checkTeamManagerStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run once on mount
+
+  // Main data fetching useEffect with proper dependencies
+  useEffect(() => {
+    let isMounted = true;
+
     const fetchUserAndRequests = async () => {
       if (!userId) return;
 
       setLoading(true);
 
       try {
-        // First fetch user departments
-        const userResponse =
-          await userDepartmentService.getUserDepartmentByUserId(userId);
-        const userDepartmentData = userResponse.data;
-
-        setUserDepartments(userDepartmentData);
-
-        // Check user roles
-        const userIsHR = userDepartmentData.some(
-          (dept: UserDepartment) =>
-            dept.department.name.toLowerCase() === "hr" ||
-            dept.department.slug.toLowerCase() === "hr"
-        );
-        const userIsManager = userDepartmentData.some(
-          (dept: UserDepartment) => dept.isAdmin === true
-        );
-
-        // Always fetch user's own requests
         const myRequestsResponse = await leaveRequestService.getMyLeaveRequests();
-        setMyRequests(myRequestsResponse.data);
+        if (isMounted) {
+          setMyRequests(myRequestsResponse.data);
+        }
 
         // Fetch others' requests only if user is HR or Manager
-        if (userIsHR || userIsManager) {
+        if (isHR || isManager) {
           let allOthersRequests: any[] = [];
 
-          if (userIsHR && userIsManager) {
+          if (isHR && isManager) {
             // User is both HR and Manager - fetch both types
             const [managerResponse, hrResponse] = await Promise.all([
               leaveRequestService.getLeaveRequestsForManagerApproval(),
               leaveRequestService.getLeaveRequestsForHRApproval(),
             ]);
-            
+
             // Combine and deduplicate requests (in case there are overlaps)
             const managerRequests = managerResponse.data;
             const hrRequests = hrResponse.data;
-            
+
             // Use Map to deduplicate by request ID
             const requestsMap = new Map();
             [...managerRequests, ...hrRequests].forEach(request => {
               requestsMap.set(request.id, request);
             });
-            
+
             allOthersRequests = Array.from(requestsMap.values());
-          } else if (userIsManager) {
+          } else if (isManager) {
             // User is only Manager
             const response = await leaveRequestService.getLeaveRequestsForManagerApproval();
             allOthersRequests = response.data;
-          } else if (userIsHR) {
+          } else if (isHR) {
             // User is only HR
             const response = await leaveRequestService.getLeaveRequestsForHRApproval();
             allOthersRequests = response.data;
           }
 
-          setOthersRequests(allOthersRequests);
+          if (isMounted) {
+            setOthersRequests(allOthersRequests);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch leave requests:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUserAndRequests();
-  }, [userId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, isHR, isManager]); // Proper dependencies
 
   // Get current requests based on active tab
-  const getCurrentRequests = () => {
+  const getCurrentRequests = useCallback(() => {
     return activeTab === "my-requests" ? myRequests : othersRequests;
-  };
+  }, [activeTab, myRequests, othersRequests]);
 
   const filteredRequests = getCurrentRequests().filter((request) => {
     // Search filter - using the correct property paths
@@ -224,26 +220,25 @@ const LeaveRequests = () => {
 
   const handleApprove = async (id: number) => {
     try {
-      if (isManager() && isHR()) {
+      if (isHR && isManager) {
+        // User is both HR and Manager - approve as both
         const data: ManagerApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.APPROVED,
-          comment: "Approved by manager and hr",
+          comment: "Approved by HR manager",
         };
         await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
         await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isHR()) {
+      } else if (isHR) {
         const data: HRApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.APPROVED,
           comment: "Approved by HR",
         };
         await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isManager()) {
+      } else if (isManager) {
         const data: ManagerApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.APPROVED,
           comment: "Approved by manager",
         };
-        console.log("came here bro ", data);
-        
         await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
       }
 
@@ -251,9 +246,11 @@ const LeaveRequests = () => {
       setOthersRequests(
         othersRequests.map((req) => {
           if (req.id === id) {
-            if (isHR()) {
+            if (isHR && isManager) {
+              return { ...req, hrStatus: "APPROVED", managerStatus: "APPROVED" };
+            } else if (isHR) {
               return { ...req, hrStatus: "APPROVED" };
-            } else if (isManager()) {
+            } else if (isManager) {
               return { ...req, managerStatus: "APPROVED" };
             }
           }
@@ -267,20 +264,21 @@ const LeaveRequests = () => {
 
   const handleReject = async (id: number) => {
     try {
-      if (isManager() && isHR()) {
+      if (isHR && isManager) {
+        // User is both HR and Manager - reject as both
         const data: ManagerApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.REJECTED,
-          comment: "Rejected by manager",
+          comment: "Rejected by HR manager",
         };
         await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
         await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isHR()) {
+      } else if (isHR) {
         const data: HRApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.REJECTED,
           comment: "Rejected by HR",
         };
         await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isManager()) {
+      } else if (isManager) {
         const data: ManagerApproveRejectLeaveRequestRequest = {
           status: LeaveRequestStatus.REJECTED,
           comment: "Rejected by manager",
@@ -292,9 +290,11 @@ const LeaveRequests = () => {
       setOthersRequests(
         othersRequests.map((req) => {
           if (req.id === id) {
-            if (isHR()) {
+            if (isHR && isManager) {
+              return { ...req, hrStatus: "REJECTED", managerStatus: "REJECTED" };
+            } else if (isHR) {
               return { ...req, hrStatus: "REJECTED" };
-            } else if (isManager()) {
+            } else if (isManager) {
               return { ...req, managerStatus: "REJECTED" };
             }
           }

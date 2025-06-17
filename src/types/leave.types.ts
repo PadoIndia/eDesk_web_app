@@ -89,7 +89,6 @@ export interface CreateLeaveRequestRequest {
   duration: number;
   reason: string;
   managerId: number;
-  hrId: number;
 }
 
 export interface UpdateLeaveRequestRequest {

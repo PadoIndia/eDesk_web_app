@@ -12,9 +12,24 @@ import LeaveConfiguration from "./pages/leave/leave-configuration";
 import UserLeaveBalances from "./pages/leave/user-leave-balance";
 import UserDetails from "./pages/users/user-details";
 import UserEditForm from "./pages/users/user-edit-form";
-import AssignUsersToDepartment from "./pages/department/components/assign-user-department";
+import { useEffect } from "react";
+import { AppDispatch, useAppSelector } from "./store/store";
+import { useDispatch } from "react-redux";
+import { setUserDepartments } from "./features/user-department.slice";
+import { getUserDepartments } from "./utils/helper";
 
 function HrmApp() {
+    const dispatch = useDispatch<AppDispatch>();
+    const userId = useAppSelector((state) => state.auth.userData?.user.id);
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      if (!userId) return;
+      const departments = await getUserDepartments(userId);
+      dispatch(setUserDepartments(departments));
+    };
+    fetchDepartments();
+  }, [userId, dispatch]);
+
   return (
     <div className="d-flex flex-column min-vh-100">
       <HrmNavbar />
@@ -34,7 +49,6 @@ function HrmApp() {
           path="/department-management"
           element={<DepartmentManagement />}
         />
-        <Route path="/user-department" element={<AssignUsersToDepartment/>} />
       </Routes>
     </div>
   );

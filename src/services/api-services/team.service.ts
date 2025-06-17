@@ -38,6 +38,10 @@ class TeamService extends ApiService {
     return this.getData(`/manager/${userId}`);
   }
 
+  getUserTeams(): ApiResponse {
+    return this.getData(`/get-user-teams`);
+  }
+
   
 
 

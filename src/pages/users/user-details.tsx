@@ -121,7 +121,7 @@ const handleFetchError = (error: unknown) => {
 
       <AddressesSection userId={Number(userId)} />
 
-      <DocumentsSection userId={Number(userId)} />
+      <DocumentsSection />
     </div>
   );
 };
