@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import userService from "../../../services/api-services/user.service";
 import departmentService from "../../../services/api-services/department.service";
 import leaveSchemeService from "../../../services/api-services/leave-scheme.service";
-import { DepartmentResponse } from "../../../types/department-team.types";
+import { DepartmentResponse, Team } from "../../../types/department-team.types";
 import { GENDERS, WEEK_DAYS } from "../../../utils/constants";
 import {
   UserDetails,
@@ -13,6 +13,7 @@ import {
   CreateUserPayload,
   UpdateUserPayload,
   UserDepartmentResp,
+  UserTeamResp,
 } from "../../../types/user.types";
 import { BsShieldCheck } from "react-icons/bs";
 
@@ -32,8 +33,13 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
   const [userDepartments, setUserDepartments] = useState<UserDepartmentResp[]>(
     []
   );
+  const [userTeams, setUserTeams] = useState<UserTeamResp[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
+
+  const [teamSelectionReference, setTeamSelectionReference] = useState<
+    Map<number, UserTeamResp[]>
+  >(new Map());
 
   const [dobDate, setDobDate] = useState<Date | null>(null);
   const [joiningDateValue, setJoiningDateValue] = useState<Date | null>(null);
@@ -55,7 +61,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     isActive: true,
   });
 
-  // Fetch departments and leave schemes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -77,7 +82,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     fetchData();
   }, []);
 
-  // Fetch user data if editing
   useEffect(() => {
     if (id) {
       fetchUserData();
@@ -89,7 +93,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
 
     setInitialLoading(true);
     try {
-      // Fetch user basic info
       const userResp = await userService.getUserById(id);
       if (userResp.status === "success") {
         const userData = userResp.data;
@@ -102,7 +105,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           isActive: userData.isActive,
         });
 
-        // If user has details, populate them
         if (userData.userDetails) {
           setUserDetails(userData.userDetails);
           if (userData.userDetails.dob) {
@@ -114,6 +116,9 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
         }
         if (userData.userDepartment) {
           setUserDepartments(userData.userDepartment);
+        }
+        if (userData.userTeam) {
+          setUserTeams(userData.userTeam);
         }
       }
     } catch (error) {
@@ -143,15 +148,52 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     }
   };
 
-  const handleDepartmentToggle = ({ id, name }: DepartmentResponse) => {
+  const handleDepartmentToggle = (dept: DepartmentResponse) => {
     setUserDepartments((prev) => {
-      const exists = prev.find((d) => d.departmentId === id);
+      const exists = prev.find((d) => d.departmentId === dept.id);
       if (exists) {
-        return prev.filter((d) => d.departmentId !== id);
+        const departmentTeamIds = dept.teams?.map((t) => t.id) || [];
+
+        if (id) {
+          const currentTeamSelections = userTeams.filter((ut) =>
+            departmentTeamIds.includes(ut.teamId)
+          );
+
+          if (currentTeamSelections.length > 0) {
+            setTeamSelectionReference((prevRef) => {
+              const newRef = new Map(prevRef);
+              newRef.set(dept.id, currentTeamSelections);
+              return newRef;
+            });
+          }
+        }
+
+        setUserTeams((prevTeams) =>
+          prevTeams.filter((ut) => !departmentTeamIds.includes(ut.teamId))
+        );
+
+        return prev.filter((d) => d.departmentId !== dept.id);
       } else {
+        if (id) {
+          const referenceTeams = teamSelectionReference.get(dept.id);
+          if (referenceTeams && referenceTeams.length > 0) {
+            setUserTeams((prevTeams) => [...prevTeams, ...referenceTeams]);
+
+            setTeamSelectionReference((prevRef) => {
+              const newRef = new Map(prevRef);
+              newRef.delete(dept.id);
+              return newRef;
+            });
+          }
+        }
+
         return [
           ...prev,
-          { departmentId: id, isAdmin: false, department: { name } },
+          {
+            departmentId: dept.id,
+            isAdmin: false,
+            department: { name: dept.name },
+          },
         ];
       }
     });
@@ -165,6 +207,26 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     );
   };
 
+  const handleTeamToggle = (team: Team) => {
+    setUserTeams((prev) => {
+      const exists = prev.find((t) => t.teamId === team.id);
+      if (exists) {
+        return prev.filter((t) => t.teamId !== team.id);
+      } else {
+        return [
+          ...prev,
+          { teamId: team.id, isAdmin: false, team: { name: team.name } },
+        ];
+      }
+    });
+  };
+
+  const handleTeamAdminToggle = (teamId: number) => {
+    setUserTeams((prev) =>
+      prev.map((t) => (t.teamId === teamId ? { ...t, isAdmin: !t.isAdmin } : t))
+    );
+  };
+
   const isDepartmentSelected = (departmentId: number) => {
     return userDepartments.some((d) => d.departmentId === departmentId);
   };
@@ -174,20 +236,26 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     return dept?.isAdmin || false;
   };
 
+  const isTeamSelected = (teamId: number) => {
+    return userTeams.some((t) => t.teamId === teamId);
+  };
+
+  const isTeamAdmin = (teamId: number) => {
+    const team = userTeams.find((t) => t.teamId === teamId);
+    return team?.isAdmin || false;
+  };
+
   const validateForm = (): boolean => {
-    // Basic validation
     if (!formData.name || !formData.username || !formData.contact) {
       toast.error("Please fill all required basic fields");
       return false;
     }
 
-    // Password required for new users
     if (!id && !formData.password) {
       toast.error("Password is required for new users");
       return false;
     }
 
-    // Additional validation for new users
     if (!id) {
       if (!userDetails.gender || !userDetails.dob || !userDetails.joiningDate) {
         toast.error("Please fill all required personal details");
@@ -205,8 +273,15 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
 
     setLoading(true);
     try {
+      const selectedDeptIds = userDepartments.map((d) => d.departmentId);
+      const validTeams = userTeams.filter((team) => {
+        const teamDepartment = departments.find((dept) =>
+          dept.teams?.some((t) => t.id === team.teamId)
+        );
+        return teamDepartment && selectedDeptIds.includes(teamDepartment.id);
+      });
+
       if (id) {
-        // Update existing user
         const updateData: UpdateUserPayload = {
           name: formData.name,
           username: formData.username,
@@ -217,7 +292,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           password: formData.password,
         };
 
-        // Only include password if it's been changed
         if (formData.password) {
           updateData.password = formData.password;
         }
@@ -225,23 +299,36 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
         const resp = await userService.updateUser(id, updateData);
 
         if (resp.status === "success") {
-          // Update departments separately
-          const res = await userService.updateUserDepartments(
+          const deptRes = await userService.updateUserDepartments(
             id,
             userDepartments.map((i) => ({
               departmentId: i.departmentId,
               isAdmin: i.isAdmin,
             }))
           );
-          if (res.status === "success") {
-            toast.success("User updated successfully");
-            onSuccess();
-          } else toast.error(res.message);
+
+          if (deptRes.status === "success") {
+            const teamRes = await userService.updateUserTeams(
+              id,
+              validTeams.map((t) => ({
+                teamId: t.teamId,
+                isAdmin: t.isAdmin,
+              }))
+            );
+
+            if (teamRes.status === "success") {
+              toast.success("User updated successfully");
+              onSuccess();
+            } else {
+              toast.error(teamRes.message || "Failed to update user teams");
+            }
+          } else {
+            toast.error(deptRes.message || "Failed to update user departments");
+          }
         } else {
           toast.error(resp.message || "Failed to update user");
         }
       } else {
-        // Create new user
         const createData: CreateUserPayload = {
           name: formData.name,
           username: formData.username,
@@ -250,7 +337,14 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           empCode: formData.empCode || null,
           isActive: formData.isActive,
           userDetails: userDetails,
-          departments: userDepartments,
+          departments: userDepartments.map((d) => ({
+            departmentId: d.departmentId,
+            isAdmin: d.isAdmin,
+          })),
+          teams: validTeams.map((t) => ({
+            teamId: t.teamId,
+            isAdmin: t.isAdmin,
+          })),
         };
 
         const resp = await userService.createUser(createData);
@@ -372,7 +466,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           </div>
         </div>
 
-        {/* User Details (only for new users) */}
+        {/* User Details */}
         <div className="col-md-6">
           <h6 className="text-primary mb-3">Personal Details</h6>
           <div className="mb-3">
@@ -476,16 +570,16 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           </div>
         </div>
 
-        {/* Department Assignments */}
-        <div className={""}>
+        {/* Department and Team Assignments */}
+        <div className="col-12">
           <h6 className="text-primary mb-3">
-            Department Assignments{" "}
+            Department & Team Assignments{" "}
             {!id && <span className="text-danger">*</span>}
           </h6>
           <div
             className="border rounded p-2"
             style={{
-              maxHeight: "400px",
+              maxHeight: "500px",
               overflowY: "auto",
               backgroundColor: "#f8f9fa",
             }}
@@ -494,8 +588,9 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
               <p className="text-muted mb-0">No departments available</p>
             ) : (
               departments.map((dept) => (
-                <div key={dept.id} className="mb-1 p-2 border rounded bg-white">
+                <div key={dept.id} className="mb-2 p-3 border rounded bg-white">
                   <div className="">
+                    {/* Department Checkbox */}
                     <div className="form-check">
                       <input
                         className="form-check-input"
@@ -505,14 +600,16 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                         onChange={() => handleDepartmentToggle(dept)}
                       />
                       <label
-                        className="form-check-label fw-medium"
+                        className="form-check-label fw-bold"
                         htmlFor={`dept-${dept.id}`}
                       >
                         {dept.name}
                       </label>
                     </div>
+
+                    {/* Department Admin Toggle */}
                     {isDepartmentSelected(dept.id) && (
-                      <div className="form-check form-switch">
+                      <div className="form-check form-switch ms-4 mt-1">
                         <input
                           className="form-check-input"
                           type="checkbox"
@@ -521,24 +618,81 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                           onChange={() => handleAdminToggle(dept.id)}
                         />
                         <label
-                          className="form-check-label text-primary fw-medium"
+                          className="form-check-label text-primary"
                           htmlFor={`admin-${dept.id}`}
                         >
-                          <BsShieldCheck size={15} />
-                          Make Admin
+                          <BsShieldCheck size={15} className="me-1" />
+                          Department Admin
                         </label>
                       </div>
                     )}
+
+                    {/* Teams Section - Only show if department is selected */}
+                    {isDepartmentSelected(dept.id) &&
+                      dept.teams &&
+                      dept.teams.length > 0 && (
+                        <div className="ms-4 mt-2 p-2 bg-light rounded">
+                          <div className="fw-semibold text-secondary mb-2">
+                            Teams:
+                          </div>
+                          {dept.teams.map((team) => (
+                            <div key={team.id} className="mb-1">
+                              {/* Team Checkbox */}
+                              <div className="form-check">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`team-${team.id}`}
+                                  checked={isTeamSelected(team.id)}
+                                  onChange={() => handleTeamToggle(team)}
+                                />
+                                <label
+                                  className="form-check-label"
+                                  htmlFor={`team-${team.id}`}
+                                >
+                                  {team.name}
+                                </label>
+                              </div>
+
+                              {/* Team Admin Toggle */}
+                              {isTeamSelected(team.id) && (
+                                <div className="form-check form-switch ms-4">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`team-admin-${team.id}`}
+                                    checked={isTeamAdmin(team.id)}
+                                    onChange={() =>
+                                      handleTeamAdminToggle(team.id)
+                                    }
+                                  />
+                                  <label
+                                    className="form-check-label text-info"
+                                    htmlFor={`team-admin-${team.id}`}
+                                  >
+                                    <BsShieldCheck size={14} className="me-1" />
+                                    Team Admin
+                                  </label>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </div>
               ))
             )}
           </div>
-          {userDepartments.length > 0 && (
+          {(userDepartments.length > 0 || userTeams.length > 0) && (
             <div className="mt-2">
               <small className="text-muted">
-                Selected: {userDepartments.length} department(s),{" "}
-                {userDepartments.filter((d) => d.isAdmin).length} admin role(s)
+                Selected: {userDepartments.length} department(s)
+                {userDepartments.filter((d) => d.isAdmin).length > 0 &&
+                  ` (${userDepartments.filter((d) => d.isAdmin).length} admin)`}
+                {userTeams.length > 0 && `, ${userTeams.length} team(s)`}
+                {userTeams.filter((t) => t.isAdmin).length > 0 &&
+                  ` (${userTeams.filter((t) => t.isAdmin).length} admin)`}
               </small>
             </div>
           )}

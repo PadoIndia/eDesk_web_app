@@ -1,6 +1,9 @@
 import { BASE_URL } from "../../store/config";
 import { ApiResponse } from "../../types/axios.types";
-import { UpdateUserDepartmentPayload } from "../../types/department-team.types";
+import {
+  UpdateUserDepartmentPayload,
+  UpdateUserTeamPayload,
+} from "../../types/department-team.types";
 import {
   Address,
   Contact,
@@ -65,6 +68,13 @@ class UserService extends ApiService {
     data: UpdateUserDepartmentPayload[]
   ): ApiResponse<number[]> {
     return this.postData(`/${userId}/departments`, data);
+  }
+
+  updateUserTeams(
+    userId: number,
+    data: UpdateUserTeamPayload[]
+  ): ApiResponse<number[]> {
+    return this.postData(`/${userId}/teams`, data);
   }
 }
 

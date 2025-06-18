@@ -28,6 +28,11 @@ export interface UpdateUserDepartmentPayload {
   departmentId: number;
 }
 
+export interface UpdateUserTeamPayload {
+  isAdmin: boolean;
+  teamId: number;
+}
+
 export interface DepartmentTeamLink {
   id: number;
   departmentId: number;

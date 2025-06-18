@@ -20,12 +20,18 @@ export type AdminUser = Prettify<
   User & {
     userDetails: UserDetails;
     userDepartment: UserDepartmentResp[];
+    userTeam: UserTeamResp[];
   }
 >;
 export type UserDepartmentResp = {
   department: { name: string };
   isAdmin: boolean;
   departmentId: number;
+};
+export type UserTeamResp = {
+  team: { name: string };
+  isAdmin: boolean;
+  teamId: number;
 };
 
 export type UserInfo = Prettify<
@@ -44,11 +50,12 @@ export type CreateUserPayload = Prettify<
   UserInfo & {
     userDetails: UserDetails;
     departments: { isAdmin: boolean; departmentId: number }[];
+    teams: { isAdmin: boolean; teamId: number }[];
   }
 >;
 
 export type UpdateUserPayload = Prettify<
-  Omit<CreateUserPayload, "departments">
+  Omit<CreateUserPayload, "departments" | "teams">
 >;
 
 export type UpdateSelfPayload = {
