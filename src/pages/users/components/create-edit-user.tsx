@@ -257,7 +257,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     }
 
     if (!id) {
-      if (!userDetails.gender || !userDetails.dob || !userDetails.joiningDate) {
+      if (!userDetails.gender || !userDetails.joiningDate) {
         toast.error("Please fill all required personal details");
         return false;
       }
@@ -288,7 +288,17 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           contact: formData.contact,
           empCode: formData.empCode || null,
           isActive: formData.isActive,
-          userDetails: userDetails,
+          userDetails: {
+            gender: userDetails.gender,
+            ...(!!userDetails.leaveSchemeId && {
+              leaveSchemeId: userDetails.leaveSchemeId,
+            }),
+            ...(!!userDetails.joiningDate && {
+              joiningDate: userDetails.joiningDate,
+            }),
+            ...(!!userDetails.weekoff && { weekoff: userDetails.weekoff }),
+            ...(!!userDetails.dob && { dob: userDetails.dob }),
+          } as UserDetails,
           password: formData.password,
         };
 
@@ -506,7 +516,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
               showYearDropdown
               showMonthDropdown
               dropdownMode="select"
-              required
             />
           </div>
           <div className="mb-3 d-flex flex-column">

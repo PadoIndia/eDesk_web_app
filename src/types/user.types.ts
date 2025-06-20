@@ -55,7 +55,7 @@ export type CreateUserPayload = Prettify<
 >;
 
 export type UpdateUserPayload = Prettify<
-  Omit<CreateUserPayload, "departments" | "teams">
+  Omit<CreateUserPayload, "departments" | "teams" | "dob"> & { dob?: string }
 >;
 
 export type UpdateSelfPayload = {
