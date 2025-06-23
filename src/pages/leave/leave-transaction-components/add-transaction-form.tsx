@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { LeaveType, CreateLeaveTransactionRequest } from "../../../types/leave.types";
+import {
+  LeaveType,
+  CreateLeaveTransactionRequest,
+} from "../../../types/leave.types";
 import { User } from "../../../types/user.types";
 import { useAppSelector } from "../../../store/store";
+import { toast } from "react-toastify";
+import leaveTransactionService from "../../../services/api-services/leave-transaction.service";
 
 interface AddTransactionFormProps {
   users: User[];
@@ -20,7 +23,6 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
 }) => {
   const [userId, setUserId] = useState<number | "">("");
   const [emailInput, setEmailInput] = useState("");
-  const [date, setDate] = useState<Date | null>(new Date());
   const [leaveTypeId, setLeaveTypeId] = useState<number | "">("");
   const [count, setCount] = useState<number | "">("");
   const [comment, setComment] = useState("");
@@ -31,32 +33,27 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
     e.preventDefault();
 
     if (!userId) {
-      alert("Please select an employee");
-      return;
-    }
-
-    if (!date) {
-      alert("Please select a date");
+      toast.error("Please select an employee");
       return;
     }
 
     if (!leaveTypeId) {
-      alert("Please select a leave type");
+      toast.error("Please select a leave type");
       return;
     }
 
     if (count === "") {
-      alert("Please enter a count value");
+      toast.error("Please enter a count value");
       return;
     }
 
     const selectedUser = users.find((u) => u.id === userId);
     if (!selectedUser) {
-      alert("Invalid employee selected");
+      toast.error("Invalid employee selected");
       return;
     }
-
     try {
+      const date = new Date();
       const transactionData: CreateLeaveTransactionRequest = {
         userId: Number(userId),
         year: date.getFullYear(),
@@ -67,8 +64,16 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
         comment: comment || undefined,
         assignedBy: currentUser?.id,
       };
-
-      onSave(transactionData);
+      const resp = await leaveTransactionService.createLeaveTransaction(
+        transactionData
+      );
+      if (resp.status === "success") {
+        toast.success(resp.message);
+        onSave(transactionData);
+        setComment("");
+        setCount("");
+        setLeaveTypeId("");
+      } else toast.error(resp.message);
     } catch (error) {
       console.error("Error submitting transaction:", error);
       alert("Error creating transaction");
@@ -104,19 +109,6 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
             ))}
           </datalist>
         </div>
-
-        <div className="col-md-4">
-          <label className="form-label">Date</label>
-          <div className="w-100">
-            <DatePicker
-              selected={date}
-              onChange={setDate}
-              className="form-control"
-              required
-            />
-          </div>
-        </div>
-
         <div className="col-md-4">
           <label className="form-label">Leave Type</label>
           <select

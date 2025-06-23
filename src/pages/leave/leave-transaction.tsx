@@ -1,8 +1,5 @@
-// Updated LeaveTransactions main component
 import React, { useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
-import leaveTransactionService from "../../services/api-services/leave-transaction.service";
-import { CreateLeaveTransactionRequest } from "../../types/leave.types";
 import { useLeaveTransactions } from "./leave-transaction-components/use-leave-transaction";
 import { useTransactionFilters } from "./leave-transaction-components/use-transaction-filter";
 import { TransactionFilters } from "./leave-transaction-components/transaction-filters";
@@ -12,14 +9,9 @@ import { TransactionsPagination } from "./leave-transaction-components/transacti
 
 const LeaveTransactions: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
-  
-  const {
-    transactions,
-    loading,
-    users,
-    leaveTypes,
-    refetchTransactions
-  } = useLeaveTransactions();
+
+  const { transactions, loading, users, leaveTypes, refetchTransactions } =
+    useLeaveTransactions();
 
   const {
     searchTerm,
@@ -36,18 +28,12 @@ const LeaveTransactions: React.FC = () => {
     itemsPerPage,
     handlePageChange,
     handleItemsPerPageChange,
-    clearFilters
+    clearFilters,
   } = useTransactionFilters(transactions);
 
-  const handleAddTransaction = async (newTransaction: CreateLeaveTransactionRequest) => {
+  const handleAddTransaction = async () => {
     try {
-      await leaveTransactionService.createLeaveTransaction({
-        ...newTransaction,
-        comment: newTransaction.comment || undefined,
-      });
-
       await refetchTransactions();
-      setShowAddForm(false);
     } catch (error) {
       console.error("Failed to create transaction:", error);
       alert("Failed to create transaction");
