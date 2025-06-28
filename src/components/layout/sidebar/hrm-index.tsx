@@ -1,18 +1,19 @@
-// hrm-index.tsx sidebar to be used in the hrm-app.tsx file
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaCalendarAlt, FaClock, FaBars, FaTimes, FaUsers } from "react-icons/fa";
-// import { useAppSelector } from "../../../store/store";
-// import userDepartmentService from "../../../services/api-services/user-department.service";
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaBars,
+  FaTimes,
+  FaUsers,
+} from "react-icons/fa";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Function to close sidebar when a nav link is clicked
   const handleNavClick = () => {
     setIsOpen(false);
   };
-
 
   return (
     <div
@@ -52,7 +53,7 @@ const Sidebar = () => {
               borderRadius: "8px",
               transition: "all 0.2s",
             }}
-            onClick={handleNavClick}  // Added onClick handler
+            onClick={handleNavClick} // Added onClick handler
           >
             <FaCalendarAlt className="fs-5" style={{ marginRight: "12px" }} />
             <span
@@ -77,7 +78,7 @@ const Sidebar = () => {
               borderRadius: "8px",
               transition: "all 0.2s",
             }}
-            onClick={handleNavClick}  // Added onClick handler
+            onClick={handleNavClick} // Added onClick handler
           >
             <FaClock className="fs-5" style={{ marginRight: "12px" }} />
             <span
@@ -96,7 +97,7 @@ const Sidebar = () => {
           <NavLink
             to="/hrm/department-management"
             className="text-decoration-none text-dark"
-            onClick={handleNavClick}  // Added onClick handler
+            onClick={handleNavClick} // Added onClick handler
           >
             <div
               className="d-flex align-items-center p-3 rounded"

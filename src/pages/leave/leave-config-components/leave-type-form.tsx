@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { CreateLeaveTypeRequest, LeaveType } from "../../../types/leave.types";
+import {
+  CreateLeaveTypeRequest,
+  LeaveTypeResponse,
+} from "../../../types/leave.types";
 
 interface LeaveTypeFormProps {
-  type: LeaveType | null;
-  onSave: (type: LeaveType) => void;
+  type: LeaveTypeResponse | null;
+  onSave: (type: LeaveTypeResponse) => void;
   onCancel: () => void;
 }
 
@@ -15,23 +18,24 @@ const LeaveTypeForm: React.FC<LeaveTypeFormProps> = ({
   const [formData, setFormData] = useState<CreateLeaveTypeRequest>({
     name: type?.name || "",
     isPaid: type?.isPaid ?? true,
-    description: type?.description || ""
+    description: type?.description || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       alert("Leave type name is required");
       return;
     }
 
-    onSave({ 
-      ...(type || { id: 0, schemesCount: 0 }), // Existing type or new stub
-      ...formData 
-    });
+    onSave({
+      ...(type || { id: 0, schemesCount: 0 }),
+      ...formData,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
   };
-  
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-3">
@@ -54,7 +58,7 @@ const LeaveTypeForm: React.FC<LeaveTypeFormProps> = ({
             className="form-check-input"
             id="paidLeave"
             checked={formData.isPaid}
-            onChange={() => setFormData({...formData, isPaid: true})}
+            onChange={() => setFormData({ ...formData, isPaid: true })}
             aria-label="Paid leave"
           />
           <label className="form-check-label" htmlFor="paidLeave">
@@ -67,7 +71,7 @@ const LeaveTypeForm: React.FC<LeaveTypeFormProps> = ({
             className="form-check-input"
             id="unpaidLeave"
             checked={!formData.isPaid}
-            onChange={() => setFormData({...formData, isPaid: false})}
+            onChange={() => setFormData({ ...formData, isPaid: false })}
             aria-label="Unpaid leave"
           />
           <label className="form-check-label" htmlFor="unpaidLeave">
@@ -82,7 +86,9 @@ const LeaveTypeForm: React.FC<LeaveTypeFormProps> = ({
           className="form-control"
           rows={3}
           value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           aria-label="Leave type description"
         />
       </div>

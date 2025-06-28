@@ -1,13 +1,12 @@
 import React from "react";
 import { FaPlus, FaEdit, FaTrash, FaInfoCircle } from "react-icons/fa";
-import { LeaveType } from "../../../types/leave.types";
-import Badge from "../../../components/badge";
+import { LeaveTypeResponse } from "../../../types/leave.types";
 
 interface LeaveTypesTabProps {
-  leaveTypes: LeaveType[];
+  leaveTypes: LeaveTypeResponse[];
   loading: boolean;
   onAddType: () => void;
-  onEditType: (type: LeaveType) => void;
+  onEditType: (type: LeaveTypeResponse) => void;
   onDeleteType: (id: number) => void;
 }
 
@@ -49,7 +48,6 @@ const LeaveTypesTab: React.FC<LeaveTypesTabProps> = ({
                     <th>Name</th>
                     <th>Type</th>
                     <th>Description</th>
-                    <th>Schemes</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -58,22 +56,20 @@ const LeaveTypesTab: React.FC<LeaveTypesTabProps> = ({
                     <tr key={type.id}>
                       <td>{type.name}</td>
                       <td>
-                        <Badge
-                          label={type.isPaid ? "Paid" : "Unpaid"}
-                          status={type.isPaid ? "SUCCESS" : "DANGER"}
-                        />
+                        <span
+                          className={`badge ${
+                            type.isPaid
+                              ? "text-primary bg-primary-subtle"
+                              : "text-danger bg-danger-subtle"
+                          }`}
+                        >
+                          {type.isPaid ? "Paid" : "Unpaid"}
+                        </span>
                       </td>
                       <td>
                         <small className="text-muted">
                           {type.description || "N/A"}
                         </small>
-                      </td>
-                      <td>
-                        <Badge
-                          label={(type.schemesCount || 0).toString()}
-                          status="INFO"
-                          className="ms-2"
-                        />
                       </td>
                       <td>
                         <div className="d-flex gap-2">

@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import {
-  LeaveType,
+  LeaveTypeResponse,
   CreateLeaveTransactionRequest,
 } from "../../../types/leave.types";
 import { User } from "../../../types/user.types";
-import { useAppSelector } from "../../../store/store";
 import { toast } from "react-toastify";
 import leaveTransactionService from "../../../services/api-services/leave-transaction.service";
 
 interface AddTransactionFormProps {
   users: User[];
-  leaveTypes: LeaveType[];
+  leaveTypes: LeaveTypeResponse[];
   onSave: (transaction: CreateLeaveTransactionRequest) => void;
   onCancel: () => void;
 }
@@ -26,8 +25,6 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
   const [leaveTypeId, setLeaveTypeId] = useState<number | "">("");
   const [count, setCount] = useState<number | "">("");
   const [comment, setComment] = useState("");
-
-  const currentUser = useAppSelector((s) => s.auth.userData?.user);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +59,6 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
         leaveTypeId: Number(leaveTypeId),
         count: Number(count),
         comment: comment || undefined,
-        assignedBy: currentUser?.id,
       };
       const resp = await leaveTransactionService.createLeaveTransaction(
         transactionData
@@ -76,7 +72,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
       } else toast.error(resp.message);
     } catch (error) {
       console.error("Error submitting transaction:", error);
-      alert("Error creating transaction");
+      toast.error("Error creating transaction");
     }
   };
 

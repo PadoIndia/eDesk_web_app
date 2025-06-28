@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import leaveTransactionService from "../../../services/api-services/leave-transaction.service";
 import leaveTypeService from "../../../services/api-services/leave-type.service";
 import userService from "../../../services/api-services/user.service";
-import { LeaveTransactionFilters, LeaveType } from "../../../types/leave.types";
+import {
+  LeaveTransactionFilters,
+  LeaveTypeResponse,
+} from "../../../types/leave.types";
 import { User } from "../../../types/user.types";
 import { LeaveTransaction } from "./type";
 
@@ -10,7 +13,7 @@ export const useLeaveTransactions = () => {
   const [transactions, setTransactions] = useState<LeaveTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
-  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveTypeResponse[]>([]);
 
   const fetchTransactions = async () => {
     setLoading(true);

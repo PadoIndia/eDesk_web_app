@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { CreateLeaveSchemeRequest, LeaveScheme } from "../../../types/leave.types";
+import {
+  CreateLeaveSchemeRequest,
+  LeaveScheme,
+} from "../../../types/leave.types";
 
 interface LeaveSchemeFormProps {
   scheme: LeaveScheme | null;
@@ -15,12 +18,12 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
   const [formData, setFormData] = useState<CreateLeaveSchemeRequest>({
     name: scheme?.name || "",
     description: scheme?.description || "",
-    slug: scheme?.slug || ""
+    slug: scheme?.slug || "",
   });
 
-   const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       alert("Scheme name is required");
       return;
@@ -32,9 +35,10 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
     }
 
     onSave({
-      ...(scheme || { id: 0, leaveTypesCount: 0, usersCount: 0 }), // Existing scheme or new stub
-      ...formData
-    });
+      ...(scheme || { id: 0, leaveTypesCount: 0, usersCount: 0 }),
+      ...formData,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
   };
 
   return (
@@ -45,7 +49,7 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
           type="text"
           className="form-control"
           value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
           aria-label="Scheme name"
         />
@@ -57,7 +61,9 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
           className="form-control"
           rows={3}
           value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           aria-label="Scheme description"
         />
       </div>
@@ -68,7 +74,7 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
           type="text"
           className="form-control"
           value={formData.slug}
-          onChange={(e) => setFormData({...formData, slug:e.target.value})}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
           placeholder="e.g., standard-employee"
           required
           pattern="^[a-z0-9-]+$"
@@ -76,7 +82,8 @@ const LeaveSchemeForm: React.FC<LeaveSchemeFormProps> = ({
           aria-label="Scheme slug"
         />
         <small className="text-muted">
-          This will be used in URLs and must be unique (lowercase letters, numbers, and hyphens only)
+          This will be used in URLs and must be unique (lowercase letters,
+          numbers, and hyphens only)
         </small>
       </div>
 

@@ -69,3 +69,15 @@ export interface UserTeam {
   teamId: number;
   isAdmin: boolean;
 }
+
+export interface UserTeamResp {
+  team: {
+    name: string;
+  };
+  id: number;
+  createdOn: Date;
+  updatedOn: Date | null;
+  userId: number;
+  teamId: number;
+  isAdmin: boolean;
+}

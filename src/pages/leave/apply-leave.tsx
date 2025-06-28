@@ -1,5 +1,4 @@
 import React, { useMemo, useEffect, useState } from "react";
-import { useForm, Controller, useWatch } from "react-hook-form";
 import {
   FaCalendarAlt,
   FaPaperPlane,
@@ -8,34 +7,18 @@ import {
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import leaveRequestService from "../../services/api-services/leave-request.service";
-import { CreateLeaveRequestRequest } from "../../types/leave.types";
+import { LeaveRequestPayload, LeaveScheme } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
 import userService from "../../services/api-services/user.service";
-import leaveSchemeService from "../../services/api-services/leave-scheme.service"; // Assuming this service exists
-import teamService from "../../services/api-services/team.service";
-import userDepartmentService from "../../services/api-services/user-department.service";
+import leaveSchemeService from "../../services/api-services/leave-scheme.service";
 import { UserDetails } from "../../types/user.types";
-
-interface LeaveType {
-  id: number;
-  name: string;
-  isPaid: boolean;
-  description: string;
-  maxDays?: number;
-  remainingDays?: number;
-}
-
-interface LeaveScheme {
-  id: number;
-  name: string;
-  leaveTypes: LeaveType[];
-}
+import generalService from "../../services/api-services/general.service";
+import { toast } from "react-toastify";
 
 interface FormData {
   leaveTypeId: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   reason: string;
   isStartHalfDay: boolean;
   isEndHalfDay: boolean;
@@ -43,35 +26,40 @@ interface FormData {
   halfDayTypeEnd?: "first-half" | "second-half";
 }
 
+interface FormErrors {
+  leaveTypeId?: string;
+  startDate?: string;
+  endDate?: string;
+  reason?: string;
+  halfDayTypeStart?: string;
+  halfDayTypeEnd?: string;
+  isStartHalfDay?: string;
+  isEndHalfDay?: string;
+}
+
 const ApplyLeave: React.FC = () => {
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [leaveScheme, setLeaveScheme] = useState<LeaveScheme | null>(null);
-  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveScheme["leaveTypes"]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    defaultValues: {
-      leaveTypeId: 0,
-      startDate: undefined,
-      endDate: undefined,
-      reason: "",
-      isStartHalfDay: false,
-      isEndHalfDay: false,
-      halfDayTypeStart: undefined,
-      halfDayTypeEnd: undefined,
-    },
+  const [formData, setFormData] = useState<FormData>({
+    leaveTypeId: 0,
+    startDate: null,
+    endDate: null,
+    reason: "",
+    isStartHalfDay: false,
+    isEndHalfDay: false,
+    halfDayTypeStart: undefined,
+    halfDayTypeEnd: undefined,
   });
+
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
 
-  // Fetch user details and leave scheme on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       if (!userId) {
@@ -84,7 +72,6 @@ const ApplyLeave: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch user details
         const resp = await userService.getUserById(userId);
 
         console.log("user details response", resp);
@@ -96,7 +83,6 @@ const ApplyLeave: React.FC = () => {
         const userDetailsData = resp.data.userDetails;
         setUserDetails(userDetailsData);
 
-        // Fetch leave scheme if leaveSchemeId exists
         if (userDetailsData.leaveSchemeId) {
           const leaveSchemeResponse =
             await leaveSchemeService.getLeaveSchemeById(
@@ -127,130 +113,213 @@ const ApplyLeave: React.FC = () => {
     fetchUserData();
   }, [userId]);
 
-  const watchStartIsHalfDay = useWatch({ control, name: "isStartHalfDay" });
-  const watchEndIsHalfDay = useWatch({ control, name: "isEndHalfDay" });
-  const watchStart = useWatch({ control, name: "startDate" });
-  const watchEnd = useWatch({ control, name: "endDate" });
-  const watchHalfDayTypeStart = useWatch({ control, name: "halfDayTypeStart" });
-  const watchHalfDayTypeEnd = useWatch({ control, name: "halfDayTypeEnd" });
-
-  // Calculate minimum date based on joining date
   const minDate = useMemo(() => {
     if (!userDetails?.joiningDate) return new Date();
 
     const joiningDate = new Date(userDetails.joiningDate);
     const today = new Date();
 
-    // Return the later of joining date or today
     return joiningDate > today ? joiningDate : today;
   }, [userDetails?.joiningDate]);
 
-  // Duration calculation
   const calculateDuration = () => {
-    if (!watchStart || !watchEnd) return 0;
+    if (!formData.startDate || !formData.endDate) return 0;
 
-    const start = new Date(watchStart);
-    const end = new Date(watchEnd);
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
 
-    // Normalize times to compare dates
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
 
     const diffTime = end.getTime() - start.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 3600 * 24)) + 1;
 
-    // Same day calculation
     if (diffDays === 1) {
       let duration = 1;
 
-      if (watchStartIsHalfDay && watchEndIsHalfDay) {
+      if (formData.isStartHalfDay && formData.isEndHalfDay) {
         if (
-          watchHalfDayTypeStart === "first-half" &&
-          watchHalfDayTypeEnd === "second-half"
+          formData.halfDayTypeStart === "first-half" &&
+          formData.halfDayTypeEnd === "second-half"
         ) {
           duration = 1;
-        } else if (watchHalfDayTypeStart === watchHalfDayTypeEnd) {
+        } else if (formData.halfDayTypeStart === formData.halfDayTypeEnd) {
           duration = 0.5;
         }
-      } else if (watchStartIsHalfDay || watchEndIsHalfDay) {
+      } else if (formData.isStartHalfDay || formData.isEndHalfDay) {
         duration = 0.5;
       }
 
       return duration;
     }
 
-    // Multi-day calculation
     let duration = diffDays;
-    if (watchStartIsHalfDay) duration -= 0.5;
-    if (watchEndIsHalfDay) duration -= 0.5;
+    if (formData.isStartHalfDay) duration -= 0.5;
+    if (formData.isEndHalfDay) duration -= 0.5;
 
     return duration > 0 ? duration : 0;
   };
 
   const duration = calculateDuration();
 
-  const onSubmit = async (data: FormData) => {
-    if (!userDetails || !userId) {
-      alert("User details not available");
-      return;
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!formData.leaveTypeId || formData.leaveTypeId <= 0) {
+      errors.leaveTypeId = "Select a leave type";
     }
 
-    let managerId: number | null = null;
-
-    const teamManagerResponse = await teamService.getManagerByUserId(userId);
-    if (teamManagerResponse.data) {
-      managerId = teamManagerResponse.data;
+    if (!formData.startDate) {
+      errors.startDate = "Start date is required";
     } else {
-      const userDepartmentResponse =
-        await userDepartmentService.getUserDepartmentByUserId(userId);
-
-      if (userDepartmentResponse.data.length > 0) {
-        const departmentIds = userDepartmentResponse.data.map(
-          (dept: any) => dept.departmentId
-        );
-
-        for (const deptId of departmentIds) {
-          const deptManagerResponse =
-            await userDepartmentService.getDepartmentManager(deptId);
-
-          if (deptManagerResponse.data?.length > 0) {
-            managerId = deptManagerResponse.data[0].id;
-            break;
-          }
-        }
+      const startDate = new Date(formData.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      if (startDate < today) {
+        errors.startDate = "Start date cannot be in the past";
       }
     }
 
-    if (!managerId) {
-      alert("No manager found to approve your leave request");
+    if (!formData.endDate) {
+      errors.endDate = "End date is required";
+    } else if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+      if (endDate < startDate) {
+        errors.endDate = "End date must be after or equal to start date";
+      }
+    }
+
+    if (duration <= 0) {
+      errors.endDate = "Invalid leave duration";
+    } else if (duration > 365) {
+      errors.endDate = "Leave duration cannot exceed 365 days";
+    }
+
+    if (!formData.reason.trim()) {
+      errors.reason = "Reason is required";
+    } else if (formData.reason.trim().length < 10) {
+      errors.reason = "Reason must be at least 10 characters";
+    } else if (formData.reason.trim().length > 1000) {
+      errors.reason = "Reason must not exceed 1000 characters";
+    }
+
+    if (formData.isStartHalfDay && !formData.halfDayTypeStart) {
+      errors.halfDayTypeStart = "Please select start half-day type";
+    }
+
+    if (formData.isEndHalfDay && !formData.halfDayTypeEnd) {
+      errors.halfDayTypeEnd = "Please select end half-day type";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (
+    field: keyof FormData,
+    value: string | number | boolean | Date | null
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    if (formErrors[field as keyof FormErrors]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }));
+    }
+  };
+
+  const handleCheckboxChange = (
+    field: "isStartHalfDay" | "isEndHalfDay",
+    checked: boolean
+  ) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: checked };
+
+      if (!checked) {
+        if (field === "isStartHalfDay") {
+          newData.halfDayTypeStart = undefined;
+        } else {
+          newData.halfDayTypeEnd = undefined;
+        }
+      }
+
+      return newData;
+    });
+
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+        ...(field === "isStartHalfDay" && !checked
+          ? { halfDayTypeStart: undefined }
+          : {}),
+        ...(field === "isEndHalfDay" && !checked
+          ? { halfDayTypeEnd: undefined }
+          : {}),
+      }));
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      leaveTypeId: 0,
+      startDate: null,
+      endDate: null,
+      reason: "",
+      isStartHalfDay: false,
+      isEndHalfDay: false,
+      halfDayTypeStart: undefined,
+      halfDayTypeEnd: undefined,
+    });
+    setFormErrors({});
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
+    if (!userDetails || !userId) {
+      toast.error("User details not available");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const payload: CreateLeaveRequestRequest = {
-        leaveTypeId: data.leaveTypeId,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
+      const payload: LeaveRequestPayload = {
+        leaveTypeId: formData.leaveTypeId,
+        startDate: formData.startDate!.toISOString(),
+        endDate: formData.endDate!.toISOString(),
         duration,
-        reason: data.reason,
-        managerId: managerId,
+        reason: formData.reason.trim(),
       };
 
       console.log("leave apply payload", payload);
 
-      const response = await leaveRequestService.createLeaveRequest(payload);
-      alert("Leave application submitted successfully!");
-      console.log("Leave request created:", response.data);
-
-      // Reset form after successful submission
-      reset();
+      const response = await generalService.createLeaveRequest(payload);
+      if (response.status === "success") {
+        toast.success(response.message);
+        resetForm();
+      } else toast.error(response.message);
     } catch (err) {
       console.error(err);
-      alert("Submission failed. Please try again.");
+      toast.error("Submission failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="container py-4">
@@ -268,7 +337,6 @@ const ApplyLeave: React.FC = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="container py-4">
@@ -289,6 +357,10 @@ const ApplyLeave: React.FC = () => {
       </div>
     );
   }
+
+  const selectedLeaveType = leaveTypes.find(
+    (lt) => lt.id === formData.leaveTypeId
+  );
 
   return (
     <div className="container py-4">
@@ -311,124 +383,100 @@ const ApplyLeave: React.FC = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <form onSubmit={onSubmit} noValidate>
                 {/* Leave Type */}
                 <div className="mb-4">
                   <label className="form-label fw-semibold">Leave Type</label>
                   <select
-                    {...register("leaveTypeId", {
-                      validate: (v) => v > 0 || "Select a leave type",
-                    })}
+                    value={formData.leaveTypeId}
+                    onChange={(e) =>
+                      handleInputChange("leaveTypeId", parseInt(e.target.value))
+                    }
                     className={`form-select ${
-                      errors.leaveTypeId ? "is-invalid" : ""
+                      formErrors.leaveTypeId ? "is-invalid" : ""
                     }`}
                   >
                     <option value={0}>-- Select Leave Type --</option>
                     {leaveTypes.map((lt) => (
-                      <option key={lt.id} value={lt.id}>
+                      <option
+                        key={lt.id}
+                        value={lt.id}
+                        disabled={!lt.remainingDays}
+                      >
                         {lt.name}
-                        {lt.maxDays && ` - Max: ${lt.maxDays} days`}
-                        {lt.remainingDays !== undefined &&
-                          ` - Remaining: ${lt.remainingDays} days`}
+                        {` - Max: ${lt.maxDays || 0} days`}
+                        {` - Remaining: ${lt.remainingDays || 0} days`}
                       </option>
                     ))}
                   </select>
-                  {errors.leaveTypeId && (
+                  {formErrors.leaveTypeId && (
                     <div className="invalid-feedback d-block">
-                      {errors.leaveTypeId.message}
+                      {formErrors.leaveTypeId}
                     </div>
                   )}
                 </div>
 
                 {/* Leave Type Description */}
-                <Controller
-                  name="leaveTypeId"
-                  control={control}
-                  render={({ field }) => {
-                    const type = leaveTypes.find((lt) => lt.id === field.value);
-                    return (
-                      <>
-                        {type && (
-                          <div className="alert alert-info d-flex align-items-center mb-4 p-3">
-                            <FaInfoCircle className="me-2 flex-shrink-0" />
-                            <div>
-                              <div>{type.description}</div>
-                              {type.maxDays && (
-                                <small className="text-muted">
-                                  Maximum allowed: {type.maxDays} days
-                                </small>
-                              )}
-                              {type.remainingDays !== undefined && (
-                                <small className="text-muted d-block">
-                                  Remaining balance: {type.remainingDays} days
-                                </small>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  }}
-                />
+                {selectedLeaveType && (
+                  <div className="alert alert-info d-flex align-items-center mb-4 p-3">
+                    <FaInfoCircle className="me-2 flex-shrink-0" />
+                    <div>
+                      <div>{selectedLeaveType.description}</div>
+                      {selectedLeaveType.maxDays && (
+                        <small className="text-muted">
+                          Maximum allowed: {selectedLeaveType.maxDays} days
+                        </small>
+                      )}
+                      {selectedLeaveType.remainingDays !== undefined && (
+                        <small className="text-muted d-block">
+                          Remaining balance:{" "}
+                          {selectedLeaveType.remainingDays || 0} days
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Dates */}
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Start Date</label>
-                    <Controller<FormData>
-                      name="startDate"
-                      control={control}
-                      rules={{ required: "Start date is required" }}
-                      render={({ field: { value, onChange, ...field } }) => (
-                        <DatePicker
-                          {...field}
-                          selected={value as Date}
-                          onChange={(date: Date | null) => onChange(date)}
-                          minDate={minDate}
-                          className={`form-control ${
-                            errors.startDate ? "is-invalid" : ""
-                          }`}
-                          placeholderText="Select start date"
-                          dateFormat="MMMM d, yyyy"
-                        />
-                      )}
+                    <DatePicker
+                      selected={formData.startDate}
+                      onChange={(date: Date | null) =>
+                        handleInputChange("startDate", date)
+                      }
+                      minDate={minDate}
+                      className={`form-control ${
+                        formErrors.startDate ? "is-invalid" : ""
+                      }`}
+                      placeholderText="Select start date"
+                      dateFormat="MMMM d, yyyy"
                     />
-                    {errors.startDate && (
+                    {formErrors.startDate && (
                       <div className="invalid-feedback d-block">
-                        {errors.startDate.message}
+                        {formErrors.startDate}
                       </div>
                     )}
                   </div>
 
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">End Date</label>
-                    <Controller<FormData>
-                      name="endDate"
-                      control={control}
-                      rules={{
-                        required: "End date is required",
-                        validate: (value) =>
-                          !watchStart ||
-                          (value && value >= watchStart) ||
-                          "End date must be after start date",
-                      }}
-                      render={({ field: { value, onChange, ...field } }) => (
-                        <DatePicker
-                          {...field}
-                          selected={value as Date}
-                          onChange={(date: Date | null) => onChange(date)}
-                          minDate={watchStart || minDate}
-                          className={`form-control ${
-                            errors.endDate ? "is-invalid" : ""
-                          }`}
-                          placeholderText="Select end date"
-                          dateFormat="MMMM d, yyyy"
-                        />
-                      )}
+                    <DatePicker
+                      selected={formData.endDate}
+                      onChange={(date: Date | null) =>
+                        handleInputChange("endDate", date)
+                      }
+                      minDate={formData.startDate || minDate}
+                      className={`form-control ${
+                        formErrors.endDate ? "is-invalid" : ""
+                      }`}
+                      placeholderText="Select end date"
+                      dateFormat="MMMM d, yyyy"
                     />
-                    {errors.endDate && (
+                    {formErrors.endDate && (
                       <div className="invalid-feedback d-block">
-                        {errors.endDate.message}
+                        {formErrors.endDate}
                       </div>
                     )}
                   </div>
@@ -439,7 +487,10 @@ const ApplyLeave: React.FC = () => {
                   <div className="form-check mb-3">
                     <input
                       type="checkbox"
-                      {...register("isStartHalfDay")}
+                      checked={formData.isStartHalfDay}
+                      onChange={(e) =>
+                        handleCheckboxChange("isStartHalfDay", e.target.checked)
+                      }
                       className="form-check-input"
                       id="startHalfDay"
                     />
@@ -451,19 +502,22 @@ const ApplyLeave: React.FC = () => {
                     </label>
                   </div>
 
-                  {watchStartIsHalfDay && (
+                  {formData.isStartHalfDay && (
                     <div className="ps-3 mb-3">
                       <div className="d-flex flex-wrap gap-3">
                         {["first-half", "second-half"].map((val) => (
                           <div className="form-check" key={val}>
                             <input
                               type="radio"
-                              {...register("halfDayTypeStart", {
-                                required: watchStartIsHalfDay
-                                  ? "Please select start half-day type"
-                                  : false,
-                              })}
+                              name="halfDayTypeStart"
                               value={val}
+                              checked={formData.halfDayTypeStart === val}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "halfDayTypeStart",
+                                  e.target.value as "first-half" | "second-half"
+                                )
+                              }
                               className="form-check-input"
                               id={`start-${val}`}
                             />
@@ -476,9 +530,9 @@ const ApplyLeave: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                      {errors.halfDayTypeStart && (
+                      {formErrors.halfDayTypeStart && (
                         <div className="invalid-feedback d-block mt-1">
-                          {errors.halfDayTypeStart.message}
+                          {formErrors.halfDayTypeStart}
                         </div>
                       )}
                     </div>
@@ -489,7 +543,10 @@ const ApplyLeave: React.FC = () => {
                   <div className="form-check mb-3">
                     <input
                       type="checkbox"
-                      {...register("isEndHalfDay")}
+                      checked={formData.isEndHalfDay}
+                      onChange={(e) =>
+                        handleCheckboxChange("isEndHalfDay", e.target.checked)
+                      }
                       className="form-check-input"
                       id="endHalfDay"
                     />
@@ -501,19 +558,22 @@ const ApplyLeave: React.FC = () => {
                     </label>
                   </div>
 
-                  {watchEndIsHalfDay && (
+                  {formData.isEndHalfDay && (
                     <div className="ps-3 mb-3">
                       <div className="d-flex flex-wrap gap-3">
                         {["first-half", "second-half"].map((val) => (
                           <div className="form-check" key={val}>
                             <input
                               type="radio"
-                              {...register("halfDayTypeEnd", {
-                                required: watchEndIsHalfDay
-                                  ? "Please select end half-day type"
-                                  : false,
-                              })}
+                              name="halfDayTypeEnd"
                               value={val}
+                              checked={formData.halfDayTypeEnd === val}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "halfDayTypeEnd",
+                                  e.target.value as "first-half" | "second-half"
+                                )
+                              }
                               className="form-check-input"
                               id={`end-${val}`}
                             />
@@ -526,9 +586,9 @@ const ApplyLeave: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                      {errors.halfDayTypeEnd && (
+                      {formErrors.halfDayTypeEnd && (
                         <div className="invalid-feedback d-block mt-1">
-                          {errors.halfDayTypeEnd.message}
+                          {formErrors.halfDayTypeEnd}
                         </div>
                       )}
                     </div>
@@ -541,22 +601,23 @@ const ApplyLeave: React.FC = () => {
                     Reason for Leave
                   </label>
                   <textarea
-                    {...register("reason", {
-                      required: "Reason is required",
-                      minLength: {
-                        value: 10,
-                        message: "Reason must be at least 10 characters",
-                      },
-                    })}
+                    value={formData.reason}
+                    onChange={(e) =>
+                      handleInputChange("reason", e.target.value)
+                    }
                     className={`form-control ${
-                      errors.reason ? "is-invalid" : ""
+                      formErrors.reason ? "is-invalid" : ""
                     }`}
                     rows={4}
                     placeholder="Please provide details about your leave request"
+                    maxLength={1000}
                   />
-                  {errors.reason && (
+                  <div className="form-text">
+                    {formData.reason.length}/1000 characters
+                  </div>
+                  {formErrors.reason && (
                     <div className="invalid-feedback d-block">
-                      {errors.reason.message}
+                      {formErrors.reason}
                     </div>
                   )}
                 </div>

@@ -3,8 +3,8 @@ import { useEffect } from "react";
 import { AppDispatch, useAppSelector } from "./store/store";
 import { useDispatch } from "react-redux";
 import { setUserDepartments } from "./features/user-department.slice";
-import { getUserDepartments } from "./utils/helper";
 import React from "react";
+import generalService from "./services/api-services/general.service";
 
 const Dashboard = React.lazy(() => import("./pages/dashboard/dashboard"));
 const HrmNavbar = React.lazy(
@@ -40,8 +40,10 @@ function HrmApp() {
   useEffect(() => {
     const fetchDepartments = async () => {
       if (!userId) return;
-      const departments = await getUserDepartments(userId);
-      dispatch(setUserDepartments(departments));
+      const resp = await generalService.getUserDepartments(userId);
+      if (resp.status === "success") {
+        dispatch(setUserDepartments(resp.data));
+      }
     };
     fetchDepartments();
   }, [userId, dispatch]);

@@ -10,50 +10,21 @@ import {
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import Badge from "../../components/badge";
 import leaveRequestService from "../../services/api-services/leave-request.service";
+import generalService from "../../services/api-services/general.service";
 import {
-  ManagerApproveRejectLeaveRequestRequest,
-  HRApproveRejectLeaveRequestRequest,
-  LeaveRequestStatus,
+  LeaveRequestResponse,
+  ApproveRejectLeaveRequestRequest,
 } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
 import { IsDeptManager, IsHr, isTeamManager } from "../../utils/helper";
-
-// Updated interface to match API response structure
-interface LeaveRequest {
-  id: number;
-  userId: number;
-  leaveTypeId: number;
-  startDate: string;
-  endDate: string;
-  duration: number;
-  reason: string;
-  managerId: number;
-  hrId: number;
-  submittedOn: string;
-  updatedOn: string;
-  managerStatus: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
-  hrStatus: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
-  comment: string | null;
-  leaveType: {
-    id: number;
-    name: string;
-    description: string;
-  };
-  user: {
-    id: number;
-    name: string;
-    username: string;
-  };
-}
+import { toast } from "react-toastify";
 
 const LeaveRequests = () => {
-  // const dispatch = useDispatch<AppDispatch>();
-
-  // All useState hooks first
-  const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
-  const [othersRequests, setOthersRequests] = useState<LeaveRequest[]>([]);
+  const [myRequests, setMyRequests] = useState<LeaveRequestResponse[]>([]);
+  const [othersRequests, setOthersRequests] = useState<LeaveRequestResponse[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -69,37 +40,34 @@ const LeaveRequests = () => {
   );
   const [isTeamManagerState, setIsTeamManagerState] = useState<boolean>(false);
 
-  // All useAppSelector hooks
-  const userId = useAppSelector((s) => s.auth.userData?.user.id);
+  const [showModal, setShowModal] = useState(false);
+  const [modalAction, setModalAction] = useState<
+    "APPROVED" | "REJECTED" | null
+  >(null);
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(
+    null
+  );
+  const [comment, setComment] = useState("");
+  const [commentError, setCommentError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // All static helper function calls (these don't use hooks internally that would affect order)
+  const userId = useAppSelector((s) => s.auth.userData?.user.id);
+  const permissions = useAppSelector((s) => s.auth.userData?.user.permissions);
+
   const isHR = IsHr();
   const isDeptManager = IsDeptManager();
   const isManager = isTeamManagerState || isDeptManager;
 
-  // Memoized functions
-  const canApproveReject = useCallback(() => {
-    return isHR || isManager;
-  }, [isHR, isManager]);
+  const hasAdminPermissions = useCallback(() => {
+    return permissions?.some((p) =>
+      ["is_admin", "is_admin_department", "is_admin_team"].includes(p)
+    );
+  }, [permissions]);
 
   const showTabs = useCallback(() => {
-    return isHR || isManager;
-  }, [isHR, isManager]);
+    return (isHR || isManager) && hasAdminPermissions();
+  }, [isHR, isManager, hasAdminPermissions]);
 
-  // Helper function to get the effective status based on user role
-  const getEffectiveStatus = useCallback(
-    (request: LeaveRequest) => {
-      if (isHR) {
-        return request.hrStatus;
-      } else if (isManager) {
-        return request.managerStatus;
-      }
-      return request.hrStatus;
-    },
-    [isHR, isManager]
-  );
-
-  // Check team manager status - separate useEffect with proper dependencies
   useEffect(() => {
     let isMounted = true;
 
@@ -122,60 +90,34 @@ const LeaveRequests = () => {
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, []);
 
-  // Main data fetching useEffect with proper dependencies
   useEffect(() => {
     let isMounted = true;
 
-    const fetchUserAndRequests = async () => {
+    const fetchRequests = async () => {
       if (!userId) return;
 
       setLoading(true);
 
       try {
-        const myRequestsResponse =
-          await leaveRequestService.getMyLeaveRequests();
+        const myRequestsResponse = await generalService.getMyLeaveRequests();
         if (isMounted) {
           setMyRequests(myRequestsResponse.data);
         }
 
-        // Fetch others' requests only if user is HR or Manager
-        if (isHR || isManager) {
-          let allOthersRequests: any[] = [];
-
-          if (isHR && isManager) {
-            // User is both HR and Manager - fetch both types
-            const [managerResponse, hrResponse] = await Promise.all([
-              leaveRequestService.getLeaveRequestsForManagerApproval(),
-              leaveRequestService.getLeaveRequestsForHRApproval(),
-            ]);
-
-            // Combine and deduplicate requests (in case there are overlaps)
-            const managerRequests = managerResponse.data;
-            const hrRequests = hrResponse.data;
-
-            // Use Map to deduplicate by request ID
-            const requestsMap = new Map();
-            [...managerRequests, ...hrRequests].forEach((request) => {
-              requestsMap.set(request.id, request);
-            });
-
-            allOthersRequests = Array.from(requestsMap.values());
-          } else if (isManager) {
-            // User is only Manager
-            const response =
-              await leaveRequestService.getLeaveRequestsForManagerApproval();
-            allOthersRequests = response.data;
-          } else if (isHR) {
-            // User is only HR
-            const response =
-              await leaveRequestService.getLeaveRequestsForHRApproval();
-            allOthersRequests = response.data;
-          }
-
+        if (hasAdminPermissions()) {
+          const othersRequestsResponse =
+            await leaveRequestService.getLeaveRequests();
           if (isMounted) {
-            setOthersRequests(allOthersRequests);
+            const filteredOthersRequests = othersRequestsResponse.data.filter(
+              (request) => request.user?.id !== userId
+            );
+            setOthersRequests(filteredOthersRequests);
+          }
+        } else {
+          if (isMounted) {
+            setOthersRequests([]);
           }
         }
       } catch (error) {
@@ -187,20 +129,24 @@ const LeaveRequests = () => {
       }
     };
 
-    fetchUserAndRequests();
+    fetchRequests();
 
     return () => {
       isMounted = false;
     };
-  }, [userId, isHR, isManager]); // Proper dependencies
+  }, [userId, isHR, isManager, hasAdminPermissions]);
 
-  // Get current requests based on active tab
-  const getCurrentRequests = useCallback(() => {
-    return activeTab === "my-requests" ? myRequests : othersRequests;
-  }, [activeTab, myRequests, othersRequests]);
+  const getRequestsForCurrentTab = () => {
+    if (activeTab === "my-requests") {
+      return myRequests;
+    } else {
+      return othersRequests;
+    }
+  };
 
-  const filteredRequests = getCurrentRequests().filter((request) => {
-    // Search filter - using the correct property paths
+  const tabRequests = getRequestsForCurrentTab();
+
+  const filteredRequests = tabRequests.filter((request) => {
     const employeeName = request.user?.name || "";
     const leaveTypeName = request.leaveType?.name || "";
 
@@ -208,13 +154,11 @@ const LeaveRequests = () => {
       employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       leaveTypeName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status filter - using effective status based on user role
-    const effectiveStatus = getEffectiveStatus(request);
+    const effectiveStatus = request.managerStatus;
     const matchesStatus = statusFilter
       ? effectiveStatus === statusFilter
       : true;
 
-    // Date range filter
     const matchesDate =
       dateFilter.start && dateFilter.end
         ? new Date(request.startDate) >= dateFilter.start &&
@@ -224,120 +168,102 @@ const LeaveRequests = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  const handleApprove = async (id: number) => {
+  const refreshRequests = async () => {
     try {
-      if (isHR && isManager) {
-        // User is both HR and Manager - approve as both
-        const data: ManagerApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.APPROVED,
-          comment: "Approved by HR manager",
-        };
-        await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
-        await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isHR) {
-        const data: HRApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.APPROVED,
-          comment: "Approved by HR",
-        };
-        await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isManager) {
-        const data: ManagerApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.APPROVED,
-          comment: "Approved by manager",
-        };
-        await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
-      }
+      const myRequestsResponse = await generalService.getMyLeaveRequests();
+      setMyRequests(myRequestsResponse.data);
 
-      // Update the local state - update the correct status field
-      setOthersRequests(
-        othersRequests.map((req) => {
-          if (req.id === id) {
-            if (isHR && isManager) {
-              return {
-                ...req,
-                hrStatus: "APPROVED",
-                managerStatus: "APPROVED",
-              };
-            } else if (isHR) {
-              return { ...req, hrStatus: "APPROVED" };
-            } else if (isManager) {
-              return { ...req, managerStatus: "APPROVED" };
-            }
-          }
-          return req;
-        })
-      );
+      if (hasAdminPermissions()) {
+        const othersRequestsResponse =
+          await leaveRequestService.getLeaveRequests();
+
+        const filteredOthersRequests = othersRequestsResponse.data.filter(
+          (request) => request.user?.id !== userId
+        );
+        setOthersRequests(filteredOthersRequests);
+      }
     } catch (error) {
-      console.error("Failed to approve request:", error);
+      console.error("Failed to refresh leave requests:", error);
     }
   };
 
-  const handleReject = async (id: number) => {
-    try {
-      if (isHR && isManager) {
-        // User is both HR and Manager - reject as both
-        const data: ManagerApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.REJECTED,
-          comment: "Rejected by HR manager",
-        };
-        await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
-        await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isHR) {
-        const data: HRApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.REJECTED,
-          comment: "Rejected by HR",
-        };
-        await leaveRequestService.hrApproveRejectLeaveRequest(id, data);
-      } else if (isManager) {
-        const data: ManagerApproveRejectLeaveRequestRequest = {
-          status: LeaveRequestStatus.REJECTED,
-          comment: "Rejected by manager",
-        };
-        await leaveRequestService.managerApproveRejectLeaveRequest(id, data);
-      }
+  const openModal = (action: "APPROVED" | "REJECTED", requestId: number) => {
+    setModalAction(action);
+    setSelectedRequestId(requestId);
+    setComment("");
+    setCommentError("");
+    setShowModal(true);
+  };
 
-      // Update the local state - update the correct status field
-      setOthersRequests(
-        othersRequests.map((req) => {
-          if (req.id === id) {
-            if (isHR && isManager) {
-              return {
-                ...req,
-                hrStatus: "REJECTED",
-                managerStatus: "REJECTED",
-              };
-            } else if (isHR) {
-              return { ...req, hrStatus: "REJECTED" };
-            } else if (isManager) {
-              return { ...req, managerStatus: "REJECTED" };
-            }
-          }
-          return req;
-        })
+  const closeModal = () => {
+    setShowModal(false);
+    setModalAction(null);
+    setSelectedRequestId(null);
+    setComment("");
+    setCommentError("");
+    setIsSubmitting(false);
+  };
+
+  const validateComment = () => {
+    if (!comment.trim()) {
+      setCommentError("Comment is required");
+      return false;
+    }
+    if (comment.trim().length < 5) {
+      setCommentError("Comment must be at least 5 characters");
+      return false;
+    }
+    setCommentError("");
+    return true;
+  };
+
+  const handleSubmitAction = async () => {
+    if (!validateComment() || !modalAction || !selectedRequestId) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const requestData: ApproveRejectLeaveRequestRequest = {
+        status: modalAction,
+        comment: comment.trim(),
+      };
+
+      const resp = await leaveRequestService.approveRejectLeaveRequest(
+        selectedRequestId,
+        requestData
       );
+
+      if (resp.status === "success") {
+        toast.success(resp.message);
+        await refreshRequests();
+        closeModal();
+      } else {
+        toast.error(resp.message);
+      }
     } catch (error) {
-      console.error("Failed to reject request:", error);
+      console.error(`Failed to ${modalAction.toLowerCase()} request:`, error);
+      toast.error(`Failed to ${modalAction.toLowerCase()} request`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return "badge-approved";
-      case "PENDING":
-        return "badge-pending";
-      case "REJECTED":
-        return "badge-rejected";
-      case "CANCELLED":
-        return "badge-cancelled";
-      default:
-        return "badge-default";
-    }
+  const handleApprove = (id: number) => {
+    openModal("APPROVED", id);
+  };
+
+  const handleReject = (id: number) => {
+    openModal("REJECTED", id);
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  const myRequestsCount = myRequests.length;
+  const othersRequestsCount = othersRequests.length;
 
   return (
     <div className="container py-4">
@@ -439,19 +365,21 @@ const LeaveRequests = () => {
                   }`}
                   onClick={() => setActiveTab("my-requests")}
                 >
-                  My Requests ({myRequests.length})
+                  My Requests ({myRequestsCount})
                 </button>
               </li>
-              <li className="nav-item">
-                <button
-                  className={`nav-link ${
-                    activeTab === "others-requests" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("others-requests")}
-                >
-                  Team Requests ({othersRequests.length})
-                </button>
-              </li>
+              {hasAdminPermissions() && (
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${
+                      activeTab === "others-requests" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("others-requests")}
+                  >
+                    Team Requests ({othersRequestsCount})
+                  </button>
+                </li>
+              )}
             </ul>
           )}
         </div>
@@ -485,7 +413,6 @@ const LeaveRequests = () => {
                 </thead>
                 <tbody>
                   {filteredRequests.map((request) => {
-                    const effectiveStatus = getEffectiveStatus(request);
                     return (
                       <tr key={request.id}>
                         <td>
@@ -505,35 +432,47 @@ const LeaveRequests = () => {
                           </div>
                         </td>
                         <td>{request.duration} day(s)</td>
-                        <td>
-                          <Badge
-                            label={effectiveStatus}
-                            colorClassName={getStatusBadge(effectiveStatus)}
-                          />
-                        </td>
+                        <td>{request.hrStatus}</td>
                         <td>{formatDate(request.submittedOn)}</td>
                         {activeTab === "others-requests" && (
                           <td>
                             <div className="d-flex gap-2">
-                              {effectiveStatus === "PENDING" &&
-                                canApproveReject() && (
-                                  <>
-                                    <button
-                                      className="btn btn-sm btn-success"
-                                      onClick={() => handleApprove(request.id)}
-                                      title="Approve"
-                                    >
-                                      <FaCheck />
-                                    </button>
-                                    <button
-                                      className="btn btn-sm btn-danger"
-                                      onClick={() => handleReject(request.id)}
-                                      title="Reject"
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </>
-                                )}
+                              <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => handleApprove(request.id)}
+                                title="Approve"
+                                disabled={
+                                  !(
+                                    request.hrStatus === "PENDING" &&
+                                    request.managerStatus === "PENDING"
+                                  )
+                                }
+                              >
+                                <FaCheck />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleReject(request.id)}
+                                title="Reject"
+                                disabled={
+                                  !(
+                                    request.hrStatus === "PENDING" &&
+                                    request.managerStatus === "PENDING"
+                                  )
+                                }
+                              >
+                                <FaTimes />
+                              </button>
+                              {request.managerStatus === "APPROVED" && (
+                                <span className="badge bg-success">
+                                  Approved
+                                </span>
+                              )}
+                              {request.managerStatus === "REJECTED" && (
+                                <span className="badge bg-danger">
+                                  Rejected
+                                </span>
+                              )}
                             </div>
                           </td>
                         )}
@@ -549,8 +488,7 @@ const LeaveRequests = () => {
         <div className="card-footer bg-light">
           <div className="d-flex justify-content-between align-items-center">
             <small className="text-muted">
-              Showing {filteredRequests.length} of {getCurrentRequests().length}{" "}
-              requests
+              Showing {filteredRequests.length} of {tabRequests.length} requests
             </small>
             <nav>
               <ul className="pagination pagination-sm mb-0">
@@ -584,6 +522,115 @@ const LeaveRequests = () => {
           </div>
         </div>
       </div>
+
+      {/* Approve/Reject Comment Modal */}
+      {showModal && (
+        <div
+          className="modal fade show"
+          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {modalAction === "APPROVED" ? (
+                    <span className="text-success">
+                      <FaCheck className="me-2" />
+                      Approve Leave Request
+                    </span>
+                  ) : (
+                    <span className="text-danger">
+                      <FaTimes className="me-2" />
+                      Reject Leave Request
+                    </span>
+                  )}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeModal}
+                  disabled={isSubmitting}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="mb-3">
+                  Please provide a comment for{" "}
+                  {modalAction === "APPROVED" ? "approving" : "rejecting"} this
+                  leave request:
+                </p>
+                <div className="mb-3">
+                  <label htmlFor="comment" className="form-label">
+                    Comment <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    id="comment"
+                    className={`form-control ${
+                      commentError ? "is-invalid" : ""
+                    }`}
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => {
+                      setComment(e.target.value);
+                      if (commentError) {
+                        setCommentError("");
+                      }
+                    }}
+                    placeholder={`Enter your reason for ${
+                      modalAction === "APPROVED" ? "approving" : "rejecting"
+                    } this request...`}
+                    disabled={isSubmitting}
+                    maxLength={500}
+                  />
+                  {commentError && (
+                    <div className="invalid-feedback">{commentError}</div>
+                  )}
+                  <div className="form-text">
+                    {comment.length}/500 characters
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={closeModal}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${
+                    modalAction === "APPROVED" ? "btn-success" : "btn-danger"
+                  }`}
+                  onClick={handleSubmitAction}
+                  disabled={isSubmitting || !comment.trim()}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      ></span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {modalAction === "APPROVED" ? (
+                        <FaCheck className="me-2" />
+                      ) : (
+                        <FaTimes className="me-2" />
+                      )}
+                      {modalAction === "APPROVED" ? "Approve" : "Reject"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

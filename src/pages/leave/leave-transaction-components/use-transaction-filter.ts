@@ -1,22 +1,29 @@
-// Updated useTransactionFilters hook with pagination
 import { useState, useMemo } from "react";
 import { LeaveTransaction } from "./type";
 
 export const useTransactionFilters = (transactions: LeaveTransaction[]) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("");
-  const [yearFilter, setYearFilter] = useState<number | "">(new Date().getFullYear());
+  const [yearFilter, setYearFilter] = useState<number | "">(
+    new Date().getFullYear()
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
       const matchesSearch =
-        (transaction.userName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (transaction.leaveType || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (transaction.comment?.toLowerCase().includes(searchTerm.toLowerCase()));
+        (transaction.userName || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (transaction.leaveType || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        transaction.comment?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesLeaveType = leaveTypeFilter ? transaction.leaveType === leaveTypeFilter : true;
+      const matchesLeaveType = leaveTypeFilter
+        ? transaction.leaveType === leaveTypeFilter
+        : true;
       const matchesYear = yearFilter ? transaction.year === yearFilter : true;
 
       return matchesSearch && matchesLeaveType && matchesYear;
@@ -29,13 +36,13 @@ export const useTransactionFilters = (transactions: LeaveTransaction[]) => {
     return filteredTransactions.slice(startIndex, endIndex);
   }, [filteredTransactions, currentPage, itemsPerPage]);
 
-  const transactionLeaveTypes = useMemo(() => 
-    Array.from(new Set(transactions.map((t) => t.leaveType))), 
+  const transactionLeaveTypes = useMemo(
+    () => Array.from(new Set(transactions.map((t) => t.leaveType))),
     [transactions]
   );
 
-  const years = useMemo(() => 
-    Array.from(new Set(transactions.map((t) => t.year))), 
+  const years = useMemo(
+    () => Array.from(new Set(transactions.map((t) => t.year))),
     [transactions]
   );
 
@@ -43,7 +50,7 @@ export const useTransactionFilters = (transactions: LeaveTransaction[]) => {
     setSearchTerm("");
     setLeaveTypeFilter("");
     setYearFilter("");
-    setCurrentPage(1); // Reset to first page when clearing filters
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -75,6 +82,6 @@ export const useTransactionFilters = (transactions: LeaveTransaction[]) => {
     itemsPerPage,
     handlePageChange,
     handleItemsPerPageChange,
-    clearFilters
+    clearFilters,
   };
 };

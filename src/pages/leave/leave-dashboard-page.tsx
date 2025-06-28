@@ -1,61 +1,53 @@
 import { useState, useEffect, lazy } from "react";
 import { FaCalendarAlt, FaPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import leaveRequestService from "../../services/api-services/leave-request.service";
 import leaveTransactionService from "../../services/api-services/leave-transaction.service";
 import { useAppSelector } from "../../store/store";
 import RecentLeaveRequestsComponent from "./leave-dashboard-components/recent-leave-request";
+import { toast } from "react-toastify";
+import leaveTypeService from "../../services/api-services/leave-type.service";
+import { buildLeaveBalances } from "../../utils/helper";
+import { LeaveBalance, LeaveRequestResponse } from "../../types/leave.types";
+import generalService from "../../services/api-services/general.service";
+
 const LeaveBalanceComponent = lazy(
   () => import("./leave-dashboard-components/leave-balance")
 );
 
-interface LeaveBalance {
-  id: number;
-  type: string;
-  total: number;
-  used: number;
-  remaining: number;
-  isPaid: boolean;
-}
-
-interface LeaveRequest {
-  id: number;
-  type: string;
-  startDate: string;
-  endDate: string;
-  duration: number;
-  status: string;
-  reason: string;
-}
-
 const LeaveDashboard = () => {
-  // State for dashboard data
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
-  const [recentRequests, setRecentRequests] = useState<LeaveRequest[]>([]);
+  const [recentRequests, setRecentRequests] = useState<LeaveRequestResponse[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
 
-  // Fetch dashboard data
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
 
       setLoading(true);
       try {
-        // Fetch leave balance - corrected API call
-        const balanceRes = await leaveTransactionService.getLeaveBalance(
-          userId
-        );
-        setLeaveBalance(balanceRes.data);
+        const resp = await leaveTransactionService.getLeaveTransactions({
+          userId,
+        });
 
-        // Fetch recent requests - corrected parameters structure
-        const requestsRes = await leaveRequestService.getMyLeaveRequests({
+        if (resp.status === "success") {
+          const typesResp = await leaveTypeService.getLeaveTypes();
+          if (typesResp.status === "success") {
+            setLeaveBalance(buildLeaveBalances(typesResp.data, resp.data));
+          }
+        } else toast.error(resp.message);
+
+        const requestsRes = await generalService.getMyLeaveRequests({
           limit: 3,
+          userId,
           sortBy: "submittedOn",
           sortOrder: "desc",
         });
-        setRecentRequests(requestsRes.data);
+        if (requestsRes.status === "success")
+          setRecentRequests(requestsRes.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {

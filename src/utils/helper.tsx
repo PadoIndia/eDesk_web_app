@@ -24,10 +24,14 @@ import {
 } from "react-icons/fa";
 import { Punch } from "../types/attendance.types";
 import { RootState } from "../store/store";
-import userDepartmentService from "../services/api-services/user-department.service";
 import teamService from "../services/api-services/team.service";
 import { useSelector } from "react-redux";
 import userService from "../services/api-services/user.service";
+import {
+  LeaveBalance,
+  LeaveTransactionResponse,
+  LeaveTypeResponse,
+} from "../types/leave.types";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -403,20 +407,12 @@ export const getLeaveTypeFromComment = (comment: string): string => {
   if (commentLower.includes("compensatory") || commentLower.includes("comp"))
     return "CO";
   if (commentLower.includes("earned")) return "EL";
-  // Default to casual leave if can't determine
   return "CL";
 };
 
 export const getDayOfWeek = (date: Date): string => {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return days[date.getDay()];
-};
-
-export const getUserDepartments = async (userId: number) => {
-  const userResponse = await userDepartmentService.getUserDepartmentByUserId(
-    userId
-  );
-  return userResponse.data;
 };
 
 // Current user is a department manager
@@ -462,3 +458,40 @@ export const isTeamManager = async (): Promise<boolean> => {
   if (isManager) return true;
   return false;
 };
+
+export function buildLeaveBalances(
+  leaveTypes: LeaveTypeResponse[],
+  transactions: LeaveTransactionResponse[]
+): LeaveBalance[] {
+  const balanceMap = new Map<number, LeaveBalance>();
+  for (const lt of leaveTypes) {
+    balanceMap.set(lt.id, {
+      id: lt.id,
+      type: lt.name,
+      total: 0,
+      used: 0,
+      remaining: 0,
+      isPaid: lt.isPaid,
+      transactions: [],
+    });
+  }
+
+  for (const tx of transactions) {
+    const bal = balanceMap.get(tx.leaveTypeId);
+    if (!bal) continue;
+
+    bal.transactions.push(tx);
+
+    if (tx.count >= 0) {
+      bal.total += tx.count;
+    } else {
+      bal.used += Math.abs(tx.count);
+    }
+  }
+
+  for (const bal of balanceMap.values()) {
+    bal.remaining = bal.total - bal.used;
+  }
+
+  return [...balanceMap.values()];
+}

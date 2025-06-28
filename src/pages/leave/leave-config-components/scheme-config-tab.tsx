@@ -2,7 +2,7 @@ import React from "react";
 import { FaSave, FaPlus, FaTrash, FaLink } from "react-icons/fa";
 import {
   LeaveScheme,
-  LeaveType,
+  LeaveTypeResponse,
   LeaveTypeScheme,
   IsEarned,
 } from "../../../types/leave.types";
@@ -12,12 +12,12 @@ interface SchemeConfigurationTabProps {
   schemes: LeaveScheme[];
   schemeId: number | null;
   currentConfigs: LeaveTypeScheme[];
-  availableLeaveTypes: LeaveType[];
+  availableLeaveTypes: LeaveTypeResponse[];
   showAddForm: boolean;
   newConfig: {
     leaveTypeId: number;
     maxCarryForward: number;
-    allowedAfterMonths?: number;
+    allowedAfterMonths: number;
     isEarned: IsEarned;
   };
   loading: boolean;
@@ -39,7 +39,7 @@ interface SchemeConfigurationTabProps {
   onUpdateNewConfig: (config: {
     leaveTypeId: number;
     maxCarryForward: number;
-    allowedAfterMonths?: number;
+    allowedAfterMonths: number;
     isEarned: IsEarned;
   }) => void;
 }
@@ -304,7 +304,7 @@ const SchemeConfigurationTab: React.FC<SchemeConfigurationTabProps> = ({
                                 ...newConfig,
                                 allowedAfterMonths: e.target.value
                                   ? Number(e.target.value)
-                                  : undefined,
+                                  : 0,
                               })
                             }
                             min="0"

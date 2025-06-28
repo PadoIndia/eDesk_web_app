@@ -68,7 +68,7 @@ const UserEditForm = () => {
         toast.success("User details updated successfully");
         // Navigate after a short delay so toast is visible
         setTimeout(() => navigate(`/users/${userId}`), 1500);
-      } catch (err) {
+      } catch {
         toast.error("Failed to update user details");
       }
     }

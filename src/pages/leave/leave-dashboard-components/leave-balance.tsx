@@ -2,24 +2,16 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FaChartBar, FaCircle } from "react-icons/fa";
 import Badge from "../../../components/badge";
-
-interface LeaveBalance {
-  id: number;
-  type: string;
-  total: number;
-  used: number;
-  remaining: number;
-  isPaid: boolean;
-}
+import { LeaveBalance } from "../../../types/leave.types";
 
 interface LeaveBalanceProps {
   leaveBalance: LeaveBalance[];
   loading?: boolean;
 }
 
-const LeaveBalanceComponent: React.FC<LeaveBalanceProps> = ({ 
-  leaveBalance, 
-  loading = false 
+const LeaveBalanceComponent: React.FC<LeaveBalanceProps> = ({
+  leaveBalance,
+  loading = false,
 }) => {
   if (loading) {
     return (

@@ -1,11 +1,11 @@
-//Leave Types
-
-export interface LeaveType {
+export interface LeaveTypeResponse {
   id: number;
   name: string;
   isPaid: boolean;
   description: string;
-  schemesCount: number;
+  _count: {
+    schemes: number;
+  };
 }
 
 export interface LeaveScheme {
@@ -15,6 +15,17 @@ export interface LeaveScheme {
   slug: string;
   leaveTypesCount: number;
   usersCount: number;
+  leaveTypes: {
+    id: number;
+    name: string;
+    description: string;
+    isPaid: boolean;
+    maxDays: number;
+    remainingDays: number;
+    usedDays: number;
+    allowedAfterMonths: number | null;
+    isEarned: "YES" | "NO";
+  }[];
 }
 
 export interface LeaveTypeScheme {
@@ -24,13 +35,12 @@ export interface LeaveTypeScheme {
   maxCarryForward: number;
   allowedAfterMonths?: number;
   isEarned: IsEarned;
-  leaveType: LeaveType;
+  leaveType: LeaveTypeResponse;
 }
 
-
 export enum IsEarned {
-  YES = 'YES',
-  NO = 'NO'
+  YES = "YES",
+  NO = "NO",
 }
 
 export interface CreateLeaveSchemeRequest {
@@ -44,7 +54,6 @@ export interface UpdateLeaveSchemeRequest {
   description?: string;
   slug?: string;
 }
-
 
 export interface CreateLeaveTypeRequest {
   name: string;
@@ -72,23 +81,13 @@ export interface UpdateLeaveTypeSchemeRequest {
   isEarned?: IsEarned;
 }
 
-
 ///////////////////////////////////// Leave Request Related //////////////////////////////////////
 
 export enum LeaveRequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED'
-}
-
-export interface CreateLeaveRequestRequest {
-  leaveTypeId: number;
-  startDate: string; // ISO date string
-  endDate: string; // ISO date string
-  duration: number;
-  reason: string;
-  managerId: number;
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface UpdateLeaveRequestRequest {
@@ -99,18 +98,8 @@ export interface UpdateLeaveRequestRequest {
   reason?: string;
 }
 
-export interface ManagerApproveRejectLeaveRequestRequest {
-  status: LeaveRequestStatus.APPROVED | LeaveRequestStatus.REJECTED;
-  comment?: string;
-}
-
-export interface HRApproveRejectLeaveRequestRequest {
-  status: LeaveRequestStatus.APPROVED | LeaveRequestStatus.REJECTED;
-  comment?: string;
-}
-
 export interface ApproveRejectLeaveRequestRequest {
-  status: LeaveRequestStatus.APPROVED | LeaveRequestStatus.REJECTED;
+  status: "APPROVED" | "REJECTED";
   comment?: string;
 }
 
@@ -126,18 +115,28 @@ export interface GetLeaveRequestsQuery {
   endDate?: string; // ISO date string
   page?: number;
   limit?: number;
-  sortBy?: 'submittedOn' | 'startDate' | 'endDate' | 'employeeName' | 'leaveType';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "submittedOn"
+    | "startDate"
+    | "endDate"
+    | "employeeName"
+    | "leaveType";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface GetManagerLeaveRequestsQuery {
   leaveTypeId?: number;
-  startDate?: string; // ISO date string
-  endDate?: string; // ISO date string
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'submittedOn' | 'startDate' | 'endDate' | 'employeeName' | 'leaveType';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "submittedOn"
+    | "startDate"
+    | "endDate"
+    | "employeeName"
+    | "leaveType";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface GetHRLeaveRequestsQuery {
@@ -146,8 +145,13 @@ export interface GetHRLeaveRequestsQuery {
   endDate?: string; // ISO date string
   page?: number;
   limit?: number;
-  sortBy?: 'submittedOn' | 'startDate' | 'endDate' | 'employeeName' | 'leaveType';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "submittedOn"
+    | "startDate"
+    | "endDate"
+    | "employeeName"
+    | "leaveType";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface GetMyLeaveRequestsQuery {
@@ -158,8 +162,8 @@ export interface GetMyLeaveRequestsQuery {
   endDate?: string; // ISO date string
   page?: number;
   limit?: number;
-  sortBy?: 'submittedOn' | 'startDate' | 'endDate' | 'leaveType';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "submittedOn" | "startDate" | "endDate" | "leaveType";
+  sortOrder?: "asc" | "desc";
 }
 
 // Request types for Leave Transactions
@@ -171,13 +175,11 @@ export interface CreateLeaveTransactionRequest {
   leaveTypeId: number;
   count: number; // Can be negative for deductions
   comment?: string;
-  assignedBy?: number;
 }
 
 export interface UpdateLeaveTransactionRequest {
   count?: number;
   comment?: string;
-  commentBy?: number;
 }
 
 // Query parameter types for Leave Transactions
@@ -189,17 +191,92 @@ export interface LeaveTransactionFilters {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'createdOn' | 'year' | 'month' | 'date' | 'count' | 'userName' | 'leaveType';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "createdOn"
+    | "year"
+    | "month"
+    | "date"
+    | "count"
+    | "userName"
+    | "leaveType";
+  sortOrder?: "asc" | "desc";
+}
+
+// export interface LeaveBalance {
+//   userId: number;
+//   leaveTypeId: number;
+//   leaveTypeName: string;
+//   totalAllocated: number;
+//   totalUsed: number;
+//   currentBalance: number;
+//   pendingRequests: number;
+//   availableBalance: number;
+// }
+
+export interface LeaveTransactionResponse {
+  id: number;
+  userId: number;
+  year: number;
+  month: number;
+  date: number;
+  leaveTypeId: number;
+  count: number;
+  comment: string | null;
+  createdOn: Date;
+  updatedOn: Date;
+  assignedById: number | null;
+  user: {
+    id: number;
+    name: string | null;
+    username: string;
+  };
+  leaveType: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface LeaveBalance {
+  id: number;
+  type: string;
+  total: number;
+  used: number;
+  remaining: number;
+  isPaid: boolean;
+  transactions: LeaveTransactionResponse[];
+}
+
+export interface LeaveRequestResponse {
+  id: number;
   userId: number;
   leaveTypeId: number;
-  leaveTypeName: string;
-  totalAllocated: number;
-  totalUsed: number;
-  currentBalance: number;
-  pendingRequests: number;
-  availableBalance: number;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  reason: string;
+  managerId: number;
+  hrId: number;
+  submittedOn: string;
+  updatedOn: string;
+  managerStatus: LeaveRequestStatus;
+  hrStatus: LeaveRequestStatus;
+  comment: string | null;
+  leaveType: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  user: {
+    id: number;
+    name: string | null;
+    username: string;
+  };
+}
+
+export interface LeaveRequestPayload {
+  leaveTypeId: number;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  reason: string;
 }

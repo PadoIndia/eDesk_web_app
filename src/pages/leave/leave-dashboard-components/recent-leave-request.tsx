@@ -2,16 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaClipboardList, FaSearch } from "react-icons/fa";
 import Badge from "../../../components/badge";
-
-interface LeaveRequest {
-  id: number;
-  type: string;
-  startDate: string;
-  endDate: string;
-  duration: number;
-  status: string;
-  reason: string;
-}
+import { LeaveRequestResponse } from "../../../types/leave.types";
 
 interface DateFormatOptions {
   year: "numeric";
@@ -20,13 +11,13 @@ interface DateFormatOptions {
 }
 
 interface RecentLeaveRequestsProps {
-  recentRequests: LeaveRequest[];
+  recentRequests: LeaveRequestResponse[];
   loading?: boolean;
 }
 
-const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({ 
-  recentRequests, 
-  loading = false 
+const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
+  recentRequests,
+  loading = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -54,10 +45,13 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const filteredRequests = recentRequests.filter(request =>
-    request.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.reason?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRequests = recentRequests.filter(
+    (request) =>
+      request.leaveType.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      request.hrStatus?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.reason?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -77,7 +71,11 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
               placeholder="Search..."
               disabled
             />
-            <button className="btn btn-outline-secondary" type="button" disabled>
+            <button
+              className="btn btn-outline-secondary"
+              type="button"
+              disabled
+            >
               <FaSearch />
             </button>
           </div>
@@ -97,10 +95,7 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
         <h5 className="mb-0">
           <FaClipboardList className="me-2" /> Recent Leave Requests
         </h5>
-        <div
-          className="input-group input-group-sm"
-          style={{ width: "150px" }}
-        >
+        <div className="input-group input-group-sm" style={{ width: "150px" }}>
           <input
             type="text"
             className="form-control"
@@ -124,18 +119,16 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
                   className="list-group-item list-group-item-action"
                 >
                   <div className="d-flex w-100 justify-content-between">
-                    <h6 className="mb-1">{request.type}</h6>
-                    <Badge 
-                      label={request.status} 
-                      colorClassName={getStatusColor(request.status)} 
+                    <h6 className="mb-1">{request.leaveType.name}</h6>
+                    <Badge
+                      label={request.hrStatus}
+                      colorClassName={getStatusColor(request.hrStatus)}
                     />
                   </div>
                   <p className="mb-1 text-muted">
                     {formatDate(request.startDate)} -{" "}
                     {formatDate(request.endDate)}
-                    <span className="ms-2">
-                      ({request.duration} days)
-                    </span>
+                    <span className="ms-2">({request.duration} days)</span>
                   </p>
                   <small>{request.reason}</small>
                 </Link>
@@ -144,10 +137,9 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
           ) : (
             <div className="text-center text-muted py-4">
               <p>
-                {searchTerm 
-                  ? "No leave requests match your search" 
-                  : "No recent leave requests"
-                }
+                {searchTerm
+                  ? "No leave requests match your search"
+                  : "No recent leave requests"}
               </p>
             </div>
           )}

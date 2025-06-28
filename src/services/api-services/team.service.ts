@@ -3,7 +3,7 @@ import ApiService from "./api-service";
 
 class TeamService extends ApiService {
   constructor() {
-    super("/admin/team"); // Fixed: backend uses '/team' not '/team-management'
+    super("/admin/teams");
   }
 
   createTeam(team: {
@@ -16,23 +16,33 @@ class TeamService extends ApiService {
 
   getTeams(): ApiResponse {
     return this.getData("/");
-  } // this only gets team data
+  }
 
   getTeamById(teamId: number): ApiResponse {
     return this.getData(`/${teamId}`);
-  } // this gets team data and also users info in that team
+  }
 
   deleteTeam(teamId: number): ApiResponse {
     return this.deleteData(`/${teamId}`);
   }
 
-  addUserToTeam(teamId: number, data:{ userId: number, isAdmin: boolean }): ApiResponse{
-    return this.postData(`/${teamId}/add-user`, data);
-  } // this addes users to a team 
+  addUserToTeam(
+    teamId: number,
+    data: { userId: number; isAdmin: boolean }
+  ): ApiResponse {
+    return this.postData(`/${teamId}/users`, data);
+  }
+  updateTeamUser(
+    userId: number,
+    teamId: number,
+    isAdmin: boolean
+  ): ApiResponse {
+    return this.putData(`/${teamId}/users/${userId}`, { isAdmin });
+  }
 
-  removeUserFromTeam(userId: number, teamId: number):ApiResponse {
-    return this.deleteData(`/${userId}/${teamId}/remove-user`);
-  } // this removes users from a team
+  removeUserFromTeam(userId: number, teamId: number): ApiResponse {
+    return this.deleteData(`/${teamId}/users/${userId}`);
+  }
 
   getManagerByUserId(userId: number): ApiResponse {
     return this.getData(`/manager/${userId}`);
@@ -41,11 +51,6 @@ class TeamService extends ApiService {
   getUserTeams(): ApiResponse {
     return this.getData(`/get-user-teams`);
   }
-
-  
-
-
-
 }
 
 export default new TeamService();

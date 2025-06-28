@@ -1,7 +1,9 @@
+import { TPermission } from "./user.types";
+
 export type VerifyOtpResponse = {
   token: string;
   refreshToken: string;
-  user: { id: number };
+  user: { id: number; permissions: TPermission[] };
 };
 
 export type DeviceInfoPayload = {

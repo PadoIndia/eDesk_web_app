@@ -24,12 +24,12 @@ export type AdminUser = Prettify<
   }
 >;
 export type UserDepartmentResp = {
-  department: { name: string };
+  department: { name: string; slug: string };
   isAdmin: boolean;
   departmentId: number;
 };
 export type UserTeamResp = {
-  team: { name: string };
+  team: { name: string; slug: string };
   isAdmin: boolean;
   teamId: number;
 };
@@ -161,3 +161,14 @@ export interface Document {
   // userId: number;
   file?: FileDetails | null;
 }
+
+export type TPermission =
+  | "can_access_ecloud"
+  | "can_create_ecloud_event"
+  | "can_create_ecloud_event_group"
+  | "can_manage_user"
+  | "can_assign_team"
+  | "can_add_leaves"
+  | "is_admin"
+  | "is_admin_department"
+  | "is_admin_team";

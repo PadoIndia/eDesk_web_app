@@ -1,6 +1,12 @@
 import { AxiosProgressEvent } from "axios";
 import { ApiResponse } from "../../types/axios.types";
 import ApiService from "./api-service";
+import {
+  GetLeaveRequestsQuery,
+  LeaveRequestPayload,
+  LeaveRequestResponse,
+} from "../../types/leave.types";
+import { UserDepartmentResp, UserTeamResp } from "../../types/user.types";
 
 class GeneralService extends ApiService {
   constructor() {
@@ -25,6 +31,24 @@ class GeneralService extends ApiService {
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress,
     });
+  }
+
+  createLeaveRequest(data: LeaveRequestPayload): ApiResponse<number> {
+    return this.postData("/users/leave-requests", data);
+  }
+
+  getUserDepartments(userId: number): ApiResponse<UserDepartmentResp[]> {
+    return this.getData(`/users/${userId}/departments`);
+  }
+
+  getUserTeams(userId: number): ApiResponse<UserTeamResp[]> {
+    return this.getData(`/users/${userId}/teams`);
+  }
+
+  getMyLeaveRequests(
+    params?: GetLeaveRequestsQuery
+  ): ApiResponse<LeaveRequestResponse[]> {
+    return this.getData(`/users/leave-requests`, { params });
   }
 }
 

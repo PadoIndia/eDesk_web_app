@@ -1,7 +1,6 @@
 import React from "react";
 import { FaPlus, FaEdit, FaTrash, FaInfoCircle } from "react-icons/fa";
 import { LeaveScheme } from "../../../types/leave.types";
-import Badge from "../../../components/badge";
 
 interface LeaveSchemesTabProps {
   schemes: LeaveScheme[];
@@ -69,18 +68,10 @@ const LeaveSchemesTab: React.FC<LeaveSchemesTabProps> = ({
                         <code>{scheme.slug}</code>
                       </td>
                       <td>
-                        <Badge
-                          label={(scheme.leaveTypesCount || 0).toString()}
-                          status="INFO"
-                          className="ms-2"
-                        />
+                        <span>{scheme.leaveTypesCount}</span>
                       </td>
                       <td>
-                        <Badge
-                          label={(scheme.usersCount || 0).toString()}
-                          status="WARNING"
-                          className="ms-2"
-                        />
+                        <span>{scheme.usersCount}</span>
                       </td>
                       <td>
                         <div className="d-flex gap-2">
