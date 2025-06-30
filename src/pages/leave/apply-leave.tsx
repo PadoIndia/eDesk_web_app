@@ -515,18 +515,20 @@ const ApplyLeave = () => {
               </h4>
             </div>
             <div className="card-body p-4">
-              <div className="d-flex gap-3 mb-2">
-                <input
-                  className=""
-                  id="applyFor"
-                  type="checkbox"
-                  checked={!isForSelf}
-                  onChange={() => setIsForSelf(!isForSelf)}
-                />
-                <label htmlFor="applyFor" className="fs-5">
-                  Apply for others
-                </label>
-              </div>
+              {hasAdminPermissions && (
+                <div className="d-flex gap-3 mb-2">
+                  <input
+                    className=""
+                    id="applyFor"
+                    type="checkbox"
+                    checked={!isForSelf}
+                    onChange={() => setIsForSelf(!isForSelf)}
+                  />
+                  <label htmlFor="applyFor" className="fs-5">
+                    Apply for others
+                  </label>
+                </div>
+              )}
               {/* Admin Mode Info */}
               {!isForSelf && hasAdminPermissions && adminPermissionType && (
                 <div className="alert alert-info mb-4">
