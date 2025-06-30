@@ -8,6 +8,8 @@ import { AuthReducer } from "../types/slice.types";
 import { VerifyOtpPayload } from "../types/auth.types";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import authService from "../services/api-services/auth.service";
+import userService from "../services/api-services/user.service";
+import { TPermission } from "../types/user.types";
 
 const initialState: AuthReducer = {
   isLoggedIn: false,
@@ -50,6 +52,25 @@ export const logIn = createAsyncThunk(
   }
 );
 
+export const fetchUserPermissions = createAsyncThunk(
+  `auth/permissions`,
+  async (userId: number, { rejectWithValue }) => {
+    try {
+      const resp = await userService.getUserPermissions(userId);
+      if (resp.status === "success") {
+        return resp.data.map((i) => i.permission.slug) as TPermission[];
+      }
+      return rejectWithValue(resp.message);
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Error while fetching permissions"
+      );
+    }
+  }
+);
+
 export const logOut = createAsyncThunk(`auth/logOut`, async () => {
   localStorage.removeItem("@user");
   return Promise.resolve();
@@ -86,6 +107,9 @@ const authSlice = createSlice({
     builder.addCase(logOut.fulfilled, (state) => {
       state.userData = null;
       state.isLoggedIn = false;
+    });
+    builder.addCase(fetchUserPermissions.fulfilled, (state, action) => {
+      if (state.userData) state.userData.user.permissions = action.payload;
     });
   },
 });

@@ -6,6 +6,7 @@ import userService from "../../../services/api-services/user.service";
 import departmentService from "../../../services/api-services/department.service";
 import teamService from "../../../services/api-services/team.service";
 import leaveSchemeService from "../../../services/api-services/leave-scheme.service";
+import permissionService from "../../../services/api-services/permission.service";
 import { DepartmentResponse, Team } from "../../../types/department-team.types";
 import { GENDERS, WEEK_DAYS } from "../../../utils/constants";
 import {
@@ -18,6 +19,10 @@ import {
 } from "../../../types/user.types";
 import { BsShieldCheck } from "react-icons/bs";
 import { useAppSelector } from "../../../store/store";
+import {
+  PermissionResponse,
+  UserPermissionResponse,
+} from "../../../types/permission.types";
 
 interface UserFormProps {
   id: number | null;
@@ -30,22 +35,35 @@ type LeaveScheme = {
 };
 
 const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
-  const [activeTab, setActiveTab] = useState<"details" | "assignments">(
-    "details"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "details" | "assignments" | "permissions"
+  >("details");
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [leaveSchemes, setLeaveSchemes] = useState<LeaveScheme[]>([]);
+  const [permissions, setPermissions] = useState<PermissionResponse[]>([]);
+  const [userPermissions, setUserPermissions] = useState<
+    UserPermissionResponse[]
+  >([]);
   const [userDepartments, setUserDepartments] = useState<UserDepartmentResp[]>(
     []
   );
   const [userTeams, setUserTeams] = useState<UserTeamResp[]>([]);
   const [loading, setLoading] = useState(false);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
+  const [permissionLoading, setPermissionLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
   const [dobDate, setDobDate] = useState<Date | null>(null);
   const [joiningDateValue, setJoiningDateValue] = useState<Date | null>(null);
   const currentUserId = useAppSelector((s) => s.auth.userData?.user.id);
+  const currentUserPermissions = useAppSelector(
+    (s) => s.auth.userData?.user.permissions
+  );
+
+  // Check if current user has is_admin permission
+  const hasAdminPermission =
+    currentUserPermissions?.some((p) => p === "is_admin") || false;
+
   const [userDetails, setUserDetails] = useState<UserDetails>({
     gender: "MALE",
     dob: "",
@@ -66,15 +84,29 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [deptResp, leaveResp] = await Promise.all([
+        const promises = [
           departmentService.getDepartments({ userId: currentUserId }),
           leaveSchemeService.getLeaveSchemes(),
-        ]);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any[];
+
+        // Only fetch permissions if user has admin permission
+        if (hasAdminPermission) {
+          promises.push(permissionService.getAllPermissions());
+        }
+
+        const results = await Promise.all(promises);
+
+        const [deptResp, leaveResp, permResp] = results;
 
         if (deptResp.status === "success") {
           setDepartments(deptResp.data);
         }
         setLeaveSchemes(leaveResp.data);
+
+        if (permResp) {
+          setPermissions(permResp.data || []);
+        }
       } catch (error) {
         console.error("Error fetching initial data:", error);
         toast.error("Failed to load form data");
@@ -82,7 +114,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     };
 
     fetchData();
-  }, []);
+  }, [currentUserId, hasAdminPermission]);
 
   useEffect(() => {
     if (id) {
@@ -95,7 +127,15 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
 
     setInitialLoading(true);
     try {
-      const userResp = await userService.getUserById(id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const promises: Promise<any>[] = [userService.getUserById(id)];
+
+      if (hasAdminPermission) {
+        promises.push(userService.getUserPermissions(id));
+      }
+
+      const [userResp, userPermResp] = await Promise.all(promises);
+
       if (userResp.status === "success") {
         const userData = userResp.data;
         setFormData({
@@ -122,6 +162,10 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
         if (userData.userTeam) {
           setUserTeams(userData.userTeam);
         }
+      }
+
+      if (userPermResp && userPermResp.status === "success") {
+        setUserPermissions(userPermResp.data || []);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -363,6 +407,67 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     }
   };
 
+  const handlePermissionToggle = async (permission: PermissionResponse) => {
+    if (!id) {
+      toast.warning(
+        "Please create the user first before assigning permissions"
+      );
+      return;
+    }
+
+    const isCurrentlyAssigned = userPermissions.some(
+      (up) => up.permissionId === permission.id
+    );
+
+    setPermissionLoading(true);
+    try {
+      if (isCurrentlyAssigned) {
+        // Remove permission
+        const response = await userService.removeUserPermission(
+          id,
+          permission.id
+        );
+        if (response.status === "success") {
+          setUserPermissions((prev) =>
+            prev.filter((up) => up.permissionId !== permission.id)
+          );
+          toast.success(`Removed ${permission.title} permission`);
+        } else {
+          toast.error(response.message || "Failed to remove permission");
+        }
+      } else {
+        // Add permission
+        const response = await userService.addUserPermission(id, permission.id);
+        if (response.status === "success") {
+          // Fetch updated permissions to get the assignedBy info
+          const updatedPermissions = await userService.getUserPermissions(id);
+          if (updatedPermissions.status === "success") {
+            setUserPermissions(updatedPermissions.data || []);
+          }
+          toast.success(`Added ${permission.title} permission`);
+        } else {
+          toast.error(response.message || "Failed to add permission");
+        }
+      }
+    } catch (error) {
+      console.error("Error updating permission:", error);
+      toast.error("An error occurred while updating permission");
+    } finally {
+      setPermissionLoading(false);
+    }
+  };
+
+  const isPermissionAssigned = (permissionId: number) => {
+    return userPermissions.some((up) => up.permissionId === permissionId);
+  };
+
+  const getAssignedByName = (permissionId: number) => {
+    const userPerm = userPermissions.find(
+      (up) => up.permissionId === permissionId
+    );
+    return userPerm?.assignedBy?.name || "";
+  };
+
   const isDepartmentSelected = (departmentId: number) => {
     return userDepartments.some((d) => d.departmentId === departmentId);
   };
@@ -475,7 +580,11 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
         // For existing users, departments and teams are already handled in real-time
         // This submission is just for completion
         toast.success("Assignments updated successfully");
-        onSuccess();
+        if (hasAdminPermission) {
+          setActiveTab("permissions");
+        } else {
+          onSuccess();
+        }
       } else {
         // For new users, create the user with all data
         const selectedDeptIds = userDepartments.map((d) => d.departmentId);
@@ -521,6 +630,11 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     }
   };
 
+  const handlePermissionsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSuccess();
+  };
+
   if (initialLoading) {
     return (
       <div className="text-center p-4">
@@ -553,6 +667,18 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
             Departments & Teams
           </button>
         </li>
+        {hasAdminPermission && id && (
+          <li className="nav-item">
+            <button
+              className={`nav-link ${
+                activeTab === "permissions" ? "active" : ""
+              }`}
+              onClick={() => setActiveTab("permissions")}
+            >
+              Permissions
+            </button>
+          </li>
+        )}
       </ul>
 
       {/* Tab Content */}
@@ -948,9 +1074,121 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                   {id ? "Updating..." : "Creating..."}
                 </>
               ) : id ? (
-                "Update Assignments"
+                hasAdminPermission ? (
+                  "Next: Permissions"
+                ) : (
+                  "Update Assignments"
+                )
               ) : (
                 "Create User"
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {activeTab === "permissions" && hasAdminPermission && id && (
+        <form onSubmit={handlePermissionsSubmit}>
+          <div className="row">
+            <div className="col-12">
+              <h6 className="text-primary mb-3">User Permissions</h6>
+              <div
+                className="border rounded p-2"
+                style={{
+                  maxHeight: "500px",
+                  overflowY: "auto",
+                  backgroundColor: "#f8f9fa",
+                }}
+              >
+                {permissions.length === 0 ? (
+                  <p className="text-muted mb-0">No permissions available</p>
+                ) : (
+                  permissions.map((permission) => {
+                    const isAssigned = isPermissionAssigned(permission.id);
+                    const assignedBy = getAssignedByName(permission.id);
+
+                    return (
+                      <div
+                        key={permission.id}
+                        className="mb-2 p-3 border rounded bg-white"
+                      >
+                        <div className="d-flex align-items-start">
+                          <div className="form-check flex-grow-1">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`perm-${permission.id}`}
+                              checked={isAssigned}
+                              onChange={() =>
+                                handlePermissionToggle(permission)
+                              }
+                              disabled={permissionLoading}
+                            />
+                            <label
+                              className="form-check-label"
+                              htmlFor={`perm-${permission.id}`}
+                            >
+                              <div>
+                                <span className="fw-semibold">
+                                  {permission.title}
+                                </span>
+                                <span className="text-muted ms-2">
+                                  ({permission.slug})
+                                </span>
+                              </div>
+                              {permission.description && (
+                                <small className="text-muted d-block">
+                                  {permission.description}
+                                </small>
+                              )}
+                              {isAssigned && assignedBy && (
+                                <small className="text-success d-block mt-1">
+                                  <BsShieldCheck size={14} className="me-1" />
+                                  Assigned by: {assignedBy}
+                                </small>
+                              )}
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              {userPermissions.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted">
+                    Total permissions assigned: {userPermissions.length}
+                  </small>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              className="btn btn-outline-secondary me-2"
+              onClick={() => setActiveTab("assignments")}
+            >
+              Back to Departments & Teams
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={permissionLoading}
+            >
+              {permissionLoading ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Updating...
+                </>
+              ) : (
+                "Complete"
               )}
             </button>
           </div>

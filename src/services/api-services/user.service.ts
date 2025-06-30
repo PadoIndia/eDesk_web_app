@@ -4,6 +4,7 @@ import {
   UpdateUserDepartmentPayload,
   UpdateUserTeamPayload,
 } from "../../types/department-team.types";
+import { UserPermissionResponse } from "../../types/permission.types";
 import {
   Address,
   Contact,
@@ -75,6 +76,19 @@ class UserService extends ApiService {
     data: UpdateUserTeamPayload[]
   ): ApiResponse<number[]> {
     return this.postData(`/${userId}/teams`, data);
+  }
+
+  getUserPermissions(userId: number): ApiResponse<UserPermissionResponse[]> {
+    return this.getData(`/${userId}/permissions`);
+  }
+  addUserPermission(userId: number, permissionId: number): ApiResponse<number> {
+    return this.postData(`/${userId}/permissions`, { permissionId });
+  }
+  removeUserPermission(
+    userId: number,
+    permissionId: number
+  ): ApiResponse<number> {
+    return this.deleteData(`/${userId}/permissions/${permissionId}`);
   }
 }
 
