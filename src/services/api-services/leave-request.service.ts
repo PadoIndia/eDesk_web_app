@@ -13,7 +13,9 @@ class LeaveRequestService extends ApiService {
     super("/admin/leave-request");
   }
 
-  createLeaveRequest(data: LeaveRequestPayload): ApiResponse<number> {
+  createLeaveRequest(
+    data: LeaveRequestPayload & { userId: number }
+  ): ApiResponse<number> {
     return this.postData("/", data);
   }
 

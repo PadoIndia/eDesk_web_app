@@ -4,16 +4,18 @@ import {
   FaPaperPlane,
   FaInfoCircle,
   FaSpinner,
+  FaUser,
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { LeaveRequestPayload, LeaveScheme } from "../../types/leave.types";
-import { useAppSelector } from "../../store/store";
-import userService from "../../services/api-services/user.service";
-import leaveSchemeService from "../../services/api-services/leave-scheme.service";
-import { UserDetails } from "../../types/user.types";
-import generalService from "../../services/api-services/general.service";
 import { toast } from "react-toastify";
+import generalService from "../../services/api-services/general.service";
+import leaveRequestService from "../../services/api-services/leave-request.service";
+import leaveSchemeService from "../../services/api-services/leave-scheme.service";
+import userService from "../../services/api-services/user.service";
+import { useAppSelector } from "../../store/store";
+import { LeaveScheme, LeaveRequestPayload } from "../../types/leave.types";
+import { UserDetails } from "../../types/user.types";
 
 interface FormData {
   leaveTypeId: number;
@@ -35,16 +37,26 @@ interface FormErrors {
   halfDayTypeEnd?: string;
   isStartHalfDay?: string;
   isEndHalfDay?: string;
+  selectedUserId?: string;
 }
 
-const ApplyLeave: React.FC = () => {
+interface UserOption {
+  id: number;
+  name: string;
+  username: string;
+}
+
+const ApplyLeave = () => {
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [leaveScheme, setLeaveScheme] = useState<LeaveScheme | null>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveScheme["leaveTypes"]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [loadingUserData, setLoadingUserData] = useState(false);
+  const [isForSelf, setIsForSelf] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     leaveTypeId: 0,
     startDate: null,
@@ -58,60 +70,164 @@ const ApplyLeave: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const userId = useAppSelector((s) => s.auth.userData?.user.id);
+  const currentUserId = useAppSelector((s) => s.auth.userData?.user.id);
+  const currentUserPermissions = useAppSelector(
+    (s) => s.auth.userData?.user.permissions
+  );
+  const userId = isForSelf ? currentUserId : selectedUserId;
+
+  const hasAdminPermissions = useMemo(() => {
+    if (!currentUserPermissions) return false;
+
+    const adminPermissionSlugs = [
+      "is_admin",
+      "is_department_admin",
+      "is_team_admin",
+    ];
+    return currentUserPermissions.some((perm) =>
+      adminPermissionSlugs.includes(perm)
+    );
+  }, [currentUserPermissions]);
+
+  const adminPermissionType = useMemo(() => {
+    if (!currentUserPermissions) return null;
+
+    const adminTypes = [
+      { slug: "is_admin", label: "System Admin" },
+      { slug: "is_department_admin", label: "Department Admin" },
+      { slug: "is_team_admin", label: "Team Admin" },
+    ];
+
+    for (const type of adminTypes) {
+      if (currentUserPermissions.some((perm) => perm === type.slug)) {
+        return type.label;
+      }
+    }
+    return null;
+  }, [currentUserPermissions]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!userId) {
-        setError("User ID not found");
-        setLoading(false);
-        return;
-      }
+    if (!isForSelf && !hasAdminPermissions) {
+      setError(
+        "You don't have permission to create leave requests on behalf of other users."
+      );
+      setLoading(false);
+    }
+  }, [isForSelf, hasAdminPermissions]);
 
-      try {
-        setLoading(true);
-        setError(null);
-
-        const resp = await userService.getUserById(userId);
-
-        console.log("user details response", resp);
-
-        if (!resp.status || !resp.data) {
-          throw new Error("Failed to fetch user details");
-        }
-
-        const userDetailsData = resp.data.userDetails;
-        setUserDetails(userDetailsData);
-
-        if (userDetailsData.leaveSchemeId) {
-          const leaveSchemeResponse =
-            await leaveSchemeService.getLeaveSchemeById(
-              userDetailsData.leaveSchemeId
-            );
-          console.log("leave scheme response", leaveSchemeResponse);
-
-          if (!leaveSchemeResponse.status || !leaveSchemeResponse.data) {
-            throw new Error("Failed to fetch leave scheme");
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!isForSelf && hasAdminPermissions) {
+        try {
+          const response = await userService.getAllUsers();
+          if (response.status === "success" && response.data) {
+            const userOptions = response.data.map((user) => ({
+              id: user.id,
+              name: user.name,
+              username: user.username,
+            }));
+            setUsers(userOptions);
           }
-
-          const leaveSchemeData = leaveSchemeResponse.data;
-          setLeaveScheme(leaveSchemeData);
-          setLeaveTypes(leaveSchemeData.leaveTypes || []);
-        } else {
-          setError("No leave scheme assigned to user");
+        } catch (err) {
+          console.error("Error fetching users:", err);
+          toast.error("Failed to load users list");
         }
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load user data"
-        );
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchUserData();
-  }, [userId]);
+    fetchUsers();
+  }, [isForSelf, hasAdminPermissions]);
+
+  useEffect(() => {
+    if (isForSelf && currentUserId) {
+      fetchUserData(currentUserId);
+    } else if (!isForSelf && selectedUserId && hasAdminPermissions) {
+      fetchUserData(selectedUserId);
+    } else if (isForSelf && !currentUserId) {
+      setError("User ID not found");
+      setLoading(false);
+    } else if (!isForSelf && !hasAdminPermissions) {
+      setLoading(false);
+    } else if (!isForSelf) {
+      setLoading(false);
+    }
+  }, [currentUserId, selectedUserId, isForSelf, hasAdminPermissions]);
+
+  const fetchUserData = async (targetUserId: number) => {
+    try {
+      if (!isForSelf) {
+        setLoadingUserData(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      setLeaveScheme(null);
+      setLeaveTypes([]);
+      setUserDetails(null);
+
+      const resp = await userService.getUserById(targetUserId);
+
+      console.log("user details response", resp);
+
+      if (!resp.status || !resp.data) {
+        throw new Error("Failed to fetch user details");
+      }
+
+      const userDetailsData = resp.data.userDetails;
+      setUserDetails(userDetailsData);
+
+      if (userDetailsData.leaveSchemeId) {
+        const leaveSchemeResponse = await leaveSchemeService.getLeaveSchemeById(
+          userDetailsData.leaveSchemeId,
+          {
+            userId: selectedUserId || Number(currentUserId),
+          }
+        );
+        console.log("leave scheme response", leaveSchemeResponse);
+
+        if (!leaveSchemeResponse.status || !leaveSchemeResponse.data) {
+          throw new Error("Failed to fetch leave scheme");
+        }
+
+        const leaveSchemeData = leaveSchemeResponse.data;
+        setLeaveScheme(leaveSchemeData);
+        setLeaveTypes(leaveSchemeData.leaveTypes || []);
+      } else {
+        setError("No leave scheme assigned to user");
+      }
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      setError(err instanceof Error ? err.message : "Failed to load user data");
+    } finally {
+      if (!isForSelf) {
+        setLoadingUserData(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleUserSelection = (userId: string) => {
+    if (!hasAdminPermissions) {
+      toast.error(
+        "You don't have permission to create leave requests on behalf of other users."
+      );
+      return;
+    }
+
+    const id = parseInt(userId);
+    setSelectedUserId(id);
+
+    resetForm();
+
+    if (formErrors.selectedUserId) {
+      setFormErrors((prev) => ({
+        ...prev,
+        selectedUserId: undefined,
+      }));
+    }
+  };
 
   const minDate = useMemo(() => {
     if (!userDetails?.joiningDate) return new Date();
@@ -166,6 +282,17 @@ const ApplyLeave: React.FC = () => {
     const errors: FormErrors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    if (!isForSelf && !hasAdminPermissions) {
+      toast.error(
+        "You don't have permission to create leave requests on behalf of other users."
+      );
+      return false;
+    }
+
+    if (!isForSelf && !selectedUserId) {
+      errors.selectedUserId = "Please select a user";
+    }
 
     if (!formData.leaveTypeId || formData.leaveTypeId <= 0) {
       errors.leaveTypeId = "Select a leave type";
@@ -285,6 +412,13 @@ const ApplyLeave: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isForSelf && !hasAdminPermissions) {
+      toast.error(
+        "You don't have permission to create leave requests on behalf of other users."
+      );
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -307,11 +441,16 @@ const ApplyLeave: React.FC = () => {
 
       console.log("leave apply payload", payload);
 
-      const response = await generalService.createLeaveRequest(payload);
+      const response = isForSelf
+        ? await generalService.createLeaveRequest(payload)
+        : await leaveRequestService.createLeaveRequest({ ...payload, userId });
+
       if (response.status === "success") {
         toast.success(response.message);
         resetForm();
-      } else toast.error(response.message);
+      } else {
+        toast.error(response.message);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Submission failed. Please try again.");
@@ -328,7 +467,7 @@ const ApplyLeave: React.FC = () => {
             <div className="card shadow-sm">
               <div className="card-body text-center py-5">
                 <FaSpinner className="fa-spin fs-1 text-primary mb-3" />
-                <h5>Loading your leave information...</h5>
+                <h5>Loading leave information...</h5>
               </div>
             </div>
           </div>
@@ -337,7 +476,7 @@ const ApplyLeave: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && (isForSelf || (!isForSelf && !hasAdminPermissions))) {
     return (
       <div className="container py-4">
         <div className="row justify-content-center">
@@ -345,12 +484,14 @@ const ApplyLeave: React.FC = () => {
             <div className="alert alert-danger" role="alert">
               <h4 className="alert-heading">Error</h4>
               <p>{error}</p>
-              <button
-                className="btn btn-outline-danger"
-                onClick={() => window.location.reload()}
-              >
-                Retry
-              </button>
+              {isForSelf && (
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -370,292 +511,396 @@ const ApplyLeave: React.FC = () => {
             <div className="card-header bg-primary text-white py-3">
               <h4 className="mb-0 d-flex align-items-center">
                 <FaCalendarAlt className="me-2" />
-                Apply for Leave
+                {isForSelf ? "Apply for Leave" : "Create Leave Request"}
               </h4>
             </div>
             <div className="card-body p-4">
-              {/* Leave Scheme Info */}
-              {leaveScheme && (
+              <div className="d-flex gap-3 mb-2">
+                <input
+                  className=""
+                  id="applyFor"
+                  type="checkbox"
+                  checked={!isForSelf}
+                  onChange={() => setIsForSelf(!isForSelf)}
+                />
+                <label htmlFor="applyFor" className="fs-5">
+                  Apply for others
+                </label>
+              </div>
+              {/* Admin Mode Info */}
+              {!isForSelf && hasAdminPermissions && adminPermissionType && (
                 <div className="alert alert-info mb-4">
-                  <h6 className="mb-1">
-                    Your Leave Scheme: {leaveScheme.name}
-                  </h6>
+                  <FaInfoCircle className="me-2" />
+                  You are creating a leave request as{" "}
+                  <strong>{adminPermissionType}</strong>
                 </div>
               )}
 
-              <form onSubmit={onSubmit} noValidate>
-                {/* Leave Type */}
+              {/* User Selection Dropdown (only for admin) */}
+              {!isForSelf && hasAdminPermissions && (
                 <div className="mb-4">
-                  <label className="form-label fw-semibold">Leave Type</label>
+                  <label className="form-label fw-semibold">
+                    <FaUser className="me-2" />
+                    Select User
+                  </label>
                   <select
-                    value={formData.leaveTypeId}
-                    onChange={(e) =>
-                      handleInputChange("leaveTypeId", parseInt(e.target.value))
-                    }
+                    value={selectedUserId || ""}
+                    onChange={(e) => handleUserSelection(e.target.value)}
                     className={`form-select ${
-                      formErrors.leaveTypeId ? "is-invalid" : ""
+                      formErrors.selectedUserId ? "is-invalid" : ""
                     }`}
                   >
-                    <option value={0}>-- Select Leave Type --</option>
-                    {leaveTypes.map((lt) => (
-                      <option
-                        key={lt.id}
-                        value={lt.id}
-                        disabled={!lt.remainingDays}
-                      >
-                        {lt.name}
-                        {` - Max: ${lt.maxDays || 0} days`}
-                        {` - Remaining: ${lt.remainingDays || 0} days`}
+                    <option value="">-- Select a User --</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({user.username})
                       </option>
                     ))}
                   </select>
-                  {formErrors.leaveTypeId && (
+                  {formErrors.selectedUserId && (
                     <div className="invalid-feedback d-block">
-                      {formErrors.leaveTypeId}
+                      {formErrors.selectedUserId}
                     </div>
                   )}
                 </div>
+              )}
 
-                {/* Leave Type Description */}
-                {selectedLeaveType && (
-                  <div className="alert alert-info d-flex align-items-center mb-4 p-3">
-                    <FaInfoCircle className="me-2 flex-shrink-0" />
-                    <div>
-                      <div>{selectedLeaveType.description}</div>
-                      {selectedLeaveType.maxDays && (
-                        <small className="text-muted">
-                          Maximum allowed: {selectedLeaveType.maxDays} days
-                        </small>
-                      )}
-                      {selectedLeaveType.remainingDays !== undefined && (
-                        <small className="text-muted d-block">
-                          Remaining balance:{" "}
-                          {selectedLeaveType.remainingDays || 0} days
-                        </small>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dates */}
-                <div className="row g-3 mb-4">
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">Start Date</label>
-                    <DatePicker
-                      selected={formData.startDate}
-                      onChange={(date: Date | null) =>
-                        handleInputChange("startDate", date)
-                      }
-                      minDate={minDate}
-                      className={`form-control ${
-                        formErrors.startDate ? "is-invalid" : ""
-                      }`}
-                      placeholderText="Select start date"
-                      dateFormat="MMMM d, yyyy"
-                    />
-                    {formErrors.startDate && (
-                      <div className="invalid-feedback d-block">
-                        {formErrors.startDate}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">End Date</label>
-                    <DatePicker
-                      selected={formData.endDate}
-                      onChange={(date: Date | null) =>
-                        handleInputChange("endDate", date)
-                      }
-                      minDate={formData.startDate || minDate}
-                      className={`form-control ${
-                        formErrors.endDate ? "is-invalid" : ""
-                      }`}
-                      placeholderText="Select end date"
-                      dateFormat="MMMM d, yyyy"
-                    />
-                    {formErrors.endDate && (
-                      <div className="invalid-feedback d-block">
-                        {formErrors.endDate}
-                      </div>
-                    )}
-                  </div>
+              {/* Loading indicator for user data */}
+              {loadingUserData && (
+                <div className="text-center py-4">
+                  <FaSpinner className="fa-spin fs-3 text-primary" />
+                  <p className="mt-2">Loading user information...</p>
                 </div>
+              )}
 
-                {/* Half Day Options */}
-                <div className="mb-4">
-                  <div className="form-check mb-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.isStartHalfDay}
-                      onChange={(e) =>
-                        handleCheckboxChange("isStartHalfDay", e.target.checked)
-                      }
-                      className="form-check-input"
-                      id="startHalfDay"
-                    />
-                    <label
-                      htmlFor="startHalfDay"
-                      className="form-check-label fw-semibold"
-                    >
-                      Start Half Day Leave
-                    </label>
-                  </div>
+              {/* Show form only when user is selected (for admin) or always (for self) */}
+              {(isForSelf ||
+                (!loadingUserData &&
+                  selectedUserId &&
+                  hasAdminPermissions)) && (
+                <>
+                  {/* Leave Scheme Info */}
+                  {leaveScheme && (
+                    <div className="alert alert-info mb-4">
+                      <h6 className="mb-1">
+                        {isForSelf
+                          ? "Your"
+                          : `${
+                              users.find((u) => u.id === selectedUserId)?.name
+                            }'s`}{" "}
+                        Leave Scheme: {leaveScheme.name}
+                      </h6>
+                    </div>
+                  )}
 
-                  {formData.isStartHalfDay && (
-                    <div className="ps-3 mb-3">
-                      <div className="d-flex flex-wrap gap-3">
-                        {["first-half", "second-half"].map((val) => (
-                          <div className="form-check" key={val}>
-                            <input
-                              type="radio"
-                              name="halfDayTypeStart"
-                              value={val}
-                              checked={formData.halfDayTypeStart === val}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "halfDayTypeStart",
-                                  e.target.value as "first-half" | "second-half"
-                                )
-                              }
-                              className="form-check-input"
-                              id={`start-${val}`}
-                            />
-                            <label
-                              htmlFor={`start-${val}`}
-                              className="form-check-label text-capitalize"
+                  {/* Error display for no leave scheme */}
+                  {error && !isForSelf && (
+                    <div className="alert alert-warning mb-4">
+                      <FaInfoCircle className="me-2" />
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Show form only if leave scheme exists */}
+                  {leaveScheme && (
+                    <form onSubmit={onSubmit} noValidate>
+                      {/* Leave Type */}
+                      <div className="mb-4">
+                        <label className="form-label fw-semibold">
+                          Leave Type
+                        </label>
+                        <select
+                          value={formData.leaveTypeId}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "leaveTypeId",
+                              parseInt(e.target.value)
+                            )
+                          }
+                          className={`form-select ${
+                            formErrors.leaveTypeId ? "is-invalid" : ""
+                          }`}
+                        >
+                          <option value={0}>-- Select Leave Type --</option>
+                          {leaveTypes.map((lt) => (
+                            <option
+                              key={lt.id}
+                              value={lt.id}
+                              disabled={!lt.remainingDays}
                             >
-                              {val.replace("-", " ")}
-                            </label>
+                              {lt.name}
+                              {` - Max: ${lt.maxDays || 0} days`}
+                              {` - Remaining: ${lt.remainingDays || 0} days`}
+                            </option>
+                          ))}
+                        </select>
+                        {formErrors.leaveTypeId && (
+                          <div className="invalid-feedback d-block">
+                            {formErrors.leaveTypeId}
                           </div>
-                        ))}
+                        )}
                       </div>
-                      {formErrors.halfDayTypeStart && (
-                        <div className="invalid-feedback d-block mt-1">
-                          {formErrors.halfDayTypeStart}
+
+                      {/* Leave Type Description */}
+                      {selectedLeaveType && (
+                        <div className="alert alert-info d-flex align-items-center mb-4 p-3">
+                          <FaInfoCircle className="me-2 flex-shrink-0" />
+                          <div>
+                            <div>{selectedLeaveType.description}</div>
+                            {selectedLeaveType.maxDays && (
+                              <small className="text-muted">
+                                Maximum allowed: {selectedLeaveType.maxDays}{" "}
+                                days
+                              </small>
+                            )}
+                            {selectedLeaveType.remainingDays !== undefined && (
+                              <small className="text-muted d-block">
+                                Remaining balance:{" "}
+                                {selectedLeaveType.remainingDays || 0} days
+                              </small>
+                            )}
+                          </div>
                         </div>
                       )}
-                    </div>
-                  )}
-                </div>
 
-                <div className="mb-4">
-                  <div className="form-check mb-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.isEndHalfDay}
-                      onChange={(e) =>
-                        handleCheckboxChange("isEndHalfDay", e.target.checked)
-                      }
-                      className="form-check-input"
-                      id="endHalfDay"
-                    />
-                    <label
-                      htmlFor="endHalfDay"
-                      className="form-check-label fw-semibold"
-                    >
-                      End Half Day Leave
-                    </label>
-                  </div>
-
-                  {formData.isEndHalfDay && (
-                    <div className="ps-3 mb-3">
-                      <div className="d-flex flex-wrap gap-3">
-                        {["first-half", "second-half"].map((val) => (
-                          <div className="form-check" key={val}>
-                            <input
-                              type="radio"
-                              name="halfDayTypeEnd"
-                              value={val}
-                              checked={formData.halfDayTypeEnd === val}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "halfDayTypeEnd",
-                                  e.target.value as "first-half" | "second-half"
-                                )
-                              }
-                              className="form-check-input"
-                              id={`end-${val}`}
-                            />
-                            <label
-                              htmlFor={`end-${val}`}
-                              className="form-check-label text-capitalize"
-                            >
-                              {val.replace("-", " ")}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {formErrors.halfDayTypeEnd && (
-                        <div className="invalid-feedback d-block mt-1">
-                          {formErrors.halfDayTypeEnd}
+                      {/* Dates */}
+                      <div className="row g-3 mb-4">
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">
+                            Start Date
+                          </label>
+                          <DatePicker
+                            selected={formData.startDate}
+                            onChange={(date: Date | null) =>
+                              handleInputChange("startDate", date)
+                            }
+                            minDate={minDate}
+                            className={`form-control ${
+                              formErrors.startDate ? "is-invalid" : ""
+                            }`}
+                            placeholderText="Select start date"
+                            dateFormat="MMMM d, yyyy"
+                          />
+                          {formErrors.startDate && (
+                            <div className="invalid-feedback d-block">
+                              {formErrors.startDate}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">
+                            End Date
+                          </label>
+                          <DatePicker
+                            selected={formData.endDate}
+                            onChange={(date: Date | null) =>
+                              handleInputChange("endDate", date)
+                            }
+                            minDate={formData.startDate || minDate}
+                            className={`form-control ${
+                              formErrors.endDate ? "is-invalid" : ""
+                            }`}
+                            placeholderText="Select end date"
+                            dateFormat="MMMM d, yyyy"
+                          />
+                          {formErrors.endDate && (
+                            <div className="invalid-feedback d-block">
+                              {formErrors.endDate}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Half Day Options */}
+                      <div className="mb-4">
+                        <div className="form-check mb-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.isStartHalfDay}
+                            onChange={(e) =>
+                              handleCheckboxChange(
+                                "isStartHalfDay",
+                                e.target.checked
+                              )
+                            }
+                            className="form-check-input"
+                            id="startHalfDay"
+                          />
+                          <label
+                            htmlFor="startHalfDay"
+                            className="form-check-label fw-semibold"
+                          >
+                            Start Half Day Leave
+                          </label>
+                        </div>
+
+                        {formData.isStartHalfDay && (
+                          <div className="ps-3 mb-3">
+                            <div className="d-flex flex-wrap gap-3">
+                              {["first-half", "second-half"].map((val) => (
+                                <div className="form-check" key={val}>
+                                  <input
+                                    type="radio"
+                                    name="halfDayTypeStart"
+                                    value={val}
+                                    checked={formData.halfDayTypeStart === val}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        "halfDayTypeStart",
+                                        e.target.value as
+                                          | "first-half"
+                                          | "second-half"
+                                      )
+                                    }
+                                    className="form-check-input"
+                                    id={`start-${val}`}
+                                  />
+                                  <label
+                                    htmlFor={`start-${val}`}
+                                    className="form-check-label text-capitalize"
+                                  >
+                                    {val.replace("-", " ")}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                            {formErrors.halfDayTypeStart && (
+                              <div className="invalid-feedback d-block mt-1">
+                                {formErrors.halfDayTypeStart}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-4">
+                        <div className="form-check mb-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.isEndHalfDay}
+                            onChange={(e) =>
+                              handleCheckboxChange(
+                                "isEndHalfDay",
+                                e.target.checked
+                              )
+                            }
+                            className="form-check-input"
+                            id="endHalfDay"
+                          />
+                          <label
+                            htmlFor="endHalfDay"
+                            className="form-check-label fw-semibold"
+                          >
+                            End Half Day Leave
+                          </label>
+                        </div>
+
+                        {formData.isEndHalfDay && (
+                          <div className="ps-3 mb-3">
+                            <div className="d-flex flex-wrap gap-3">
+                              {["first-half", "second-half"].map((val) => (
+                                <div className="form-check" key={val}>
+                                  <input
+                                    type="radio"
+                                    name="halfDayTypeEnd"
+                                    value={val}
+                                    checked={formData.halfDayTypeEnd === val}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        "halfDayTypeEnd",
+                                        e.target.value as
+                                          | "first-half"
+                                          | "second-half"
+                                      )
+                                    }
+                                    className="form-check-input"
+                                    id={`end-${val}`}
+                                  />
+                                  <label
+                                    htmlFor={`end-${val}`}
+                                    className="form-check-label text-capitalize"
+                                  >
+                                    {val.replace("-", " ")}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                            {formErrors.halfDayTypeEnd && (
+                              <div className="invalid-feedback d-block mt-1">
+                                {formErrors.halfDayTypeEnd}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Reason */}
+                      <div className="mb-4">
+                        <label className="form-label fw-semibold">
+                          Reason for Leave
+                        </label>
+                        <textarea
+                          value={formData.reason}
+                          onChange={(e) =>
+                            handleInputChange("reason", e.target.value)
+                          }
+                          className={`form-control ${
+                            formErrors.reason ? "is-invalid" : ""
+                          }`}
+                          rows={4}
+                          placeholder="Please provide details about your leave request"
+                          maxLength={1000}
+                        />
+                        <div className="form-text">
+                          {formData.reason.length}/1000 characters
+                        </div>
+                        {formErrors.reason && (
+                          <div className="invalid-feedback d-block">
+                            {formErrors.reason}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Duration Display */}
+                      <div className="alert alert-secondary mb-4">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="fw-semibold">
+                            Calculated Duration:
+                          </span>
+                          <span className="badge bg-primary rounded-pill fs-6">
+                            {duration} day{duration !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="d-grid">
+                        <button
+                          type="submit"
+                          className="btn btn-primary btn-lg"
+                          disabled={isSubmitting || leaveTypes.length === 0}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                              ></span>
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              <FaPaperPlane className="me-2" />
+                              Submit Leave Request
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
                   )}
-                </div>
-
-                {/* Reason */}
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">
-                    Reason for Leave
-                  </label>
-                  <textarea
-                    value={formData.reason}
-                    onChange={(e) =>
-                      handleInputChange("reason", e.target.value)
-                    }
-                    className={`form-control ${
-                      formErrors.reason ? "is-invalid" : ""
-                    }`}
-                    rows={4}
-                    placeholder="Please provide details about your leave request"
-                    maxLength={1000}
-                  />
-                  <div className="form-text">
-                    {formData.reason.length}/1000 characters
-                  </div>
-                  {formErrors.reason && (
-                    <div className="invalid-feedback d-block">
-                      {formErrors.reason}
-                    </div>
-                  )}
-                </div>
-
-                {/* Duration Display */}
-                <div className="alert alert-secondary mb-4">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <span className="fw-semibold">Calculated Duration:</span>
-                    <span className="badge bg-primary rounded-pill fs-6">
-                      {duration} day{duration !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="d-grid">
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-lg"
-                    disabled={isSubmitting || leaveTypes.length === 0}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                        ></span>
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <FaPaperPlane className="me-2" />
-                        Submit Leave Request
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                </>
+              )}
             </div>
           </div>
         </div>

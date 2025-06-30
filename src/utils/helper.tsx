@@ -29,6 +29,7 @@ import { useSelector } from "react-redux";
 import userService from "../services/api-services/user.service";
 import {
   LeaveBalance,
+  LeaveRequestStatus,
   LeaveTransactionResponse,
   LeaveTypeResponse,
 } from "../types/leave.types";
@@ -495,3 +496,29 @@ export function buildLeaveBalances(
 
   return [...balanceMap.values()];
 }
+
+export const getFinalLeaveRequestStatus = (
+  managerStatus: LeaveRequestStatus,
+  hrStatus: LeaveRequestStatus
+): LeaveRequestStatus => {
+  const statuses: LeaveRequestStatus[] = [managerStatus, hrStatus];
+
+  if (statuses.every((status) => status === LeaveRequestStatus.PENDING)) {
+    return LeaveRequestStatus.PENDING;
+  }
+
+  if (statuses.includes(LeaveRequestStatus.CANCELLED)) {
+    return LeaveRequestStatus.CANCELLED;
+  }
+
+  if (statuses.includes(LeaveRequestStatus.APPROVED)) {
+    return LeaveRequestStatus.APPROVED;
+  }
+
+  if (statuses.includes(LeaveRequestStatus.REJECTED)) {
+    return LeaveRequestStatus.REJECTED;
+  }
+
+  // fallback (shouldn't happen if all statuses are valid)
+  return LeaveRequestStatus.PENDING;
+};

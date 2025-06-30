@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaClipboardList, FaSearch } from "react-icons/fa";
-import Badge from "../../../components/badge";
 import { LeaveRequestResponse } from "../../../types/leave.types";
+import { getFinalLeaveRequestStatus } from "../../../utils/helper";
 
 interface DateFormatOptions {
   year: "numeric";
@@ -24,15 +24,15 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return "badge-approved";
+        return "bg-subtle-success text-success";
       case "PENDING":
-        return "badge-pending";
+        return "bg-subtle-warning text-warning";
       case "REJECTED":
-        return "badge-rejected";
+        return "bg-subtle-danger text-danger";
       case "CANCELLED":
-        return "badge-cancelled";
+        return "bg-subtle-secondary text-secondary";
       default:
-        return "badge-default";
+        return "bg-subtle-primary text-primary";
     }
   };
 
@@ -113,17 +113,21 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
           {filteredRequests.length > 0 ? (
             <div className="list-group">
               {filteredRequests.map((request) => (
-                <Link
-                  to={`/hrm/leave-request/${request.id}`}
+                <div
+                  // to={`/hrm/leave-request/${request.id}`}
                   key={request.id}
                   className="list-group-item list-group-item-action"
                 >
                   <div className="d-flex w-100 justify-content-between">
                     <h6 className="mb-1">{request.leaveType.name}</h6>
-                    <Badge
-                      label={request.hrStatus}
-                      colorClassName={getStatusColor(request.hrStatus)}
-                    />
+                    <span
+                      className={`badge ${getStatusColor(request.hrStatus)}`}
+                    >
+                      {getFinalLeaveRequestStatus(
+                        request.hrStatus,
+                        request.managerStatus
+                      )}
+                    </span>
                   </div>
                   <p className="mb-1 text-muted">
                     {formatDate(request.startDate)} -{" "}
@@ -131,7 +135,7 @@ const RecentLeaveRequestsComponent: React.FC<RecentLeaveRequestsProps> = ({
                     <span className="ms-2">({request.duration} days)</span>
                   </p>
                   <small>{request.reason}</small>
-                </Link>
+                </div>
               ))}
             </div>
           ) : (

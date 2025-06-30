@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaChartBar, FaCircle } from "react-icons/fa";
-import Badge from "../../../components/badge";
 import { LeaveBalance } from "../../../types/leave.types";
+import { Badge } from "../../../components/ui/badge";
 
 interface LeaveBalanceProps {
   leaveBalance: LeaveBalance[];
@@ -62,7 +62,9 @@ const LeaveBalanceComponent: React.FC<LeaveBalanceProps> = ({
                           />
                           {leave.type}
                           {leave.isPaid && (
-                            <Badge label="Paid" status="SUCCESS" />
+                            <Badge className="ms-2" variant="success">
+                              Paid
+                            </Badge>
                           )}
                         </div>
                       </td>
