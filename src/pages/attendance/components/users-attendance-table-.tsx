@@ -8,6 +8,7 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaChevronUp,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { UserAttendanceItem } from "../../../types/attendance-dashboard.types";
@@ -15,9 +16,16 @@ import attendanceDashboardService from "../../../services/api-services/attendanc
 import Avatar from "../../../components/avatar";
 import Search from "../../../components/ui/search";
 import { Colors } from "../../../utils/constants";
+import UserDetailedAttendance from "./detailed-attendance";
 
 interface UsersAttendanceTableProps {
-  onUserClick?: (userId: number) => void;
+  onMissPunchRequest?: (date: string, userId: number) => void;
+  onManualStatusChange?: (
+    userId: number,
+    date: string,
+    currentStatus: string,
+    userName: string
+  ) => void;
 }
 
 type SortField =
@@ -31,9 +39,7 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
-  onUserClick,
-}) => {
+const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = () => {
   const [users, setUsers] = useState<UserAttendanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +47,7 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchUsers();
@@ -74,6 +81,18 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
       setSortField(field);
       setSortDirection("asc");
     }
+  };
+
+  const toggleRowExpansion = (userId: number) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
   };
 
   const filteredAndSortedUsers = useMemo(() => {
@@ -269,6 +288,7 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
           <table className="table table-hover align-middle">
             <thead>
               <tr className="border-0">
+                <th style={{ width: "40px" }}></th>
                 <th
                   className="text-nowrap cursor-pointer bg-light rounded-l-lg hover-bg-primary hover-text-white"
                   onClick={() => handleSort("name")}
@@ -344,7 +364,7 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
             <tbody>
               {filteredAndSortedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10">
+                  <td colSpan={8} className="text-center py-10">
                     <div className="text-muted">
                       <FaUser className="mb-3 animate-bounce" size={48} />
                       <h5 className="mb-1">No employees found</h5>
@@ -357,75 +377,123 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover-shadow-sm hover-lift-sm"
-                    onClick={() => onUserClick?.(user.id)}
-                    style={{ cursor: onUserClick ? "pointer" : "default" }}
-                  >
-                    <td>
-                      <div className="d-flex align-items-center py-2">
-                        <Avatar
-                          fontSize={14}
-                          bgColor={Colors.BGColorList[5]}
-                          title={user.name}
-                          imageUrl={user.thumbnail}
-                        />
-                        <div className="ms-3">
-                          <div className="fw-semibold text-dark">
-                            {user.name}
+                filteredAndSortedUsers.flatMap((user) => {
+                  const isExpanded = expandedRows.has(user.id);
+                  return [
+                    // Main Row
+                    <tr
+                      key={user.id}
+                      className={`hover-shadow-sm ${
+                        isExpanded ? "bg-light" : ""
+                      }`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <td
+                        className="text-center"
+                        onClick={() => toggleRowExpansion(user.id)}
+                      >
+                        <button className="btn border-0 text-primary p-0">
+                          <FaChevronUp
+                            size={14}
+                            style={{
+                              rotate: isExpanded ? "180deg" : "0deg",
+                              transition: "all 200ms ease-in-out",
+                            }}
+                          />
+                        </button>
+                      </td>
+                      <td onClick={() => toggleRowExpansion(user.id)}>
+                        <div className="d-flex align-items-center py-2">
+                          <Avatar
+                            fontSize={14}
+                            bgColor={Colors.BGColorList[5]}
+                            title={user.name}
+                            imageUrl={user.thumbnail}
+                          />
+                          <div className="ms-3">
+                            <div className="fw-semibold text-dark">
+                              {user.name}
+                            </div>
+                            <small className="text-muted">ID: {user.id}</small>
                           </div>
-                          <small className="text-muted">ID: {user.id}</small>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="text-secondary fw-medium">
-                        {user.department}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
-                        <FaCheckCircle
-                          className="text-success me-1"
-                          size={14}
-                        />
-                        <span className="fw-bold text-success">
-                          {user.presentDays}
+                      </td>
+                      <td onClick={() => toggleRowExpansion(user.id)}>
+                        <span className="text-secondary fw-medium">
+                          {user.department}
                         </span>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
-                        <FaTimesCircle className="text-danger me-1" size={14} />
-                        <span className="fw-bold text-danger">
-                          {user.absentDays}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
-                        <FaCalendarTimes
-                          className="text-warning me-1"
-                          size={14}
-                        />
-                        <span className="fw-bold text-warning">
-                          {user.leaveDays}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
-                        <FaClock className="text-info me-1" size={14} />
-                        <span className="fw-bold text-info">
-                          {user.missPunchCount}
-                        </span>
-                      </div>
-                    </td>
-                    <td>{getStatusBadge(user.todayStatus)}</td>
-                  </tr>
-                ))
+                      </td>
+                      <td
+                        className="text-center"
+                        onClick={() => toggleRowExpansion(user.id)}
+                      >
+                        <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
+                          <FaCheckCircle
+                            className="text-success me-1"
+                            size={14}
+                          />
+                          <span className="fw-bold text-success">
+                            {user.presentDays}
+                          </span>
+                        </div>
+                      </td>
+                      <td
+                        className="text-center"
+                        onClick={() => toggleRowExpansion(user.id)}
+                      >
+                        <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
+                          <FaTimesCircle
+                            className="text-danger me-1"
+                            size={14}
+                          />
+                          <span className="fw-bold text-danger">
+                            {user.absentDays}
+                          </span>
+                        </div>
+                      </td>
+                      <td
+                        className="text-center"
+                        onClick={() => toggleRowExpansion(user.id)}
+                      >
+                        <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
+                          <FaCalendarTimes
+                            className="text-warning me-1"
+                            size={14}
+                          />
+                          <span className="fw-bold text-warning">
+                            {user.leaveDays}
+                          </span>
+                        </div>
+                      </td>
+                      <td
+                        className="text-center"
+                        onClick={() => toggleRowExpansion(user.id)}
+                      >
+                        <div className="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm">
+                          <FaClock className="text-info me-1" size={14} />
+                          <span className="fw-bold text-info">
+                            {user.missPunchCount}
+                          </span>
+                        </div>
+                      </td>
+                      <td onClick={() => toggleRowExpansion(user.id)}>
+                        {getStatusBadge(user.todayStatus)}
+                      </td>
+                    </tr>,
+                    // Expanded Detail Row
+                    isExpanded && (
+                      <tr key={`${user.id}-detail`}>
+                        <td colSpan={8} className="p-0">
+                          <div className="animate-fade-in">
+                            <div className="bg-white border-top border-bottom p-4">
+                              <UserDetailedAttendance userId={user.id} />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  ].filter(Boolean);
+                })
               )}
             </tbody>
           </table>

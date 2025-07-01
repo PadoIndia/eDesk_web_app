@@ -1469,3 +1469,36 @@ a:hover {
   border-top-right-radius: 1.25rem !important; 
   border-bottom-left-radius: 1.25rem !important; 
 }
+
+
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.accordion-row {
+  transition: all 0.3s ease-in-out;
+}
+
+
+.accordion-chevron {
+  transition: transform 0.3s ease;
+}
+
+
+.expanded-row {
+  background-color: #f8f9fa !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

@@ -297,7 +297,7 @@ const AttendanceDashboard = () => {
 
   console.log(currentUser?.permissions);
   return (
-    <div className="container py-4">
+    <div className="px-5 mx-5 py-4">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div className=" shadow mb-4">
