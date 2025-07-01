@@ -1,14 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  FaUser,
-  FaPlus,
-  // FaCheckCircle,
-  // FaTimesCircle,
-  // FaHourglassHalf,
-  FaCalendarAlt,
-  FaChartBar,
-} from "react-icons/fa";
-import Badge from "../../../components/badge";
+import { FaUser, FaPlus, FaCalendarAlt, FaChartBar } from "react-icons/fa";
 import {
   AttendanceUser,
   Punch,
@@ -24,6 +15,7 @@ import {
   getDayOfWeek,
 } from "../../../utils/helper";
 import { getPunchApprovalIcon } from "../../../utils/helper.tsx";
+import { Badge } from "../../../components/ui/badge/index.tsx";
 
 interface UserAttendanceTableProps {
   user: AttendanceUser;
@@ -40,10 +32,9 @@ interface UserAttendanceTableProps {
     comment: string
   ) => void;
   isAdmin: boolean;
-  isManager?: boolean; // Added manager prop
+  isManager?: boolean;
 }
 
-// Status mapping to short codes
 const statusToShortCode: { [key: string]: string } = {
   PRESENT: "P",
   ABSENT: "A",
@@ -75,7 +66,7 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     const fetchWeekOff = async () => {
       try {
         const weekOff = await getWeekOff(user.id);
-        // Convert to uppercase for case-insensitive comparison
+
         setWeekOffDays(
           weekOff.split(",").map((day) => day.trim().toUpperCase())
         );
@@ -88,8 +79,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     fetchWeekOff();
   }, []);
 
-  // Helper functions
-
   const getPunchesForDate = (day: number): Punch[] => {
     const punches = user.punchData.filter(
       (punch) =>
@@ -98,7 +87,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
         punch.year === selectedYear
     );
 
-    // Sort punches in ascending order by time
     return punches.sort((a, b) => {
       const timeA = (a.hh ?? 0) * 60 + (a.mm ?? 0);
       const timeB = (b.hh ?? 0) * 60 + (b.mm ?? 0);
@@ -112,10 +100,8 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       .toLocaleDateString("en-US", { weekday: "long" })
       .toUpperCase();
 
-    // Check if this is a week-off day
     const isWeekOff = weekOffDays.includes(dayOfWeek);
 
-    // Find attendance entry for this date
     const dateEntry = user.attendance.find(
       (entry) =>
         entry.date === day &&
@@ -123,19 +109,14 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
         entry.year === selectedYear
     );
 
-    // Priority 1: Manual status override
     if (dateEntry?.statusManual) {
       return statusToShortCode[dateEntry.statusManual] || "A";
     }
 
-    // Priority 2: Check if there's a comment (indicates leave)
     if (dateEntry?.comment) {
-      // If there's a comment but no manual status, treat as leave
-      // Determine leave type from comment content
       return getLeaveTypeFromComment(dateEntry.comment);
     }
 
-    // Priority 3: Check for punch data
     const punches = getPunchesForDate(day);
     const validPunches = punches.filter(
       (p) => p.isApproved !== false || !p.approvedBy
@@ -155,12 +136,10 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       (p) => p.isApproved === false && p.approvedBy
     ).length;
 
-    // Check for odd number of punches first (yellow highlight)
     if (punches.length > 0 && (punches.length - rejectedPunches) % 2 !== 0) {
       return "table-warning";
     }
 
-    // Then check status-based colors
     if (["A", "SL", "CL", "PL", "UL", "CO", "EL"].includes(status))
       return "table-danger";
     if (["WO", "H"].includes(status)) return "table-light";
@@ -168,7 +147,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     return "";
   };
 
-  // Check if miss punch request is allowed for a given date
   const isMissPunchAllowed = (day: number): boolean => {
     const today = new Date();
     const targetDate = new Date(selectedYear, selectedMonth, day);
@@ -176,25 +154,19 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       (today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Admin can always make miss punch requests
     if (isAdmin) return true;
 
-    // Manager can make miss punch requests for others for the whole month, but not for themselves
     if (isManager) {
       if (isCurrentUser) {
-        // Manager's own attendance - same 4-day rule
         return daysDifference <= 4;
       } else {
-        // Manager can request for others for the whole month
         return true;
       }
     }
 
-    // Regular users can only request within 4 days
     return daysDifference <= 4;
   };
 
-  // Format date for display
   const formatDate = (day: number): string => {
     return `${selectedYear}-${String(selectedMonth + 1).padStart(
       2,
@@ -202,7 +174,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     )}-${String(day).padStart(2, "0")}`;
   };
 
-  // Calculate monthly summary
   const calculateMonthlySummary = () => {
     const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -287,7 +258,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
       }
     });
 
-    // Calculate average working hours
     const totalHours = Math.floor(summary.totalWorkingHours / 60);
     const totalMinutes = summary.totalWorkingHours % 60;
     const presentAndHalfDays = summary.presentDays + summary.halfDays;
@@ -318,7 +288,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
     };
   };
 
-  // Generate table rows
   const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const monthlySummary = calculateMonthlySummary();
@@ -363,7 +332,6 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
               const statusShortCode = getStatusForDate(day);
               const canRequestMissPunch = isMissPunchAllowed(day);
 
-              // Get attendance entry for this date to check for comments
               const attendanceEntry = user.attendance.find(
                 (entry) =>
                   entry.date === day &&
@@ -428,38 +396,37 @@ const UserAttendanceTable: React.FC<UserAttendanceTableProps> = ({
                     {attendanceEntry?.comment &&
                     !attendanceEntry?.statusManual ? (
                       <Badge
-                        label={statusShortCode}
-                        status={
+                        variant={
                           ["SL", "CL", "PL", "UL", "CO", "EL"].includes(
                             statusShortCode
                           )
-                            ? "INFO"
-                            : "SUCCESS"
+                            ? "info"
+                            : "success"
                         }
                         title={attendanceEntry.comment}
-                      />
+                      >
+                        {statusShortCode}
+                      </Badge>
                     ) : attendanceEntry?.comment ? (
-                      <Badge
-                        label="i"
-                        status="INFO"
-                        title={attendanceEntry.comment}
-                      />
+                      <Badge title={attendanceEntry.comment} variant="info">
+                        i
+                      </Badge>
                     ) : (
                       <Badge
-                        label={statusShortCode}
-                        status={
+                        variant={
                           statusShortCode === "P"
-                            ? "SUCCESS"
+                            ? "success"
                             : statusShortCode === "A"
-                            ? "DANGER"
+                            ? "danger"
                             : statusShortCode === "HD"
-                            ? "WARNING"
+                            ? "warning"
                             : ["WO", "H"].includes(statusShortCode)
-                            ? "PRIMARY"
-                            : "INFO"
+                            ? "primary"
+                            : "info"
                         }
-                        title=""
-                      />
+                      >
+                        {statusShortCode}
+                      </Badge>
                     )}
                   </td>
 

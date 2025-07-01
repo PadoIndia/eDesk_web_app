@@ -1,15 +1,16 @@
 import React from "react";
 import { FaPlus } from "react-icons/fa";
 import { AttendanceUser } from "../../../types/attendance.types";
+import { UserAttendanceItem } from "../../../types/attendance-dashboard.types";
 
 interface DashboardControlsProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   filterDepartment: string;
   setFilterDepartment: (department: string) => void;
-  users: AttendanceUser[];
+  users: UserAttendanceItem[];
   currentUser: AttendanceUser;
-   handleMissPunchRequest: (date: string) => void;
+  handleMissPunchRequest: (date: string) => void;
 }
 
 const DashboardControls: React.FC<DashboardControlsProps> = ({
@@ -19,27 +20,22 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
   setFilterDepartment,
   users,
   currentUser,
-  handleMissPunchRequest
+  handleMissPunchRequest,
 }) => {
-  // Extract unique departments for filter dropdown
-  // const departments = Array.from(new Set(users.map((user) => user.department)));
-
   const departments = [
-  "All",
-  ...Array.from(
-    new Set(
-      users
-        .flatMap((user) => user.department.split(",").map((d) => d.trim()))
-    )
-  ).filter(Boolean),
-];
+    "All",
+    ...Array.from(
+      new Set(
+        users.flatMap((user) => user.department.split(",").map((d) => d.trim()))
+      )
+    ).filter(Boolean),
+  ];
 
-  
-  // Check if current user needs miss punch button
-  const showMissPunchButton = currentUser && 
-    !currentUser.isAdmin && 
+  const showMissPunchButton =
+    currentUser &&
+    !currentUser.isAdmin &&
     currentUser.punchData.length % 2 !== 0;
-    
+
   return (
     <div className="row g-3 mb-4 align-items-end">
       <div className="col-md-4">
@@ -52,7 +48,7 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
+
       <div className="col-md-4">
         <label className="form-label">Department</label>
         <select
@@ -68,7 +64,7 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
           ))}
         </select>
       </div>
-      
+
       {showMissPunchButton && (
         <div className="col-md-4 col-lg-3 ms-auto">
           <button
@@ -84,6 +80,3 @@ const DashboardControls: React.FC<DashboardControlsProps> = ({
 };
 
 export default DashboardControls;
-
-
-

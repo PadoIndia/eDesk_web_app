@@ -7,6 +7,7 @@ interface AvatarProps {
   imageUrl?: string | null;
   size?: number;
   bgColor?: string;
+  fontSize?: number;
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -14,8 +15,16 @@ const Avatar: React.FC<AvatarProps> = ({
   imageUrl,
   size = 40,
   bgColor,
+  fontSize,
 }) => {
-  const initials = title.charAt(0).toUpperCase();
+  const initials = title
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const finalFontSize = fontSize ?? size * 0.5;
 
   return imageUrl ? (
     <img
@@ -35,7 +44,7 @@ const Avatar: React.FC<AvatarProps> = ({
         width: size,
         height: size,
         backgroundColor: bgColor || Colors.BGColorList[2],
-        fontSize: size * 0.5,
+        fontSize: finalFontSize,
         textTransform: "uppercase",
         color: Colors.text.title,
       }}

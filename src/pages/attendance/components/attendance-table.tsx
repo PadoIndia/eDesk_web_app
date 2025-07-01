@@ -9,7 +9,12 @@ interface AttendanceTablesProps {
   selectedYear: number;
   selectedDate: string;
   onMissPunchRequest: (date: string, userId: number) => void;
-  onManualStatusChange: (userId: number, date: string, newStatus: string, comment:string) => void;
+  onManualStatusChange: (
+    userId: number,
+    date: string,
+    newStatus: string,
+    comment: string
+  ) => void;
   isAdmin: boolean;
   currentView: "department" | "requests";
 }
@@ -24,7 +29,6 @@ const AttendanceTables: React.FC<AttendanceTablesProps> = ({
   onManualStatusChange,
   isAdmin,
 }) => {
-  // Mock calendar events - should be moved to parent component or API
   const calendarEvents: CalendarEvent[] = [
     {
       date: `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`,
@@ -42,8 +46,6 @@ const AttendanceTables: React.FC<AttendanceTablesProps> = ({
       type: "event",
     },
   ];
-
-  
 
   return (
     <>

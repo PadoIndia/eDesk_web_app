@@ -1,6 +1,8 @@
 import {
   ManualStatusData,
   MissPunchRequestData,
+  UserAttendanceItem,
+  UserDashboardData,
 } from "../../types/attendance-dashboard.types";
 import { ApiResponse } from "../../types/axios.types";
 import ApiService from "./api-service";
@@ -10,7 +12,11 @@ class AttendanceDashboardService extends ApiService {
     super("/admin/attendance");
   }
 
-  getDashboardData(userId: number, month?: number, year?: number): ApiResponse {
+  getDashboardData(
+    userId: number,
+    month?: number,
+    year?: number
+  ): ApiResponse<UserDashboardData> {
     const params = new URLSearchParams();
     if (month) params.append("month", month.toString());
     if (year) params.append("year", year.toString());
@@ -19,17 +25,14 @@ class AttendanceDashboardService extends ApiService {
   }
 
   getDepartmentUsers(
-    adminUserId: number,
     month?: number,
     year?: number
-  ): ApiResponse {
+  ): ApiResponse<UserAttendanceItem[]> {
     const params = new URLSearchParams();
     if (month) params.append("month", month.toString());
     if (year) params.append("year", year.toString());
 
-    return this.getData(
-      `/department-users/${adminUserId}?${params.toString()}`
-    );
+    return this.getData(`/department-users?${params.toString()}`);
   }
 
   getPendingRequests(adminUserId: number): ApiResponse {

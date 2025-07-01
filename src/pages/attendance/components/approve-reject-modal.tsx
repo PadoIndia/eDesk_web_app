@@ -19,7 +19,10 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
   setShowApproveRejectModal,
 }) => {
   const formatDate = (date: number, month: number, year: number): string => {
-    return `${year}-${String(month).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(date).padStart(
+      2,
+      "0"
+    )}`;
   };
 
   return (
@@ -28,7 +31,8 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
-              {actionType === "approve" ? "Approve" : "Reject"} Miss Punch Request
+              {actionType === "approve" ? "Approve" : "Reject"} Miss Punch
+              Request
             </h5>
             <button
               type="button"
@@ -40,7 +44,7 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
             <div className="row mb-3">
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Employee:</p>
-                <p>{currentRequest.userName || "N/A"}</p>
+                <p>{currentRequest.user?.name || "N/A"}</p>
               </div>
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Department:</p>
@@ -50,7 +54,13 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
             <div className="row mb-3">
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Date:</p>
-                <p>{formatDate(currentRequest.date, currentRequest.month, currentRequest.year)}</p>
+                <p>
+                  {formatDate(
+                    currentRequest.date,
+                    currentRequest.month,
+                    currentRequest.year
+                  )}
+                </p>
               </div>
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Time:</p>
@@ -61,7 +71,7 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
               <p className="mb-1 fw-bold">Reason:</p>
               <p>{currentRequest.missPunchReason || "No reason provided"}</p>
             </div>
-            
+
             {actionType === "reject" && (
               <div className="mb-3">
                 <label htmlFor="rejectionReason" className="form-label">

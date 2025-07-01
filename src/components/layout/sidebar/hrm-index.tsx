@@ -7,13 +7,16 @@ import {
   FaTimes,
   FaUsers,
 } from "react-icons/fa";
+import { useAppSelector } from "../../../store/store";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-
+  const permissions = useAppSelector((s) => s.auth.userData?.user.permissions);
   const handleNavClick = () => {
     setIsOpen(false);
   };
+
+  const isAdmin = permissions?.includes("is_admin");
 
   return (
     <div
@@ -94,33 +97,35 @@ const Sidebar = () => {
             </span>
           </NavLink>
 
-          <NavLink
-            to="/hrm/department-management"
-            className="text-decoration-none text-dark"
-            onClick={handleNavClick} // Added onClick handler
-          >
-            <div
-              className="d-flex align-items-center p-3 rounded"
-              style={{
-                transition: "all 0.2s",
-                justifyContent: isOpen ? "flex-start" : "center",
-              }}
+          {isAdmin && (
+            <NavLink
+              to="/hrm/department-management"
+              className="text-decoration-none text-dark"
+              onClick={handleNavClick} // Added onClick handler
             >
-              <FaUsers className="fs-5" style={{ minWidth: "24px" }} />
-              <span
-                className="ms-2"
+              <div
+                className="d-flex align-items-center p-3 rounded"
                 style={{
-                  opacity: isOpen ? 1 : 0,
-                  width: isOpen ? "auto" : 0,
-                  overflow: "hidden",
-                  transition: "opacity 0.2s, width 0.2s",
-                  whiteSpace: "nowrap",
+                  transition: "all 0.2s",
+                  justifyContent: isOpen ? "flex-start" : "center",
                 }}
               >
-                Departments
-              </span>
-            </div>
-          </NavLink>
+                <FaUsers className="fs-5" style={{ minWidth: "24px" }} />
+                <span
+                  className="ms-2"
+                  style={{
+                    opacity: isOpen ? 1 : 0,
+                    width: isOpen ? "auto" : 0,
+                    overflow: "hidden",
+                    transition: "opacity 0.2s, width 0.2s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Departments
+                </span>
+              </div>
+            </NavLink>
+          )}
         </nav>
       </div>
     </div>
