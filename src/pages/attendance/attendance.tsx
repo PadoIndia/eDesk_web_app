@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { ToastContainer, toast } from "react-toastify";
 import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
@@ -8,10 +8,12 @@ import DashboardHeader from "./components/header";
 import ApproveRejectModal from "./components/approve-reject-modal";
 
 import { Punch } from "../../types/attendance.types";
-import UsersAttendanceTable from "./components/users-attendance-table-";
-import UserDetailedAttendance from "./components/detailed-attendance";
-import RequestsTable from "./components/requests-table";
 import { fetchUserPermissions } from "../../features/auth.slice";
+import UserDetailedAttendance from "./components/detailed-attendance";
+const RequestsTable = lazy(() => import("./components/requests-table"));
+const UsersAttendanceTable = lazy(
+  () => import("./components/users-attendance-table-")
+);
 
 const AttendanceDashboard = () => {
   const userId = useAppSelector((state) => state.auth.userData?.user.id);

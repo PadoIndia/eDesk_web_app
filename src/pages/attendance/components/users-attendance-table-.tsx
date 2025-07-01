@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, lazy } from "react";
 import {
   FaUser,
   FaCheckCircle,
@@ -16,7 +16,7 @@ import attendanceDashboardService from "../../../services/api-services/attendanc
 import Avatar from "../../../components/avatar";
 import Search from "../../../components/ui/search";
 import { Colors } from "../../../utils/constants";
-import UserDetailedAttendance from "./detailed-attendance";
+const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
 
 interface UsersAttendanceTableProps {
   onMissPunchRequest?: (date: string, userId: number) => void;
