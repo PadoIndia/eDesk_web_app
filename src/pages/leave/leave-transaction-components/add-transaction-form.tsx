@@ -3,12 +3,12 @@ import {
   LeaveTypeResponse,
   CreateLeaveTransactionRequest,
 } from "../../../types/leave.types";
-import { User } from "../../../types/user.types";
 import { toast } from "react-toastify";
 import leaveTransactionService from "../../../services/api-services/leave-transaction.service";
+import Select from "react-select";
 
 interface AddTransactionFormProps {
-  users: User[];
+  users: { label: string; value: number }[];
   leaveTypes: LeaveTypeResponse[];
   onSave: (transaction: CreateLeaveTransactionRequest) => void;
   onCancel: () => void;
@@ -21,7 +21,6 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
   onCancel,
 }) => {
   const [userId, setUserId] = useState<number | "">("");
-  const [emailInput, setEmailInput] = useState("");
   const [leaveTypeId, setLeaveTypeId] = useState<number | "">("");
   const [count, setCount] = useState<number | "">("");
   const [comment, setComment] = useState("");
@@ -44,7 +43,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
       return;
     }
 
-    const selectedUser = users.find((u) => u.id === userId);
+    const selectedUser = users.find((u) => u.value === userId);
     if (!selectedUser) {
       toast.error("Invalid employee selected");
       return;
@@ -80,30 +79,14 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
     <form onSubmit={handleSubmit}>
       <div className="row g-3">
         <div className="col-md-4">
-          <label className="form-label">Employee Email</label>
-          <input
-            type="email"
-            className="form-control"
-            list="userEmailList"
-            value={emailInput}
-            onChange={(e) => {
-              const value = e.target.value;
-              setEmailInput(value);
-              const user = users.find((u) => u.username === value);
-              if (user) {
-                setUserId(user.id);
-              } else {
-                setUserId("");
-              }
-            }}
-            placeholder="Search by email"
-            required
+          <label className="form-label">Employee</label>
+          <Select
+            options={users}
+            placeholder="Select user"
+            isSearchable
+            value={users.find((u) => u.value === userId)}
+            onChange={(e) => setUserId(e ? e.value : "")}
           />
-          <datalist id="userEmailList">
-            {users.map((user) => (
-              <option key={user.id} value={user.username} />
-            ))}
-          </datalist>
         </div>
         <div className="col-md-4">
           <label className="form-label">Leave Type</label>

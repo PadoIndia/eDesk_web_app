@@ -77,7 +77,10 @@ const LeaveTransactions: React.FC = () => {
         {showAddForm && (
           <div className="card-body border-bottom">
             <AddTransactionForm
-              users={users}
+              users={users.map((u) => ({
+                label: `${u.name} (${u.contact})`,
+                value: u.id,
+              }))}
               leaveTypes={leaveTypes}
               onSave={handleAddTransaction}
               onCancel={() => setShowAddForm(false)}
