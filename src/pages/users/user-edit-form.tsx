@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTimes } from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const UserEditForm = () => {
@@ -9,9 +9,9 @@ const UserEditForm = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState({
-    name: "Saksham Jain",
-    email: "1@gmail.com",
-    contact: "+91 9999999999",
+    name: "",
+    email: "",
+    contact: "+91",
     profileImg: null as string | null,
   });
 
@@ -76,9 +76,6 @@ const UserEditForm = () => {
 
   return (
     <div className="container py-10 p-5">
-      {/* Toast Container */}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-
       <div className="card shadow">
         <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
           <h3 className="mb-0">Edit User Details</h3>

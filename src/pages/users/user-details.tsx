@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { UpdateSelfPayload, User, UserDetails } from "../../types/user.types";
 import { ProfileSection } from "./components/profile-section";
 import { ContactsSection } from "./components/contact-section";
@@ -24,7 +23,8 @@ const UserFullDetails = () => {
         if (!userId) return;
         const resp = await userService.getUserById(Number(userId));
         if (resp.status === "success") {
-          const { userDetails, userDepartment, ...data } = resp.data;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { userDetails, userDepartment: __, ...data } = resp.data;
           setUserData(data);
           setUserDetails(userDetails);
           initializeDraft(resp.data);
@@ -71,8 +71,6 @@ const UserFullDetails = () => {
 
   return (
     <div className="container py-10 p-5">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-
       <ProfileSection
         userData={userData}
         userDetails={userDetails}

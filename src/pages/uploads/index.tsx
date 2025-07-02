@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import uploadService from "../../services/upload/upload.service";
 import { FilePicker } from "./components/file-picker";
 import VideoUploadList from "./components/video-upload-list";
@@ -33,7 +33,6 @@ const Uploads: React.FC = () => {
       <div className="flex-grow-1 ps-3 d-flex flex-column align-items-start">
         <VideoUploadList />
       </div>
-      <ToastContainer />
     </div>
   );
 };

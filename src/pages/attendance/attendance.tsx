@@ -1,6 +1,6 @@
 import { lazy, useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
 
 import MissPunchForm from "./components/miss-punch-form";
@@ -9,7 +9,9 @@ import ApproveRejectModal from "./components/approve-reject-modal";
 
 import { Punch } from "../../types/attendance.types";
 import UserDetailedAttendance from "./components/detailed-attendance";
+
 const RequestsTable = lazy(() => import("./components/requests-table"));
+
 const UsersAttendanceTable = lazy(
   () => import("./components/users-attendance-table-")
 );
@@ -295,8 +297,6 @@ const AttendanceDashboard = () => {
 
   return (
     <div className="px-5 mx-5 py-4">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <div className=" shadow mb-4">
         <DashboardHeader
           currentView={currentView}

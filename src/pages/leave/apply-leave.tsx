@@ -16,6 +16,7 @@ import userService from "../../services/api-services/user.service";
 import { useAppSelector } from "../../store/store";
 import { LeaveScheme, LeaveRequestPayload } from "../../types/leave.types";
 import { UserDetails } from "../../types/user.types";
+import leaveTypeService from "../../services/api-services/leave-type.service";
 
 interface FormData {
   leaveTypeId: number;
@@ -67,6 +68,7 @@ const ApplyLeave = () => {
     halfDayTypeStart: undefined,
     halfDayTypeEnd: undefined,
   });
+  const [datesToExclude, setDatesToExclude] = useState<Date[]>([]);
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -152,6 +154,17 @@ const ApplyLeave = () => {
       setLoading(false);
     }
   }, [currentUserId, selectedUserId, isForSelf, hasAdminPermissions]);
+
+  const handleLeaveTypeChange = (leaveTypeId: number) => {
+    if (userId && leaveTypeId)
+      leaveTypeService.getExcludedDates(leaveTypeId, { userId }).then((res) => {
+        if (res.status === "success") {
+          setDatesToExclude(res.data);
+        }
+      });
+
+    handleInputChange("leaveTypeId", leaveTypeId);
+  };
 
   const fetchUserData = async (targetUserId: number) => {
     try {
@@ -303,7 +316,7 @@ const ApplyLeave = () => {
     } else {
       const startDate = new Date(formData.startDate);
       startDate.setHours(0, 0, 0, 0);
-      if (startDate < today) {
+      if (startDate < today && isForSelf) {
         errors.startDate = "Start date cannot be in the past";
       }
     }
@@ -614,10 +627,7 @@ const ApplyLeave = () => {
                         <select
                           value={formData.leaveTypeId}
                           onChange={(e) =>
-                            handleInputChange(
-                              "leaveTypeId",
-                              parseInt(e.target.value)
-                            )
+                            handleLeaveTypeChange(Number(e.target.value))
                           }
                           className={`form-select ${
                             formErrors.leaveTypeId ? "is-invalid" : ""
@@ -628,7 +638,7 @@ const ApplyLeave = () => {
                             <option
                               key={lt.id}
                               value={lt.id}
-                              disabled={!lt.remainingDays}
+                              // disabled={!lt.remainingDays}
                             >
                               {lt.name}
                               {` - Max: ${lt.maxDays || 0} days`}
@@ -676,10 +686,13 @@ const ApplyLeave = () => {
                             onChange={(date: Date | null) =>
                               handleInputChange("startDate", date)
                             }
-                            minDate={minDate}
+                            minDate={isForSelf ? minDate : new Date(0)}
                             className={`form-control ${
                               formErrors.startDate ? "is-invalid" : ""
                             }`}
+                            excludeDates={datesToExclude.map(
+                              (p) => new Date(p)
+                            )}
                             placeholderText="Select start date"
                             dateFormat="MMMM d, yyyy"
                           />
@@ -699,7 +712,10 @@ const ApplyLeave = () => {
                             onChange={(date: Date | null) =>
                               handleInputChange("endDate", date)
                             }
-                            minDate={formData.startDate || minDate}
+                            excludeDates={datesToExclude.map(
+                              (p) => new Date(p)
+                            )}
+                            minDate={formData.startDate || new Date(0)}
                             className={`form-control ${
                               formErrors.endDate ? "is-invalid" : ""
                             }`}

@@ -31,6 +31,13 @@ class LeaveTypeService extends ApiService {
   deleteLeaveType(id: number): ApiResponse<void> {
     return this.deleteData(`/${id}`);
   }
+
+  getExcludedDates(
+    id: number,
+    params: { userId: number }
+  ): ApiResponse<Date[]> {
+    return this.getData(`/${id}/dates`, { params });
+  }
 }
 
 export default new LeaveTypeService();
