@@ -3,15 +3,17 @@ import { useAppSelector } from "../../store/store";
 import { toast } from "react-toastify";
 import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
 
-import MissPunchForm from "./components/miss-punch-form";
 import DashboardHeader from "./components/header";
-import ApproveRejectModal from "./components/approve-reject-modal";
 
 import { Punch } from "../../types/attendance.types";
 import UserDetailedAttendance from "./components/detailed-attendance";
 
 const RequestsTable = lazy(() => import("./components/requests-table"));
 
+const MissPunchForm = lazy(() => import("./components/miss-punch-form"));
+const ApproveRejectModal = lazy(
+  () => import("./components/approve-reject-modal")
+);
 const UsersAttendanceTable = lazy(
   () => import("./components/users-attendance-table-")
 );

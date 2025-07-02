@@ -17,6 +17,7 @@ import { useAppSelector } from "../../store/store";
 import { LeaveScheme, LeaveRequestPayload } from "../../types/leave.types";
 import { UserDetails } from "../../types/user.types";
 import leaveTypeService from "../../services/api-services/leave-type.service";
+import Select from "react-select";
 
 interface FormData {
   leaveTypeId: number;
@@ -42,9 +43,8 @@ interface FormErrors {
 }
 
 interface UserOption {
-  id: number;
-  name: string;
-  username: string;
+  value: number;
+  label: string;
 }
 
 const ApplyLeave = () => {
@@ -124,9 +124,8 @@ const ApplyLeave = () => {
           const response = await userService.getAllUsers();
           if (response.status === "success" && response.data) {
             const userOptions = response.data.map((user) => ({
-              id: user.id,
-              name: user.name,
-              username: user.username,
+              value: user.id,
+              label: user.name,
             }));
             setUsers(userOptions);
           }
@@ -190,18 +189,17 @@ const ApplyLeave = () => {
       const userDetailsData = resp.data.userDetails;
       setUserDetails(userDetailsData);
 
-      if (userDetailsData.leaveSchemeId) {
+      if (userDetailsData?.leaveSchemeId) {
         const leaveSchemeResponse = await leaveSchemeService.getLeaveSchemeById(
-          userDetailsData.leaveSchemeId,
+          userDetailsData?.leaveSchemeId,
           {
             userId: selectedUserId || Number(currentUserId),
           }
         );
         console.log("leave scheme response", leaveSchemeResponse);
 
-        if (!leaveSchemeResponse.status || !leaveSchemeResponse.data) {
-          throw new Error("Failed to fetch leave scheme");
-        }
+        if (leaveSchemeResponse.status === "error")
+          throw new Error(leaveSchemeResponse.message);
 
         const leaveSchemeData = leaveSchemeResponse.data;
         setLeaveScheme(leaveSchemeData);
@@ -551,27 +549,25 @@ const ApplyLeave = () => {
                 </div>
               )}
 
-              {/* User Selection Dropdown (only for admin) */}
               {!isForSelf && hasAdminPermissions && (
                 <div className="mb-4">
                   <label className="form-label fw-semibold">
                     <FaUser className="me-2" />
                     Select User
                   </label>
-                  <select
-                    value={selectedUserId || ""}
-                    onChange={(e) => handleUserSelection(e.target.value)}
-                    className={`form-select ${
+                  <Select
+                    placeholder="Select User to apply Leave"
+                    options={users}
+                    value={users.find((i) => i.value === selectedUserId)}
+                    onChange={(e) =>
+                      handleUserSelection(e?.value.toString() || "")
+                    }
+                    className={` ${
                       formErrors.selectedUserId ? "is-invalid" : ""
                     }`}
-                  >
-                    <option value="">-- Select a User --</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.username})
-                      </option>
-                    ))}
-                  </select>
+                    isMulti={false}
+                  />
+
                   {formErrors.selectedUserId && (
                     <div className="invalid-feedback d-block">
                       {formErrors.selectedUserId}
@@ -580,7 +576,6 @@ const ApplyLeave = () => {
                 </div>
               )}
 
-              {/* Loading indicator for user data */}
               {loadingUserData && (
                 <div className="text-center py-4">
                   <FaSpinner className="fa-spin fs-3 text-primary" />
@@ -588,7 +583,6 @@ const ApplyLeave = () => {
                 </div>
               )}
 
-              {/* Show form only when user is selected (for admin) or always (for self) */}
               {(isForSelf ||
                 (!loadingUserData &&
                   selectedUserId &&
@@ -601,7 +595,8 @@ const ApplyLeave = () => {
                         {isForSelf
                           ? "Your"
                           : `${
-                              users.find((u) => u.id === selectedUserId)?.name
+                              users.find((u) => u.value === selectedUserId)
+                                ?.label
                             }'s`}{" "}
                         Leave Scheme: {leaveScheme.name}
                       </h6>
@@ -638,7 +633,7 @@ const ApplyLeave = () => {
                             <option
                               key={lt.id}
                               value={lt.id}
-                              // disabled={!lt.remainingDays}
+                              disabled={!lt.remainingDays}
                             >
                               {lt.name}
                               {` - Max: ${lt.maxDays || 0} days`}

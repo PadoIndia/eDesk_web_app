@@ -345,8 +345,11 @@ export const formatTime = (hh: number, mm: number): string => {
 
 export const getWeekOff = async (userId: number): Promise<string> => {
   const response = await userService.getUserById(userId);
-  const weekoff = response.data.userDetails.weekoff;
-  return weekoff || "";
+  if (response.data.userDetails) {
+    const weekoff = response.data.userDetails.weekoff || "";
+    return weekoff;
+  }
+  return "";
 };
 
 export const calculateWorkingHours = (punches: Punch[]): string => {

@@ -18,7 +18,7 @@ export type TGender = "MALE" | "FEMALE" | "OTHER";
 
 export type AdminUser = Prettify<
   User & {
-    userDetails: UserDetails;
+    userDetails: UserDetails | null;
     userDepartment: UserDepartmentResp[];
     userTeam: UserTeamResp[];
   }

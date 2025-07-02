@@ -598,6 +598,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   const dayPunches = dashboardData.punchData.filter(
                     (p) => p.date === day
                   );
+                  console.log(dayPunches, day, "LLLLL");
                   const fullStatus = getStatusForDate(day);
                   let shortStatus = statusToShortCode[fullStatus] || fullStatus;
                   if (

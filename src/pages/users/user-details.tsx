@@ -26,7 +26,7 @@ const UserFullDetails = () => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { userDetails, userDepartment: __, ...data } = resp.data;
           setUserData(data);
-          setUserDetails(userDetails);
+          if (userDetails) setUserDetails(userDetails);
           initializeDraft(resp.data);
         } else toast.error(resp.message);
       } catch (error) {
