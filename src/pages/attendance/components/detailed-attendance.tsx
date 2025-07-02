@@ -68,8 +68,8 @@ const statusConfig: {
   },
   SICK_LEAVE: {
     icon: <FaHospital size={14} />,
-    bgClass: "bg-danger bg-opacity-10",
-    textClass: "text-danger",
+    bgClass: "bg-warning bg-opacity-10",
+    textClass: "text-warning",
   },
   CASUAL_LEAVE: {
     icon: <FaBriefcase size={14} />,
@@ -599,10 +599,13 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                     (p) => p.date === day
                   );
                   const fullStatus = getStatusForDate(day);
-                  const shortStatus =
-                    dayPunches.length > 0 && dayPunches.length % 2 == 0
-                      ? statusToShortCode[fullStatus] || fullStatus
-                      : "A";
+                  let shortStatus = statusToShortCode[fullStatus] || fullStatus;
+                  if (
+                    !(dayPunches.length > 0 && dayPunches.length % 2 == 0) &&
+                    (shortStatus == "P" || shortStatus === "—")
+                  ) {
+                    shortStatus = "A";
+                  }
                   const date = new Date(year, month - 1, day);
                   const dateStr = `${year}-${month
                     .toString()
@@ -630,7 +633,10 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                             </small>
                           </div>
                           {config && (
-                            <span className={config.textClass}>
+                            <span
+                              className={config.textClass}
+                              title={fullStatus.replace(/(_)/, " ")}
+                            >
                               {config.icon}
                             </span>
                           )}
@@ -666,14 +672,14 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                         <span
                           className={`badge rounded-pill px-3 py-1 ${
                             shortStatus === "P"
-                              ? "bg-success"
+                              ? "bg-success-subtle text-success"
                               : shortStatus === "A"
-                              ? "bg-danger"
+                              ? "bg-danger-subtle text-danger"
                               : shortStatus === "HD"
-                              ? "bg-warning text-dark"
+                              ? "bg-warning-subtle text-warning"
                               : shortStatus === "WO" || shortStatus === "H"
-                              ? "bg-info"
-                              : "bg-secondary"
+                              ? "bg-primary-subtle text-primary"
+                              : "bg-secondary-subtle text-secondary"
                           }`}
                         >
                           {shortStatus}
