@@ -64,10 +64,6 @@ const LeaveRequests = () => {
     );
   }, [permissions]);
 
-  const showTabs = useCallback(() => {
-    return (isHR || isManager) && hasAdminPermissions();
-  }, [isHR, isManager, hasAdminPermissions]);
-
   useEffect(() => {
     let isMounted = true;
     if (userId) {
@@ -357,7 +353,7 @@ const LeaveRequests = () => {
           </div>
 
           {/* Navigation Tabs - Only show if user is HR or Manager */}
-          {showTabs() && (
+          {
             <ul className="nav nav-tabs card-header-tabs">
               <li className="nav-item">
                 <button
@@ -382,7 +378,7 @@ const LeaveRequests = () => {
                 </li>
               )}
             </ul>
-          )}
+          }
         </div>
 
         <div className="card-body">

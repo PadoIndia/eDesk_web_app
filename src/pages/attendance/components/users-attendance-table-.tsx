@@ -409,12 +409,14 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
                       </td>
                       <td onClick={() => toggleRowExpansion(user.id)}>
                         <div className="d-flex align-items-center py-2">
-                          <Avatar
-                            fontSize={14}
-                            bgColor={Colors.BGColorList[5]}
-                            title={user.name}
-                            imageUrl={user.thumbnail}
-                          />
+                          <div>
+                            <Avatar
+                              fontSize={14}
+                              bgColor={Colors.BGColorList[5]}
+                              title={user.name}
+                              imageUrl={user.thumbnail}
+                            />
+                          </div>
                           <div className="ms-3">
                             <div className="fw-semibold text-dark">
                               {user.name}

@@ -21,8 +21,12 @@ const LeaveDashboard = () => {
   );
   const [loading, setLoading] = useState(true);
 
-  const userId = useAppSelector((s) => s.auth.userData?.user.id);
-
+  const user = useAppSelector((s) => s.auth.userData?.user);
+  const userId = user?.id;
+  const permissions = user?.permissions || [];
+  const isAdmin = permissions.some((p) =>
+    ["is_admin", "is_admin_department", "is_admin_team"].includes(p)
+  );
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
@@ -79,9 +83,11 @@ const LeaveDashboard = () => {
           <Link to="/hrm/apply-leave" className="btn btn-primary">
             <FaPlus className="me-2" /> Apply for Leave
           </Link>
-          <Link to="/hrm/leave-config" className="btn btn-primary">
-            <FaCalendarAlt className="me-2" /> Leave Configuration
-          </Link>
+          {isAdmin && (
+            <Link to="/hrm/leave-config" className="btn btn-primary">
+              <FaCalendarAlt className="me-2" /> Leave Configuration
+            </Link>
+          )}
         </div>
       </div>
 

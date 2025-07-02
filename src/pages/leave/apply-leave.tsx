@@ -18,6 +18,7 @@ import { LeaveScheme, LeaveRequestPayload } from "../../types/leave.types";
 import { UserDetails } from "../../types/user.types";
 import leaveTypeService from "../../services/api-services/leave-type.service";
 import Select from "react-select";
+import { formatDateForBackend } from "../../utils/helper";
 
 interface FormData {
   leaveTypeId: number;
@@ -444,8 +445,8 @@ const ApplyLeave = () => {
     try {
       const payload: LeaveRequestPayload = {
         leaveTypeId: formData.leaveTypeId,
-        startDate: formData.startDate!.toISOString(),
-        endDate: formData.endDate!.toISOString(),
+        startDate: formatDateForBackend(formData.startDate!),
+        endDate: formatDateForBackend(formData.endDate!),
         duration,
         reason: formData.reason.trim(),
       };
@@ -688,6 +689,7 @@ const ApplyLeave = () => {
                             excludeDates={datesToExclude.map(
                               (p) => new Date(p)
                             )}
+                            filterDate={(d) => d.getDay() !== 0}
                             placeholderText="Select start date"
                             dateFormat="MMMM d, yyyy"
                           />
@@ -714,6 +716,7 @@ const ApplyLeave = () => {
                             className={`form-control ${
                               formErrors.endDate ? "is-invalid" : ""
                             }`}
+                            filterDate={(d) => d.getDay() !== 0}
                             placeholderText="Select end date"
                             dateFormat="MMMM d, yyyy"
                           />
