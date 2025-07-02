@@ -6,12 +6,19 @@ import { TransactionFilters } from "./leave-transaction-components/transaction-f
 import { TransactionTable } from "./leave-transaction-components/transaction-tables";
 import { AddTransactionForm } from "./leave-transaction-components/add-transaction-form";
 import { TransactionsPagination } from "./leave-transaction-components/transaction-pagination";
+import { useAppSelector } from "../../store/store";
 
 const LeaveTransactions: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const { transactions, loading, users, leaveTypes, refetchTransactions } =
     useLeaveTransactions();
+
+  const userPermissinos =
+    useAppSelector((s) => s.auth.userData?.user.permissions) || [];
+  const isAdmin = userPermissinos.some((p) =>
+    ["is_admin", "is_admin_team", "is_admin_department"].includes(p)
+  );
 
   const {
     searchTerm,
@@ -45,24 +52,26 @@ const LeaveTransactions: React.FC = () => {
       <div className="card">
         <div className="card-header bg-light d-flex justify-content-between align-items-center">
           <h2 className="mb-0">Leave Transactions</h2>
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-secondary"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              {showAddForm ? (
-                <>
-                  <FaTrash className="me-1" />
-                  Cancel
-                </>
-              ) : (
-                <>
-                  <FaPlus className="me-1" />
-                  Add Transaction
-                </>
-              )}
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                {showAddForm ? (
+                  <>
+                    <FaTrash className="me-1" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <FaPlus className="me-1" />
+                    Add Transaction
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {showAddForm && (

@@ -1,5 +1,5 @@
 import { lazy, useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../store/store";
+import { useAppSelector } from "../../store/store";
 import { ToastContainer, toast } from "react-toastify";
 import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
 
@@ -8,7 +8,6 @@ import DashboardHeader from "./components/header";
 import ApproveRejectModal from "./components/approve-reject-modal";
 
 import { Punch } from "../../types/attendance.types";
-import { fetchUserPermissions } from "../../features/auth.slice";
 import UserDetailedAttendance from "./components/detailed-attendance";
 const RequestsTable = lazy(() => import("./components/requests-table"));
 const UsersAttendanceTable = lazy(
@@ -17,7 +16,6 @@ const UsersAttendanceTable = lazy(
 
 const AttendanceDashboard = () => {
   const userId = useAppSelector((state) => state.auth.userData?.user.id);
-  const dispatch = useAppDispatch();
   const [missPunchRequests, setMissPunchRequests] = useState<Punch[]>([]);
 
   const [showMissPunchForm, setShowMissPunchForm] = useState(false);
@@ -285,8 +283,6 @@ const AttendanceDashboard = () => {
   };
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      dispatch(fetchUserPermissions(currentUser.id));
-
       attendanceDashboardService
         .getPendingRequests(currentUser.id)
         .then((res) => {
@@ -297,7 +293,6 @@ const AttendanceDashboard = () => {
     }
   }, []);
 
-  console.log(currentUser?.permissions);
   return (
     <div className="px-5 mx-5 py-4">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -321,7 +316,9 @@ const AttendanceDashboard = () => {
           />
         )}
 
-        {currentView === "users-attendance" && <UsersAttendanceTable />}
+        {currentView === "users-attendance" && (
+          <UsersAttendanceTable onMissPunchRequest={handleMissPunchRequest} />
+        )}
         {currentView === "punch-requests" && (
           <RequestsTable
             filteredRequests={filteredRequests}

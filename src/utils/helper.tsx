@@ -24,7 +24,6 @@ import {
 } from "react-icons/fa";
 import { Punch } from "../types/attendance.types";
 import { RootState } from "../store/store";
-import teamService from "../services/api-services/team.service";
 import { useSelector } from "react-redux";
 import userService from "../services/api-services/user.service";
 import {
@@ -33,6 +32,7 @@ import {
   LeaveTransactionResponse,
   LeaveTypeResponse,
 } from "../types/leave.types";
+import generalService from "../services/api-services/general.service";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -451,11 +451,9 @@ export const IsHrManager = (): boolean => {
   return false;
 };
 
-export const isTeamManager = async (): Promise<boolean> => {
-  const teams = await teamService.getUserTeams();
-  const isManager = teams.data.some(
-    (team: { isAdmin: boolean }) => team.isAdmin
-  );
+export const isTeamManager = async (userId: number): Promise<boolean> => {
+  const teams = await generalService.getUserTeams(userId);
+  const isManager = teams.data.some((team) => team.isAdmin);
   if (isManager) return true;
   return false;
 };

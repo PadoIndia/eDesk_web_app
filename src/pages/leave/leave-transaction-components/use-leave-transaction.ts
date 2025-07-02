@@ -28,14 +28,9 @@ export const useLeaveTransactions = () => {
       const transformedTransactions = await Promise.all(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         transactionResponse.data.map(async (transaction: any) => {
-          const assignedByUser = await userService.getUserById(
-            transaction.assignedBy
-          );
           return {
             ...transaction,
-            userName: transaction.user?.name || "N/A",
             leaveType: transaction.leaveType?.name || "N/A",
-            assignedByName: assignedByUser?.data.name || "System",
           };
         })
       );

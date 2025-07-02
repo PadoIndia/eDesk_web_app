@@ -70,22 +70,23 @@ const LeaveRequests = () => {
 
   useEffect(() => {
     let isMounted = true;
-
-    const checkTeamManagerStatus = async () => {
-      try {
-        const isTeamManagerResult = await isTeamManager();
-        if (isMounted) {
-          setIsTeamManagerState(isTeamManagerResult);
+    if (userId) {
+      const checkTeamManagerStatus = async () => {
+        try {
+          const isTeamManagerResult = await isTeamManager(userId);
+          if (isMounted) {
+            setIsTeamManagerState(isTeamManagerResult);
+          }
+        } catch (error) {
+          console.error("Failed to check team manager status:", error);
+          if (isMounted) {
+            setIsTeamManagerState(false);
+          }
         }
-      } catch (error) {
-        console.error("Failed to check team manager status:", error);
-        if (isMounted) {
-          setIsTeamManagerState(false);
-        }
-      }
-    };
+      };
 
-    checkTeamManagerStatus();
+      checkTeamManagerStatus();
+    }
 
     return () => {
       isMounted = false;

@@ -6,7 +6,9 @@ interface TransactionRowProps {
   transaction: LeaveTransaction;
 }
 
-export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction }) => {
+export const TransactionRow: React.FC<TransactionRowProps> = ({
+  transaction,
+}) => {
   return (
     <tr>
       <td>
@@ -21,7 +23,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction }) =
           <div className="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
             <FaUser className="text-muted" />
           </div>
-          {transaction.userName || "Unknown User"}
+          {transaction.user?.name || "Unknown User"}
         </div>
       </td>
       <td>{transaction.leaveType || "Unknown Leave Type"}</td>
@@ -30,11 +32,9 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({ transaction }) =
         {transaction.count}
       </td>
       <td>
-        <small className="text-muted">
-          {transaction.comment || "-"}
-        </small>
+        <small className="text-muted">{transaction.comment || "-"}</small>
       </td>
-      <td>{transaction.assignedByName || "System"}</td>
+      <td>{transaction.assignedBy?.name || "System"}</td>
     </tr>
   );
 };

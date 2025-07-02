@@ -57,6 +57,16 @@ class AttendanceDashboardService extends ApiService {
   ): ApiResponse {
     return this.putData(`/miss-punch-request/${punchId}/approve`, approvalData);
   }
+
+  syncUserAttendance(
+    userId: number,
+    params: {
+      month: number;
+      year: number;
+    }
+  ): ApiResponse<boolean> {
+    return this.getData(`/${userId}/sync`, { params });
+  }
 }
 
 export default new AttendanceDashboardService();

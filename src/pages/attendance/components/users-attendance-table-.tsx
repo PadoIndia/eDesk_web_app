@@ -19,7 +19,10 @@ import { Colors } from "../../../utils/constants";
 const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
 
 interface UsersAttendanceTableProps {
-  onMissPunchRequest?: (date: string, userId: number) => void;
+  onMissPunchRequest?: (
+    date: string,
+    data: { id: number; name: string }
+  ) => void;
   onManualStatusChange?: (
     userId: number,
     date: string,
@@ -39,7 +42,9 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = () => {
+const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
+  onMissPunchRequest,
+}) => {
   const [users, setUsers] = useState<UserAttendanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -486,7 +491,12 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = () => {
                         <td colSpan={8} className="p-0">
                           <div className="animate-fade-in">
                             <div className="bg-white border-top border-bottom p-4">
-                              <UserDetailedAttendance userId={user.id} />
+                              <UserDetailedAttendance
+                                userId={user.id}
+                                fromMonth={month}
+                                fromYear={year}
+                                onMissPunchRequest={onMissPunchRequest}
+                              />
                             </div>
                           </div>
                         </td>

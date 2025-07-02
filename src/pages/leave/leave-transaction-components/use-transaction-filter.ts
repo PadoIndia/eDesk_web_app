@@ -13,7 +13,7 @@ export const useTransactionFilters = (transactions: LeaveTransaction[]) => {
   const filteredTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
       const matchesSearch =
-        (transaction.userName || "")
+        (transaction.user.name || "")
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         (transaction.leaveType || "")

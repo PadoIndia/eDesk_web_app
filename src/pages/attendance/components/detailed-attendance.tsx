@@ -35,6 +35,8 @@ interface UserDetailedAttendanceProps {
     currentStatus: string,
     userName: string
   ) => void;
+  fromMonth?: number;
+  fromYear?: number;
 }
 
 const statusToShortCode: { [key: string]: string } = {
@@ -99,13 +101,15 @@ const statusConfig: {
 const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   userId,
   onMissPunchRequest,
+  fromMonth,
+  fromYear,
 }) => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(
     null
   );
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(fromMonth || new Date().getMonth() + 1);
+  const [year, setYear] = useState(fromYear || new Date().getFullYear());
 
   const [activeTab, setActiveTab] = useState<
     "attendance" | "calls" | "classes" | "punchRequests"
@@ -114,6 +118,15 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   useEffect(() => {
     fetchDashboardData();
   }, [userId, month, year]);
+
+  useEffect(() => {
+    if (fromMonth) {
+      setMonth(fromMonth);
+    }
+    if (fromYear) {
+      setYear(fromYear);
+    }
+  }, [fromMonth, fromYear]);
 
   const fetchDashboardData = async () => {
     try {
@@ -227,6 +240,16 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   const getRowClass = (status: string) => {
     const config = statusConfig[status];
     return config ? config.bgClass : "";
+  };
+
+  const syncAttendance = () => {
+    attendanceDashboardService
+      .syncUserAttendance(userId, { month, year })
+      .then((res) => {
+        if (res.status === "success") {
+          fetchDashboardData();
+        } else toast.error(res.message);
+      });
   };
 
   const calculateMonthlySummary = () => {
@@ -359,10 +382,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
       <div className="card-body p-6">
         {/* User Header */}
         <div className="d-flex align-items-center bg-light border p-3 rounded mb-4">
-          <div
-            className="rounded-circle bg-white d-flex align-items-center justify-content-center me-3"
-            style={{ width: 40, height: 40 }}
-          >
+          <div className="rounded-circle bg-white d-flex align-items-center justify-content-center me-3">
             <Avatar
               title={dashboardData.user.name}
               imageUrl={null}
@@ -389,6 +409,14 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                 year: "numeric",
               })}
             </h5>
+          </div>
+          <div className="mx-2">
+            <button
+              className="btn btn-outline-primary"
+              onClick={syncAttendance}
+            >
+              Sync Attendance
+            </button>
           </div>
         </div>
 
@@ -572,7 +600,9 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   );
                   const fullStatus = getStatusForDate(day);
                   const shortStatus =
-                    statusToShortCode[fullStatus] || fullStatus;
+                    dayPunches.length > 0 && dayPunches.length % 2 == 0
+                      ? statusToShortCode[fullStatus] || fullStatus
+                      : "A";
                   const date = new Date(year, month - 1, day);
                   const dateStr = `${year}-${month
                     .toString()
@@ -613,12 +643,10 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                               .sort(
                                 (a, b) => a.hh * 60 + a.mm - (b.hh * 60 + b.mm)
                               )
-                              .map((punch, index) => (
+                              .map((punch) => (
                                 <div
                                   key={punch.id}
-                                  className={`badge ${
-                                    index % 2 === 0 ? "bg-success" : "bg-danger"
-                                  } rounded-pill px-3 py-2 d-flex align-items-center`}
+                                  className={`badge bg-secondary-subtle text-secondary  rounded-pill px-3 py-2 d-flex align-items-center`}
                                 >
                                   <span>{formatTime(punch.hh, punch.mm)}</span>
                                   {getPunchApprovalIcon(punch)}

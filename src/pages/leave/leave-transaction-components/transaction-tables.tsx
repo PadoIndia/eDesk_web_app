@@ -1,7 +1,7 @@
 import React from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { LeaveTransaction } from "./type";
-import {TransactionRow} from "./transaction-rows";
+import { TransactionRow } from "./transaction-rows";
 
 interface TransactionTableProps {
   transactions: LeaveTransaction[];

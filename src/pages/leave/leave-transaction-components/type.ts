@@ -1,7 +1,7 @@
 export interface LeaveTransaction {
   id: number;
   userId: number;
-  userName?: string;
+  user: { name: string };
   year: number;
   month: number;
   date: number;
@@ -10,5 +10,6 @@ export interface LeaveTransaction {
   count: number;
   comment: string | null;
   createdOn: string;
-  assignedByName: string | null;
+  assignedById: number;
+  assignedBy: { name: string | null };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FaCalendarAlt,
@@ -7,16 +7,25 @@ import {
   FaTimes,
   FaUsers,
 } from "react-icons/fa";
-import { useAppSelector } from "../../../store/store";
+import { useAppDispatch, useAppSelector } from "../../../store/store";
+import { fetchUserPermissions } from "../../../features/auth.slice";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const permissions = useAppSelector((s) => s.auth.userData?.user.permissions);
+  const currentUser = useAppSelector((s) => s.auth.userData?.user);
   const handleNavClick = () => {
     setIsOpen(false);
   };
-
+  const userId = currentUser?.id;
+  const permissions = currentUser?.permissions;
   const isAdmin = permissions?.includes("is_admin");
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchUserPermissions(userId));
+    }
+  }, []);
 
   return (
     <div
