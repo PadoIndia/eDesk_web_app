@@ -11,7 +11,7 @@ import { useAppSelector } from "../../store/store";
 const LeaveTransactions: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const { transactions, loading, users, leaveTypes, refetchTransactions } =
+  const { transactions, loading, users, refetchTransactions } =
     useLeaveTransactions();
 
   const userPermissinos =
@@ -81,7 +81,6 @@ const LeaveTransactions: React.FC = () => {
                 label: `${u.name} (${u.contact})`,
                 value: u.id,
               }))}
-              leaveTypes={leaveTypes}
               onSave={handleAddTransaction}
               onCancel={() => setShowAddForm(false)}
             />

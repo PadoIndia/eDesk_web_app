@@ -5,7 +5,7 @@ export const BASE_URL = isDev
   : "https://api-edesk.esaral.com/v1";
 
 export const mediaBaseUrl =
-  "https://myesaralbucket-destination.s3.ap-south-1.amazonaws.com/";
+  "https://edesk-destination.s3.ap-south-1.amazonaws.com/";
 
 export const socketUrl = isDev
   ? "http://localhost:3000"

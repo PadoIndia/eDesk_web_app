@@ -22,6 +22,7 @@ import {
   PunchData,
   UserDashboardData,
 } from "../../../types/attendance-dashboard.types";
+import { convertDayNameToInt } from "../../../utils/helper";
 
 interface UserDetailedAttendanceProps {
   userId: number;
@@ -198,7 +199,10 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
     // Check if it's Sunday (0 = Sunday in JavaScript)
     const dateObj = new Date(year, month - 1, date);
-    if (dateObj.getDay() === 0) {
+    if (
+      dateObj.getDay() ===
+      convertDayNameToInt(dashboardData.user.userDetails?.weekoff || "SUNDAY")
+    ) {
       return "HOLIDAY";
     }
 
@@ -385,7 +389,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
           <div className="rounded-circle bg-white d-flex align-items-center justify-content-center me-3">
             <Avatar
               title={dashboardData.user.name}
-              imageUrl={null}
+              imageUrl={dashboardData.user.profileImg?.url}
               fontSize={14}
             />
           </div>
@@ -598,7 +602,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   const dayPunches = dashboardData.punchData.filter(
                     (p) => p.date === day
                   );
-                  console.log(dayPunches, day, "LLLLL");
+
                   const fullStatus = getStatusForDate(day);
                   let shortStatus = statusToShortCode[fullStatus] || fullStatus;
                   if (
@@ -613,7 +617,11 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                     .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
                   const config = statusConfig[fullStatus];
                   const rowClass = getRowClass(fullStatus);
-                  const isSunday = date.getDay() === 0;
+                  const isWeekOff =
+                    date.getDay() ===
+                    convertDayNameToInt(
+                      dashboardData.user.userDetails?.weekoff || "SUNDAY"
+                    );
 
                   return (
                     <tr key={day} className={`${rowClass}`}>
@@ -623,7 +631,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                             <div className="fw-bold">{day}</div>
                             <small
                               className={`${
-                                isSunday
+                                isWeekOff
                                   ? "text-danger fw-semibold"
                                   : "text-muted"
                               }`}
@@ -687,10 +695,10 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                         </span>
                       </td>
                       <td className={"text-center " + rowClass}>
-                        {isSunday && !dayPunches.length ? (
+                        {isWeekOff && !dayPunches.length ? (
                           <span className="badge bg-info bg-opacity-25 text-info px-3 py-2">
                             <FaCalendarAlt className="me-1" size={12} />
-                            Sunday
+                            Week Off
                           </span>
                         ) : (
                           <div className="d-flex gap-2 justify-content-center">

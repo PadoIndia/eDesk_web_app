@@ -27,7 +27,7 @@ class GeneralService extends ApiService {
       formData.append("hashes", d.hash);
     });
 
-    return this.postData("", formData, {
+    return this.postData("/uploads", formData, {
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress,
     });

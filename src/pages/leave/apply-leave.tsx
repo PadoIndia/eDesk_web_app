@@ -18,7 +18,7 @@ import { LeaveScheme, LeaveRequestPayload } from "../../types/leave.types";
 import { UserDetails } from "../../types/user.types";
 import leaveTypeService from "../../services/api-services/leave-type.service";
 import Select from "react-select";
-import { formatDateForBackend } from "../../utils/helper";
+import { convertDayNameToInt, formatDateForBackend } from "../../utils/helper";
 
 interface FormData {
   leaveTypeId: number;
@@ -70,7 +70,6 @@ const ApplyLeave = () => {
     halfDayTypeEnd: undefined,
   });
   const [datesToExclude, setDatesToExclude] = useState<Date[]>([]);
-
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   const currentUserId = useAppSelector((s) => s.auth.userData?.user.id);
@@ -232,7 +231,6 @@ const ApplyLeave = () => {
     setSelectedUserId(id);
 
     resetForm();
-
     if (formErrors.selectedUserId) {
       setFormErrors((prev) => ({
         ...prev,
@@ -689,7 +687,12 @@ const ApplyLeave = () => {
                             excludeDates={datesToExclude.map(
                               (p) => new Date(p)
                             )}
-                            filterDate={(d) => d.getDay() !== 0}
+                            filterDate={(d) =>
+                              d.getDay() !==
+                              convertDayNameToInt(
+                                userDetails?.weekoff || "SUNDAY"
+                              )
+                            }
                             placeholderText="Select start date"
                             dateFormat="MMMM d, yyyy"
                           />
@@ -716,7 +719,12 @@ const ApplyLeave = () => {
                             className={`form-control ${
                               formErrors.endDate ? "is-invalid" : ""
                             }`}
-                            filterDate={(d) => d.getDay() !== 0}
+                            filterDate={(d) =>
+                              d.getDay() !==
+                              convertDayNameToInt(
+                                userDetails?.weekoff || "SUNDAY"
+                              )
+                            }
                             placeholderText="Select end date"
                             dateFormat="MMMM d, yyyy"
                           />

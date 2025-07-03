@@ -169,12 +169,11 @@ export interface GetMyLeaveRequestsQuery {
 // Request types for Leave Transactions
 export interface CreateLeaveTransactionRequest {
   userId: number;
-  year: number;
-  month: number; // 1-12
-  date: number; // 1-31
-  leaveTypeId: number;
-  count: number; // Can be negative for deductions
-  comment?: string;
+  transactions: {
+    leaveTypeId: number;
+    count: number;
+    comment?: string;
+  }[];
 }
 
 export interface UpdateLeaveTransactionRequest {

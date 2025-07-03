@@ -1,3 +1,5 @@
+import { DAY } from "./attendance-dashboard.types";
+
 export type User = {
   id: number;
   name: string;
@@ -43,7 +45,7 @@ export type UserDetails = {
   dob: string | null;
   gender: TGender;
   leaveSchemeId: number | null;
-  weekoff?: string;
+  weekoff?: DAY;
 };
 
 export type CreateUserPayload = Prettify<

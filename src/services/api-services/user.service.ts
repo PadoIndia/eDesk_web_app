@@ -4,6 +4,7 @@ import {
   UpdateUserDepartmentPayload,
   UpdateUserTeamPayload,
 } from "../../types/department-team.types";
+import { LeaveTypeResponse } from "../../types/leave.types";
 import { UserPermissionResponse } from "../../types/permission.types";
 import {
   Address,
@@ -89,6 +90,10 @@ class UserService extends ApiService {
     permissionId: number
   ): ApiResponse<number> {
     return this.deleteData(`/${userId}/permissions/${permissionId}`);
+  }
+
+  getLeaveTypesByUserId(userId: number): ApiResponse<LeaveTypeResponse[]> {
+    return this.getData(`/${userId}/leave-types`);
   }
 }
 

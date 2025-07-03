@@ -102,10 +102,24 @@ export interface ClassData {
   comment?: string;
 }
 
+export type DAY =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
 export interface UserDashboardData {
   user: {
     id: number;
     name: string;
+    userDetails: null | {
+      weekoff: DAY;
+    };
+    profileImg: null | {
+      url: string;
+    };
     departments: Array<{
       id: number;
       name: string;

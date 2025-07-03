@@ -33,6 +33,7 @@ import {
   LeaveTypeResponse,
 } from "../types/leave.types";
 import generalService from "../services/api-services/general.service";
+import { DAY } from "../types/attendance-dashboard.types";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -528,4 +529,24 @@ export const formatDateForBackend = (date: Date): string => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+
+export const convertDayNameToInt = (day: DAY) => {
+  switch (day) {
+    case "SUNDAY":
+      return 0;
+    case "MONDAY":
+      return 1;
+    case "TUESDAY":
+      return 2;
+    case "WEDNESDAY":
+      return 3;
+    case "THURSDAY":
+      return 4;
+    case "FRIDAY":
+      return 5;
+    case "SATURDAY":
+      return 6;
+  }
 };
