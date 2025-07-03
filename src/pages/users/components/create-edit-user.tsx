@@ -23,6 +23,7 @@ import {
   PermissionResponse,
   UserPermissionResponse,
 } from "../../../types/permission.types";
+import { DAY } from "../../../types/attendance-dashboard.types";
 
 interface UserFormProps {
   id: number | null;
@@ -69,7 +70,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     dob: "",
     joiningDate: "",
     leaveSchemeId: null,
-    weekoff: "",
+    weekoff: "SUNDAY",
   });
 
   const [formData, setFormData] = useState<UserInfo>({
@@ -841,7 +842,10 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                   className="form-select"
                   value={userDetails.weekoff}
                   onChange={(e) =>
-                    setUserDetails({ ...userDetails, weekoff: e.target.value })
+                    setUserDetails({
+                      ...userDetails,
+                      weekoff: e.target.value as DAY,
+                    })
                   }
                   required
                 >
