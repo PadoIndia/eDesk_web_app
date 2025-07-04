@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MdClose, MdOutlineTimer, MdDelete } from "react-icons/md";
 import {
   TimestampPayload,
@@ -8,31 +8,29 @@ import videoService from "../../../services/api-services/video.service";
 import Hls from "hls.js";
 import { formatSeconds } from "../../../utils/helper";
 import { useAppSelector } from "../../../store/store";
+import { toast } from "react-toastify";
 
 type Props = {
   id: number;
   poster: string;
   src: string;
-  timestamps: TimestampResponse[];
-  addTimeStamp: (data: TimestampPayload) => void;
-  updateTimeStamp: (data: TimestampResponse) => void;
-  deleteTimestamp: (id: number) => void;
+  initialTimestamps: TimestampResponse[];
+  durationInSec: number;
 };
 
 const VideoPlayer = ({
   id,
   poster,
   src,
-  timestamps,
-  addTimeStamp,
-  updateTimeStamp,
-  deleteTimestamp,
+  initialTimestamps,
+  durationInSec,
 }: Props) => {
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-
+  const [timestamps, setTimestamps] =
+    useState<TimestampResponse[]>(initialTimestamps);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showAddButton, setShowAddButton] = useState(false);
@@ -46,8 +44,18 @@ const VideoPlayer = ({
 
   useEffect(() => {
     const video = videoRef.current;
+    let timestampIntervalId: number | null = null;
     if (!video) return;
-
+    timestampIntervalId = setInterval(
+      () =>
+        videoService.getTimestamps(id).then((res) => {
+          if (res.status === "success") {
+            setTimestamps(res.data);
+          }
+        }),
+      10000
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let intervalId: any = null;
     let hls: Hls | null = null;
 
@@ -101,6 +109,9 @@ const VideoPlayer = ({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       stopSync();
       if (hls) hls.destroy();
+      if (timestampIntervalId) {
+        clearInterval(timestampIntervalId);
+      }
     };
   }, [src]);
 
@@ -144,6 +155,60 @@ const VideoPlayer = ({
     setLabelInput("");
     setShowTooltip(true);
   };
+
+  const addTimeStamp = useCallback(
+    (data: TimestampPayload) => {
+      if (id) {
+        const time = data.timeInSec;
+        const existsWithTime = timestamps.find((i) => i.timeInSec === time);
+        if (existsWithTime)
+          return toast.error("A timestamp for this time already exists");
+        if (time < 0 || time > durationInSec)
+          return toast.error(
+            `Timestamp must be between 0 and ${durationInSec} seconds`
+          );
+
+        videoService.addTimestamp(Number(id), data).then((res) => {
+          if (res.status === "success") {
+            setTimestamps((prev) => [...prev, res.data]);
+            toast.success(res.message);
+          } else toast.error(res.message);
+        });
+      }
+    },
+    [id]
+  );
+
+  const updateTimeStamp = useCallback(
+    (data: TimestampResponse) => {
+      if (id) {
+        videoService
+          .updateTimestamp(Number(id), data.id, {
+            comment:
+              data.comment || `Timestamp-${(timestamps.length || 0) + 1}`,
+            timeInSec: data.timeInSec,
+          })
+          .then((res) => {
+            if (res.status === "success") {
+              toast.success(res.message);
+            } else toast.error(res.message);
+          });
+      }
+    },
+    [id]
+  );
+  const deleteTimestamp = useCallback(
+    (timeStampId: number) => {
+      if (id) {
+        videoService.deleteTimestamp(Number(id), timeStampId).then((res) => {
+          if (res.status === "success") {
+            toast.success(res.message);
+          } else toast.error(res.message);
+        });
+      }
+    },
+    [id]
+  );
 
   const handleSave = () => {
     addTimeStamp({

@@ -57,6 +57,10 @@ class VideoService extends ApiService {
     return this.deleteData(`/${id}/tags/${tagId}`);
   }
 
+  getTimestamps(id: number): ApiResponse<TimestampResponse[]> {
+    return this.getData(`/${id}/timestamps`);
+  }
+
   addTimestamp(
     id: number,
     data: TimestampPayload

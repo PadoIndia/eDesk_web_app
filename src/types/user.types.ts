@@ -14,12 +14,18 @@ export type User = {
   status: string | null;
   isActive: boolean;
   lastSeen: Date | null;
+  userDepartment: {
+    department: { name: string };
+  }[];
+  userTeam: {
+    team: { name: string };
+  }[];
 };
 
 export type TGender = "MALE" | "FEMALE" | "OTHER";
 
 export type AdminUser = Prettify<
-  User & {
+  Omit<User, "userTeam" | "userDepartment"> & {
     userDetails: UserDetails | null;
     userDepartment: UserDepartmentResp[];
     userTeam: UserTeamResp[];
@@ -37,7 +43,10 @@ export type UserTeamResp = {
 };
 
 export type UserInfo = Prettify<
-  Omit<User, "id" | "profileImg" | "lastSeen" | "status">
+  Omit<
+    User,
+    "id" | "profileImg" | "lastSeen" | "status" | "userDepartment" | "userTeam"
+  >
 >;
 
 export type UserDetails = {

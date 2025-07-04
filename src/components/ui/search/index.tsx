@@ -6,6 +6,7 @@ type Props = {
   onChange: (value: string) => void;
   placeholder?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  shouldSkipSubmit?: boolean;
 };
 
 const Search = ({
@@ -13,6 +14,7 @@ const Search = ({
   onChange,
   placeholder,
   onKeyDown = () => {},
+  shouldSkipSubmit = false,
 }: Props) => {
   return (
     <form className="search-container">
@@ -23,7 +25,7 @@ const Search = ({
         placeholder={placeholder || "Search videos..."}
         value={value}
         onKeyDown={(e) => onKeyDown(e)}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => (shouldSkipSubmit ? {} : onChange(e.target.value))}
       />
     </form>
   );

@@ -10,6 +10,7 @@ export interface ModalProps {
   showCloseIcon?: boolean;
   footer?: React.ReactNode;
   size?: "sm" | "md" | "lg";
+  closeOnOverlayClick?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -20,13 +21,14 @@ const Modal: React.FC<ModalProps> = ({
   showCloseIcon = true,
   footer,
   size = "md",
+  closeOnOverlayClick = true,
 }) => {
   if (!isOpen) return null;
 
   const modalContent = (
     <div
       className="modal-overlay"
-      onClick={onClose}
+      onClick={() => (closeOnOverlayClick ? onClose() : null)}
       style={{ cursor: "pointer" }}
     >
       <div

@@ -558,9 +558,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
         }
       } else {
         setActiveTab("assignments");
-        toast.success(
-          "User details validated. Please assign departments and teams."
-        );
       }
     } catch (error) {
       console.error("Error saving user details:", error);
@@ -578,8 +575,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
     setAssignmentLoading(true);
     try {
       if (id) {
-        // For existing users, departments and teams are already handled in real-time
-        // This submission is just for completion
         toast.success("Assignments updated successfully");
         if (hasAdminPermission) {
           setActiveTab("permissions");
@@ -587,7 +582,6 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           onSuccess();
         }
       } else {
-        // For new users, create the user with all data
         const selectedDeptIds = userDepartments.map((d) => d.departmentId);
         const validTeams = userTeams.filter((team) => {
           const teamDepartment = departments.find((dept) =>
@@ -603,7 +597,17 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
           password: formData.password,
           empCode: formData.empCode || null,
           isActive: formData.isActive,
-          userDetails: userDetails,
+          userDetails: {
+            ...(userDetails.dob && { dob: userDetails.dob }),
+            ...(userDetails.joiningDate && {
+              joiningDate: userDetails.joiningDate,
+            }),
+            gender: userDetails.gender,
+            ...(userDetails.leaveSchemeId && {
+              leaveSchemeId: userDetails.leaveSchemeId,
+            }),
+            ...(userDetails.weekoff && { weekoff: userDetails.weekoff }),
+          } as UserDetails,
           departments: userDepartments.map((d) => ({
             departmentId: d.departmentId,
             isAdmin: d.isAdmin,
@@ -802,9 +806,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                 </select>
               </div>
               <div className="mb-3 d-flex flex-column">
-                <label className="form-label">
-                  Date of Birth <span className="text-danger">*</span>
-                </label>
+                <label className="form-label">Date of Birth</label>
                 <DatePicker
                   selected={dobDate}
                   onChange={(date) => handleDateChange("dob", date)}
@@ -818,9 +820,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                 />
               </div>
               <div className="mb-3 d-flex flex-column">
-                <label className="form-label">
-                  Joining Date <span className="text-danger">*</span>
-                </label>
+                <label className="form-label">Joining Date</label>
                 <DatePicker
                   selected={joiningDateValue}
                   onChange={(date) => handleDateChange("joiningDate", date)}
@@ -835,9 +835,7 @@ const CreateEditUser: React.FC<UserFormProps> = ({ id, onSuccess }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label">
-                  Week Off <span className="text-danger">*</span>
-                </label>
+                <label className="form-label">Week Off</label>
                 <select
                   className="form-select"
                   value={userDetails.weekoff}

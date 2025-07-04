@@ -2,16 +2,10 @@ import VideoPlayer from "./components/video-player";
 import VideoInfo from "./components/video-info";
 import { useParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
-import {
-  SingleVideoResponse,
-  TimestampPayload,
-  TimestampResponse,
-  VideoResponse,
-} from "../../types/video.types";
+import { SingleVideoResponse, VideoResponse } from "../../types/video.types";
 import videoService from "../../services/api-services/video.service";
 import RelatedVideoTile from "./components/related-video-tile";
 import "./styles.css";
-import { toast } from "react-toastify";
 
 export default function VideoPage() {
   const { id } = useParams();
@@ -49,62 +43,6 @@ export default function VideoPage() {
     fetchVidDetails();
   }, [id]);
 
-  const addTimeStamp = useCallback(
-    (data: TimestampPayload) => {
-      if (id && vidDetails) {
-        const time = data.timeInSec;
-        const existsWithTime = vidDetails.timestamps.find(
-          (i) => i.timeInSec === time
-        );
-        if (existsWithTime)
-          return toast.error("A timestamp for this time already exists");
-        if (time < 0 || time > vidDetails.durationInSec)
-          return toast.error(
-            `Timestamp must be between 0 and ${vidDetails.durationInSec} seconds`
-          );
-
-        videoService.addTimestamp(Number(id), data).then((res) => {
-          if (res.status === "success") {
-            fetchVidDetails();
-          } else toast.error(res.message);
-        });
-      }
-    },
-    [id, fetchVidDetails, vidDetails]
-  );
-
-  const updateTimeStamp = useCallback(
-    (data: TimestampResponse) => {
-      if (id && vidDetails) {
-        videoService
-          .updateTimestamp(Number(id), data.id, {
-            comment:
-              data.comment ||
-              `Timestamp-${(vidDetails?.timestamps.length || 0) + 1}`,
-            timeInSec: data.timeInSec,
-          })
-          .then((res) => {
-            if (res.status === "success") {
-              fetchVidDetails();
-            } else toast.error(res.message);
-          });
-      }
-    },
-    [id, fetchVidDetails, vidDetails]
-  );
-  const deleteTimestamp = useCallback(
-    (timeStampId: number) => {
-      if (id) {
-        videoService.deleteTimestamp(Number(id), timeStampId).then((res) => {
-          if (res.status === "success") {
-            fetchVidDetails();
-          } else toast.error(res.message);
-        });
-      }
-    },
-    [id, fetchVidDetails]
-  );
-
   if (!vidDetails) return <div>Loading...</div>;
 
   return (
@@ -114,11 +52,9 @@ export default function VideoPage() {
           <div className="col-lg-8 p-0">
             <div className="card">
               <VideoPlayer
-                timestamps={vidDetails.timestamps}
+                durationInSec={vidDetails.durationInSec || 0}
+                initialTimestamps={vidDetails.timestamps}
                 id={Number(id)}
-                addTimeStamp={addTimeStamp}
-                updateTimeStamp={updateTimeStamp}
-                deleteTimestamp={deleteTimestamp}
                 poster={vidDetails.thumbnailLr || ""}
                 src={`https://${vidDetails.clientId}.gvideo.io/videos/${vidDetails.clientId}_${vidDetails.slug}/master.m3u8`}
               />
