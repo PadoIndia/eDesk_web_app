@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { UpdateSelfPayload, User, UserDetails } from "../../types/user.types";
+import {
+  AdminUser,
+  UpdateSelfPayload,
+  User,
+  UserDetails,
+} from "../../types/user.types";
 import { ProfileSection } from "./components/profile-section";
 import { ContactsSection } from "./components/contact-section";
 import { AddressesSection } from "./components/address-section";
@@ -10,7 +15,7 @@ import userService from "../../services/api-services/user.service";
 
 const UserFullDetails = () => {
   const { userId } = useParams();
-  const [userData, setUserData] = useState<User>({} as User);
+  const [userData, setUserData] = useState<AdminUser>({} as AdminUser);
   const [userDetails, setUserDetails] = useState<UserDetails>(
     {} as UserDetails
   );
@@ -24,8 +29,8 @@ const UserFullDetails = () => {
         const resp = await userService.getUserById(Number(userId));
         if (resp.status === "success") {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { userDetails, userDepartment: __, ...data } = resp.data;
-          setUserData(data);
+          const { userDetails } = resp.data;
+          setUserData(resp.data);
           if (userDetails) setUserDetails(userDetails);
           initializeDraft(resp.data);
         } else toast.error(resp.message);
