@@ -1,5 +1,6 @@
+import { FC, useRef } from "react";
 import "./styles.css";
-import { IoSearch } from "react-icons/io5";
+import { IoClose, IoSearch } from "react-icons/io5";
 
 type Props = {
   value: string;
@@ -32,3 +33,42 @@ const Search = ({
 };
 
 export default Search;
+
+interface SearchBoxProps {
+  value: string;
+  placeholder?: string;
+  onChange: (val: string) => void;
+}
+
+export const SearchBox: FC<SearchBoxProps> = ({
+  value,
+  onChange,
+  placeholder,
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleReset = () => {
+    onChange("");
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div className="form">
+      <button type="button" className="btn border-0 btn-body">
+        <IoSearch />
+      </button>
+      <input
+        ref={inputRef}
+        className="input"
+        placeholder={placeholder || "Type your text"}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
+      <button className="reset border-0" type="button" onClick={handleReset}>
+        <IoClose />
+      </button>
+    </div>
+  );
+};

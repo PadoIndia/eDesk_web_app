@@ -13,9 +13,6 @@ const VideoSearchPage = React.lazy(() => import("./pages/search"));
 const SocialMediaManagement = React.lazy(() => import("./pages/social-media"));
 const Uploads = React.lazy(() => import("./pages/uploads"));
 
-const UsersList = React.lazy(
-  () => import("./pages/users/components/user-list")
-);
 const HrmApp = React.lazy(() => import("./hrm-app"));
 const Loading = React.lazy(() => import("./components/loading"));
 const ChatPage = React.lazy(() => import("./pages/chats"));
@@ -55,7 +52,6 @@ function App() {
         <Route path="search" element={<VideoSearchPage />} />
         <Route path="social-media" element={<SocialMediaManagement />} />
         <Route path="uploads" element={<Uploads />} />
-        <Route path="users/list" element={<UsersList />} />
         <Route
           path="chats"
           element={
@@ -63,6 +59,10 @@ function App() {
               <ChatPage />
             </Suspense>
           }
+        />
+        <Route
+          path="users/list"
+          element={<Navigate to="/hrm/users/list" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

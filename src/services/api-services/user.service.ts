@@ -8,14 +8,15 @@ import { LeaveTypeResponse } from "../../types/leave.types";
 import { UserPermissionResponse } from "../../types/permission.types";
 import {
   Address,
-  Contact,
   CreateContact,
   User,
-  Document,
   AdminUser,
   CreateUserPayload,
   UpdateUserPayload,
   UpdateSelfPayload,
+  ContactResponse,
+  DocumentPayload,
+  DocumentResponse,
 } from "../../types/user.types";
 import ApiService from "./api-service";
 
@@ -40,28 +41,51 @@ class UserService extends ApiService {
     return this.postData(``, user);
   }
 
-  getUserContactsById(id: number): ApiResponse<Contact> {
-    return this.getData(`/contacts/${id}`);
+  getUserContacts(userId: number): ApiResponse<ContactResponse> {
+    return this.getData(`/${userId}/contacts`);
   }
 
-  createUserContact(conatct: CreateContact): ApiResponse<CreateContact> {
+  createUserContact(
+    userId: number,
+    conatct: CreateContact
+  ): ApiResponse<ContactResponse> {
     console.log("contact details", conatct);
-    return this.postData(`/contacts`, conatct);
+    return this.postData(`/${userId}/contacts`, conatct);
+  }
+  updateUserContact(
+    userId: number,
+    contactId: number,
+    data: Partial<CreateContact>
+  ): ApiResponse<ContactResponse> {
+    return this.putData(`/${userId}/contacts/${contactId}`, data);
   }
 
-  getUserAddressById(id: number): ApiResponse<Address> {
-    return this.getData(`/address/${id}`);
+  getUserAddresses(userId: number): ApiResponse<Address> {
+    return this.getData(`/${userId}/address`);
   }
 
-  createUserAddress(address: Address): ApiResponse<Address> {
-    return this.postData(`/address`, address);
+  createUserAddress(
+    userId: number,
+    address: Omit<Address, "id">
+  ): ApiResponse<Address> {
+    return this.postData(`/${userId}/address`, address);
+  }
+  updateUserAddress(
+    userId: number,
+    addressId: number,
+    address: Partial<Omit<Address, "id">>
+  ): ApiResponse<Address> {
+    return this.putData(`/${userId}/address/${addressId}`, address);
   }
 
-  createUserDocument(document: Document): ApiResponse {
-    return this.postData(`/documents`, document);
+  createUserDocument(
+    userId: number,
+    document: DocumentPayload
+  ): ApiResponse<DocumentResponse> {
+    return this.postData(`/${userId}/documents`, document);
   }
 
-  getUserDocuments(userId: number): ApiResponse<Document[]> {
+  getUserDocuments(userId: number): ApiResponse<DocumentResponse[]> {
     return this.getData(`/${userId}/documents`);
   }
 

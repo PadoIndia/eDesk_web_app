@@ -1,11 +1,8 @@
 import { Link } from "react-router-dom";
 
-const Navbar = () => {
-
-  
-
+const HrmNavbar = () => {
   return (
-    <nav className="navbar navbar-expand-md bg-white shadow-sm sticky-top px-3 w-100">
+    <nav className="navbar navbar-expand-md bg-white shadow-sm sticky-top px-3">
       <button
         className="navbar-toggler d-md-none me-2"
         type="button"
@@ -29,4 +26,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default HrmNavbar;

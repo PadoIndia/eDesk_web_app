@@ -1,4 +1,5 @@
 import { DAY } from "./attendance-dashboard.types";
+import { MediaType } from "./chat";
 
 export type User = {
   id: number;
@@ -6,14 +7,14 @@ export type User = {
   username: string;
   contact: string;
   password: string | null;
-  profileImg: {
+  profileImg: null | {
     id?: bigint;
     url: string | null;
   };
   empCode: string | null;
   status: string | null;
   isActive: boolean;
-  lastSeen: Date | null;
+  lastSeen: string | null;
   userDepartment: {
     department: { name: string };
   }[];
@@ -31,6 +32,7 @@ export type AdminUser = Prettify<
     userTeam: UserTeamResp[];
   }
 >;
+
 export type UserDepartmentResp = {
   department: { name: string; slug: string };
   isAdmin: boolean;
@@ -42,13 +44,6 @@ export type UserTeamResp = {
   teamId: number;
 };
 
-export type UserInfo = Prettify<
-  Omit<
-    User,
-    "id" | "profileImg" | "lastSeen" | "status" | "userDepartment" | "userTeam"
-  >
->;
-
 export type UserDetails = {
   joiningDate: string;
   dob: string | null;
@@ -56,6 +51,13 @@ export type UserDetails = {
   leaveSchemeId: number | null;
   weekoff?: DAY;
 };
+
+export type UserInfo = Prettify<
+  Omit<
+    User,
+    "id" | "profileImg" | "lastSeen" | "status" | "userDepartment" | "userTeam"
+  >
+>;
 
 export type CreateUserPayload = Prettify<
   UserInfo & {
@@ -99,14 +101,6 @@ export type CreateUserDetails = {
   weekoff: string;
 };
 
-export type Contact = {
-  id: number;
-  relation: string;
-  name: string;
-  value: string;
-  contactType: "EMAIL" | "WHATSAPP" | "PHONE" | "OTHER";
-};
-
 export type CreateContact = {
   relation: string;
   name: string;
@@ -115,7 +109,7 @@ export type CreateContact = {
 };
 
 export type Address = {
-  id?: number;
+  id: number;
   addressType: "PERMANENT" | "CURRENT";
   address: string;
   landmark?: string | null;
@@ -125,6 +119,15 @@ export type Address = {
   isPrimary?: boolean;
   isActive?: boolean;
 };
+
+export type ContactResponse = Prettify<
+  CreateContact & {
+    id: number;
+    createdOn: string;
+    updatedOn: string;
+    userId: number;
+  }
+>;
 
 // export type Document = {
 //   title: string;
@@ -162,15 +165,20 @@ export interface FileDetails {
   resolution?: null;
 }
 
-export interface Document {
-  id?: number;
+export interface DocumentPayload {
   title: string;
   fileId: number;
   documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
-  createdOn?: string;
-  updatedOn?: string;
-  // userId: number;
-  file?: FileDetails | null;
+}
+export interface DocumentResponse {
+  id: number;
+  title: string;
+  fileId: number;
+  documentType: "AADHAR" | "PAN" | "PASSPORT" | "VOTER_ID" | "DRIVING_LICENCE";
+  createdOn: string;
+  updatedOn: string;
+  userId: number;
+  file: { url: string; type: MediaType; size: number } | null;
 }
 
 export type TPermission =

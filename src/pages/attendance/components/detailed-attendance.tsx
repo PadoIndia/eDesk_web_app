@@ -382,9 +382,8 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   const punchRequests = getPunchRequests();
 
   return (
-    <div className="card shadow-sm rounded-lg">
+    <div className="card rounded-lg" style={{ border: "1px solid #f1f1f1" }}>
       <div className="card-body p-6">
-        {/* User Header */}
         <div className="d-flex align-items-center bg-light border p-3 rounded mb-4">
           <div className="rounded-circle bg-white d-flex align-items-center justify-content-center me-3">
             <Avatar
@@ -424,7 +423,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
           </div>
         </div>
 
-        {/* Summary Cards */}
         {summary && (
           <div className="row mb-6">
             <div className="col-md-3 mb-3">
@@ -484,7 +482,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
           </div>
         )}
 
-        {/* Tab Navigation */}
         <ul className="nav nav-tabs mb-4">
           <li className="nav-item">
             <button
@@ -545,7 +542,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
             </button>
           </li>
           <div className="d-flex ms-auto align-items-center gap-2">
-            {/* Month Picker */}
             <select
               value={month}
               onChange={(e) => setMonth(+e.target.value)}
@@ -558,7 +554,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
               ))}
             </select>
 
-            {/* Year Picker */}
             <select
               value={year}
               onChange={(e) => setYear(+e.target.value)}
@@ -576,7 +571,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
           </div>
         </ul>
 
-        {/* Tab Content */}
         {activeTab === "attendance" && (
           <div className="table-responsive">
             <table className="table table-hover align-middle">

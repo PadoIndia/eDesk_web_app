@@ -5,14 +5,10 @@ import { useDispatch } from "react-redux";
 import { setUserDepartments } from "./features/user-department.slice";
 import React from "react";
 import generalService from "./services/api-services/general.service";
+import HrmLayout from "./components/layout/hrm-layout";
 
 const Dashboard = React.lazy(() => import("./pages/dashboard/dashboard"));
-const HrmNavbar = React.lazy(
-  () => import("./components/layout/navbar/hrm-index")
-);
-const HrmSidebar = React.lazy(
-  () => import("./components/layout/sidebar/hrm-index")
-);
+
 const Attendance = React.lazy(() => import("./pages/attendance/attendance"));
 const DepartmentManagement = React.lazy(
   () => import("./pages/department/department-management")
@@ -31,8 +27,8 @@ const LeaveConfiguration = React.lazy(
 const UserLeaveBalances = React.lazy(
   () => import("./pages/leave/user-leave-balance")
 );
-const UserDetails = React.lazy(() => import("./pages/users/user-details"));
-const UserEditForm = React.lazy(() => import("./pages/users/user-edit-form"));
+
+const UsersList = React.lazy(() => import("./pages/users/user-list"));
 
 function HrmApp() {
   const dispatch = useDispatch<AppDispatch>();
@@ -50,23 +46,22 @@ function HrmApp() {
 
   return (
     <div className="d-flex flex-column min-vh-100">
-      <HrmNavbar />
-      <HrmSidebar />
       <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/users/:userId" element={<UserDetails />} />
-        <Route path="/users/edit/:userId" element={<UserEditForm />} />
-        <Route path="/leave" element={<LeaveDashboard />} />
-        <Route path="/apply-leave" element={<ApplyLeave />} />
-        <Route path="/leave-requests" element={<LeaveRequests />} />
-        <Route path="/leave-transactions" element={<LeaveTransactions />} />
-        <Route path="/leave-config" element={<LeaveConfiguration />} />
-        <Route path="/user-leave-balances" element={<UserLeaveBalances />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route
-          path="/department-management"
-          element={<DepartmentManagement />}
-        />
+        <Route path="/" element={<HrmLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/users/list" element={<UsersList />} />
+          <Route path="/leave" element={<LeaveDashboard />} />
+          <Route path="/apply-leave" element={<ApplyLeave />} />
+          <Route path="/leave-requests" element={<LeaveRequests />} />
+          <Route path="/leave-transactions" element={<LeaveTransactions />} />
+          <Route path="/leave-config" element={<LeaveConfiguration />} />
+          <Route path="/user-leave-balances" element={<UserLeaveBalances />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route
+            path="/department-management"
+            element={<DepartmentManagement />}
+          />
+        </Route>
       </Routes>
     </div>
   );

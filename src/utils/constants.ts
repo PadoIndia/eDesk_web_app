@@ -15,6 +15,7 @@ export const LoginPageConstantLines = {
 
 export const Colors = {
   primary: "#5F46E3",
+  accent: "#7c66ec",
   background: "#FFFFFF",
   danger: "#CC2C2C",
   black: "#0D1015",

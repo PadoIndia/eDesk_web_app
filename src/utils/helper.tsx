@@ -34,6 +34,7 @@ import {
 } from "../types/leave.types";
 import generalService from "../services/api-services/general.service";
 import { DAY } from "../types/attendance-dashboard.types";
+import uploadService from "../services/api-services/upload-service";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -531,7 +532,6 @@ export const formatDateForBackend = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-
 export const convertDayNameToInt = (day: DAY) => {
   switch (day) {
     case "SUNDAY":
@@ -549,4 +549,21 @@ export const convertDayNameToInt = (day: DAY) => {
     case "SATURDAY":
       return 6;
   }
+};
+
+export const uploadMediaFile = async (file: File) => {
+  const hash = await generateSHA256(file);
+  const existResp = await uploadService.checkHash({
+    hash,
+    type: file.type,
+    mimeType: file.type,
+  });
+  if (existResp.status === "success" && existResp.data) {
+    return existResp.data;
+  }
+  const resp = await uploadService.uploadFile([{ image: file, hash }]);
+  if (resp.status === "success") {
+    return resp.data[0];
+  }
+  throw new Error(resp.message);
 };

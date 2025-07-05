@@ -56,8 +56,11 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
   };
 
   return (
-    <div className="card shadow-sm rounded-lg">
-      <div className="card-body p-0">
+    <div
+      className="card rounded-lg bg-white"
+      style={{ border: "1px solid #f1f1f1" }}
+    >
+      <div className="card-body p-2">
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead>

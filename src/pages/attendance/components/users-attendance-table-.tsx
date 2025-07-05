@@ -14,7 +14,7 @@ import { toast } from "react-toastify";
 import { UserAttendanceItem } from "../../../types/attendance-dashboard.types";
 import attendanceDashboardService from "../../../services/api-services/attendance-dashboard.service";
 import Avatar from "../../../components/avatar";
-import Search from "../../../components/ui/search";
+import { SearchBox } from "../../../components/ui/search";
 import { Colors } from "../../../utils/constants";
 const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
 
@@ -208,20 +208,18 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
   const stats = getTotalStats();
 
   return (
-    <div className="card shadow-sm hover-shadow-md rounded-lg">
+    <div className="card  rounded-lg" style={{ border: "1px solid #f1f1f1" }}>
       <div className="card-body p-6">
-        {/* Header with Search and Stats */}
         <div className="row mb-6">
           <div className="col-lg-6 d-flex gap-3 mb-4 mb-lg-0">
             <div className="col-6">
-              <Search
+              <SearchBox
                 placeholder="Search by name,department"
                 value={searchTerm}
                 onChange={setSearchTerm}
               />
             </div>
             <div className="col-6 d-flex align-items-center gap-2">
-              {/* Month Picker */}
               <select
                 value={month}
                 onChange={(e) => setMonth(+e.target.value)}
@@ -236,7 +234,6 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
                 ))}
               </select>
 
-              {/* Year Picker */}
               <select
                 value={year}
                 onChange={(e) => setYear(+e.target.value)}
@@ -256,28 +253,28 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
 
           <div className="col-lg-6">
             <div className="d-flex justify-content-lg-end flex-wrap gap-2">
-              <div className="badge bg-light text-dark p-3 rounded-lg shadow-sm hover-shadow">
+              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
                 <FaCheckCircle className="text-success me-2" />
                 Present:{" "}
                 <strong className="text-gradient-success">
                   {stats.totalPresent}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg shadow-sm hover-shadow">
+              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
                 <FaTimesCircle className="text-danger me-2" />
                 Absent:{" "}
                 <strong className="text-gradient-danger">
                   {stats.totalAbsent}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg shadow-sm hover-shadow">
+              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
                 <FaCalendarTimes className="text-warning me-2" />
                 Leave:{" "}
                 <strong className="text-gradient-warning">
                   {stats.totalLeave}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg shadow-sm hover-shadow">
+              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
                 <FaClock className="text-info me-2" />
                 Miss Punch:{" "}
                 <strong className="text-gradient-info">
@@ -288,14 +285,18 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
           </div>
         </div>
 
-        {/* Table */}
         <div className="table-responsive">
           <table className="table table-hover align-middle">
             <thead>
               <tr className="border-0">
-                <th style={{ width: "40px" }}></th>
                 <th
-                  className="text-nowrap cursor-pointer bg-light rounded-l-lg hover-bg-primary hover-text-white"
+                  className="bg-light rounded-tl-md"
+                  style={{ width: "40px" }}
+                >
+                  ID
+                </th>
+                <th
+                  className="text-nowrap cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("name")}
                   style={{ cursor: "pointer" }}
                 >
@@ -355,7 +356,7 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
                   </small>
                 </th>
                 <th
-                  className="text-nowrap cursor-pointer bg-light rounded-r-lg hover-bg-primary hover-text-white"
+                  className="text-nowrap cursor-pointer bg-light rounded-tr-md hover-bg-primary hover-text-white"
                   onClick={() => handleSort("todayStatus")}
                   style={{ cursor: "pointer" }}
                 >
@@ -511,7 +512,6 @@ const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
           </table>
         </div>
 
-        {/* Footer */}
         {filteredAndSortedUsers.length > 0 && (
           <div className="mt-6 d-flex justify-content-between align-items-center">
             <small className="text-muted">

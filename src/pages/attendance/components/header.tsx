@@ -13,7 +13,12 @@ interface Props {
 const DashboardHeader: React.FC<Props> = React.memo(
   ({ currentView, isAdmin, setCurrentView, punchRequestsCount = 0 }) => {
     return (
-      <div className="bg-white shadow-md b card mb-2 rounded-md text-white p-3 d-flex gap-2">
+      <div
+        style={{
+          border: "1px solid #f1f1f1",
+        }}
+        className="bg-white shadow-md  card mb-2 rounded-md text-white p-3 d-flex gap-2"
+      >
         {setCurrentView && (
           <div className="d-flex gap-2">
             <button

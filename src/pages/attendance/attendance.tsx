@@ -298,8 +298,8 @@ const AttendanceDashboard = () => {
   }, []);
 
   return (
-    <div className="px-5 mx-5 py-4">
-      <div className=" shadow mb-4">
+    <div className="p-2 mx-2">
+      <div className="mb-4">
         <DashboardHeader
           currentView={currentView}
           setCurrentView={setCurrentView}

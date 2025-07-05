@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from "../utils/constants";
 import { getMediaUrl } from "../utils/helper";
 
@@ -17,6 +17,7 @@ const Avatar: React.FC<AvatarProps> = ({
   bgColor,
   fontSize,
 }) => {
+  const [showInitials, setShowInitials] = useState(!imageUrl);
   const initials = title
     .split(" ")
     .map((word) => word[0])
@@ -24,16 +25,21 @@ const Avatar: React.FC<AvatarProps> = ({
     .toUpperCase()
     .slice(0, 2);
 
+  useEffect(() => {
+    setShowInitials(!imageUrl);
+  }, [imageUrl]);
+
   const finalFontSize = fontSize ?? size * 0.5;
 
-  return imageUrl ? (
+  return !showInitials ? (
     <img
-      src={getMediaUrl(imageUrl)}
+      src={getMediaUrl(imageUrl || "")}
       alt={title}
       className="rounded-circle"
       style={{
         objectFit: "cover",
       }}
+      onError={() => setShowInitials(true)}
       width={size}
       height={size}
     />

@@ -5,13 +5,14 @@ const loadAnimationData = () => import("../assets/lottie/loading.json");
 
 export default function Loading() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense>
       <LottieLoader />
     </Suspense>
   );
 }
 
 function LottieLoader() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [animationData, setAnimationData] = useState<any>(null);
 
   useEffect(() => {
