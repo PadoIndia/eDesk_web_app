@@ -74,7 +74,7 @@ const HrmSideBar = ({ isOpen, setIsOpen }: Props) => {
       path: "/chats",
       icon: BsChatRightText,
       label: "Chats",
-      show: true,
+      show: isAdmin,
     },
   ];
 
