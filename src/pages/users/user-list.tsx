@@ -91,6 +91,7 @@ const UsersList = () => {
 
   const filteredUsers = users.filter((u) => {
     const query = search.toLowerCase();
+    if (u.empCode?.includes(query)) return true;
     if (u.name?.toLowerCase().includes(query)) return true;
     if (u.contact?.toLowerCase().includes(query)) return true;
     if (u.username?.toLowerCase().includes(query)) return true;
@@ -186,6 +187,12 @@ const UsersList = () => {
                     className="bg-light py-3 text-muted"
                     style={{ fontSize: "13px" }}
                   >
+                    Emp Code
+                  </th>
+                  <th
+                    className="bg-light py-3 text-muted"
+                    style={{ fontSize: "13px" }}
+                  >
                     Contact
                   </th>
                   <th
@@ -236,6 +243,7 @@ const UsersList = () => {
                         </div>
                       </div>
                     </td>
+                    <td>{user.empCode}</td>
                     <td>{user.contact}</td>
                     <td className="flex-wrap">
                       {user.userDepartment.map((i) => (

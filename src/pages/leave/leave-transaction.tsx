@@ -16,8 +16,9 @@ const LeaveTransactions: React.FC = () => {
 
   const userPermissinos =
     useAppSelector((s) => s.auth.userData?.user.permissions) || [];
+
   const isAdmin = userPermissinos.some((p) =>
-    ["is_admin", "is_admin_team", "is_admin_department"].includes(p)
+    ["is_admin", "can_add_leaves"].includes(p)
   );
 
   const {
