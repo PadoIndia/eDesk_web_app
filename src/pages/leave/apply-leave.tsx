@@ -20,15 +20,14 @@ import leaveTypeService from "../../services/api-services/leave-type.service";
 import Select from "react-select";
 import { convertDayNameToInt, formatDateForBackend } from "../../utils/helper";
 
+type LeavePeriod = "FULL_DAY" | "FIRST_HALF" | "SECOND_HALF";
+
 interface FormData {
   leaveTypeId: number;
   startDate: Date | null;
   endDate: Date | null;
   reason: string;
-  isStartHalfDay: boolean;
-  isEndHalfDay: boolean;
-  halfDayTypeStart?: "first-half" | "second-half";
-  halfDayTypeEnd?: "first-half" | "second-half";
+  leavePeriod: LeavePeriod;
 }
 
 interface FormErrors {
@@ -36,10 +35,7 @@ interface FormErrors {
   startDate?: string;
   endDate?: string;
   reason?: string;
-  halfDayTypeStart?: string;
-  halfDayTypeEnd?: string;
-  isStartHalfDay?: string;
-  isEndHalfDay?: string;
+  leavePeriod?: string;
   selectedUserId?: string;
 }
 
@@ -64,10 +60,7 @@ const ApplyLeave = () => {
     startDate: null,
     endDate: null,
     reason: "",
-    isStartHalfDay: false,
-    isEndHalfDay: false,
-    halfDayTypeStart: undefined,
-    halfDayTypeEnd: undefined,
+    leavePeriod: "FULL_DAY",
   });
   const [datesToExclude, setDatesToExclude] = useState<Date[]>([]);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -107,6 +100,25 @@ const ApplyLeave = () => {
     }
     return null;
   }, [currentUserPermissions]);
+
+  // Check if it's a single day leave
+  const isSingleDayLeave = useMemo(() => {
+    if (!formData.startDate || !formData.endDate) return false;
+
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    return start.getTime() === end.getTime();
+  }, [formData.startDate, formData.endDate]);
+
+  // Reset leavePeriod to FULL_DAY when it becomes a multi-day leave
+  useEffect(() => {
+    if (!isSingleDayLeave && formData.leavePeriod !== "FULL_DAY") {
+      setFormData((prev) => ({ ...prev, leavePeriod: "FULL_DAY" }));
+    }
+  }, [isSingleDayLeave, formData.leavePeriod]);
 
   useEffect(() => {
     if (!isForSelf && !hasAdminPermissions) {
@@ -260,30 +272,13 @@ const ApplyLeave = () => {
     const diffTime = end.getTime() - start.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 3600 * 24)) + 1;
 
+    // For single day leave, use the leavePeriod to calculate duration
     if (diffDays === 1) {
-      let duration = 1;
-
-      if (formData.isStartHalfDay && formData.isEndHalfDay) {
-        if (
-          formData.halfDayTypeStart === "first-half" &&
-          formData.halfDayTypeEnd === "second-half"
-        ) {
-          duration = 1;
-        } else if (formData.halfDayTypeStart === formData.halfDayTypeEnd) {
-          duration = 0.5;
-        }
-      } else if (formData.isStartHalfDay || formData.isEndHalfDay) {
-        duration = 0.5;
-      }
-
-      return duration;
+      return formData.leavePeriod === "FULL_DAY" ? 1 : 0.5;
     }
 
-    let duration = diffDays;
-    if (formData.isStartHalfDay) duration -= 0.5;
-    if (formData.isEndHalfDay) duration -= 0.5;
-
-    return duration > 0 ? duration : 0;
+    // For multi-day leaves, return full days only
+    return diffDays;
   };
 
   const duration = calculateDuration();
@@ -344,14 +339,6 @@ const ApplyLeave = () => {
       errors.reason = "Reason must not exceed 1000 characters";
     }
 
-    if (formData.isStartHalfDay && !formData.halfDayTypeStart) {
-      errors.halfDayTypeStart = "Please select start half-day type";
-    }
-
-    if (formData.isEndHalfDay && !formData.halfDayTypeEnd) {
-      errors.halfDayTypeEnd = "Please select end half-day type";
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -373,48 +360,13 @@ const ApplyLeave = () => {
     }
   };
 
-  const handleCheckboxChange = (
-    field: "isStartHalfDay" | "isEndHalfDay",
-    checked: boolean
-  ) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [field]: checked };
-
-      if (!checked) {
-        if (field === "isStartHalfDay") {
-          newData.halfDayTypeStart = undefined;
-        } else {
-          newData.halfDayTypeEnd = undefined;
-        }
-      }
-
-      return newData;
-    });
-
-    if (formErrors[field]) {
-      setFormErrors((prev) => ({
-        ...prev,
-        [field]: undefined,
-        ...(field === "isStartHalfDay" && !checked
-          ? { halfDayTypeStart: undefined }
-          : {}),
-        ...(field === "isEndHalfDay" && !checked
-          ? { halfDayTypeEnd: undefined }
-          : {}),
-      }));
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       leaveTypeId: 0,
       startDate: null,
       endDate: null,
       reason: "",
-      isStartHalfDay: false,
-      isEndHalfDay: false,
-      halfDayTypeStart: undefined,
-      halfDayTypeEnd: undefined,
+      leavePeriod: "FULL_DAY",
     });
     setFormErrors({});
   };
@@ -441,12 +393,13 @@ const ApplyLeave = () => {
     setIsSubmitting(true);
 
     try {
-      const payload: LeaveRequestPayload = {
+      const payload: LeaveRequestPayload & { leavePeriod: LeavePeriod } = {
         leaveTypeId: formData.leaveTypeId,
         startDate: formatDateForBackend(formData.startDate!),
         endDate: formatDateForBackend(formData.endDate!),
         duration,
         reason: formData.reason.trim(),
+        leavePeriod: formData.leavePeriod,
       };
 
       console.log("leave apply payload", payload);
@@ -736,128 +689,46 @@ const ApplyLeave = () => {
                         </div>
                       </div>
 
-                      {/* Half Day Options */}
-                      <div className="mb-4">
-                        <div className="form-check mb-3">
-                          <input
-                            type="checkbox"
-                            checked={formData.isStartHalfDay}
+                      {/* Leave Period for Single Day */}
+                      {isSingleDayLeave && (
+                        <div className="mb-4">
+                          <label className="form-label fw-semibold">
+                            Leave Period
+                          </label>
+                          <select
+                            value={formData.leavePeriod}
                             onChange={(e) =>
-                              handleCheckboxChange(
-                                "isStartHalfDay",
-                                e.target.checked
+                              handleInputChange(
+                                "leavePeriod",
+                                e.target.value as LeavePeriod
                               )
                             }
-                            className="form-check-input"
-                            id="startHalfDay"
-                          />
-                          <label
-                            htmlFor="startHalfDay"
-                            className="form-check-label fw-semibold"
+                            className={`form-select ${
+                              formErrors.leavePeriod ? "is-invalid" : ""
+                            }`}
                           >
-                            Start Half Day Leave
-                          </label>
-                        </div>
-
-                        {formData.isStartHalfDay && (
-                          <div className="ps-3 mb-3">
-                            <div className="d-flex flex-wrap gap-3">
-                              {["first-half", "second-half"].map((val) => (
-                                <div className="form-check" key={val}>
-                                  <input
-                                    type="radio"
-                                    name="halfDayTypeStart"
-                                    value={val}
-                                    checked={formData.halfDayTypeStart === val}
-                                    onChange={(e) =>
-                                      handleInputChange(
-                                        "halfDayTypeStart",
-                                        e.target.value as
-                                          | "first-half"
-                                          | "second-half"
-                                      )
-                                    }
-                                    className="form-check-input"
-                                    id={`start-${val}`}
-                                  />
-                                  <label
-                                    htmlFor={`start-${val}`}
-                                    className="form-check-label text-capitalize"
-                                  >
-                                    {val.replace("-", " ")}
-                                  </label>
-                                </div>
-                              ))}
+                            <option value="FULL_DAY">Full Day</option>
+                            <option value="FIRST_HALF">First Half</option>
+                            <option value="SECOND_HALF">Second Half</option>
+                          </select>
+                          {formErrors.leavePeriod && (
+                            <div className="invalid-feedback d-block">
+                              {formErrors.leavePeriod}
                             </div>
-                            {formErrors.halfDayTypeStart && (
-                              <div className="invalid-feedback d-block mt-1">
-                                {formErrors.halfDayTypeStart}
-                              </div>
-                            )}
+                          )}
+                        </div>
+                      )}
+
+                      {/* Info for Multi-day leaves */}
+                      {!isSingleDayLeave &&
+                        formData.startDate &&
+                        formData.endDate && (
+                          <div className="alert alert-info mb-4">
+                            <FaInfoCircle className="me-2" />
+                            Half-day leave is only available for single-day
+                            leaves.
                           </div>
                         )}
-                      </div>
-
-                      <div className="mb-4">
-                        <div className="form-check mb-3">
-                          <input
-                            type="checkbox"
-                            checked={formData.isEndHalfDay}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                "isEndHalfDay",
-                                e.target.checked
-                              )
-                            }
-                            className="form-check-input"
-                            id="endHalfDay"
-                          />
-                          <label
-                            htmlFor="endHalfDay"
-                            className="form-check-label fw-semibold"
-                          >
-                            End Half Day Leave
-                          </label>
-                        </div>
-
-                        {formData.isEndHalfDay && (
-                          <div className="ps-3 mb-3">
-                            <div className="d-flex flex-wrap gap-3">
-                              {["first-half", "second-half"].map((val) => (
-                                <div className="form-check" key={val}>
-                                  <input
-                                    type="radio"
-                                    name="halfDayTypeEnd"
-                                    value={val}
-                                    checked={formData.halfDayTypeEnd === val}
-                                    onChange={(e) =>
-                                      handleInputChange(
-                                        "halfDayTypeEnd",
-                                        e.target.value as
-                                          | "first-half"
-                                          | "second-half"
-                                      )
-                                    }
-                                    className="form-check-input"
-                                    id={`end-${val}`}
-                                  />
-                                  <label
-                                    htmlFor={`end-${val}`}
-                                    className="form-check-label text-capitalize"
-                                  >
-                                    {val.replace("-", " ")}
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
-                            {formErrors.halfDayTypeEnd && (
-                              <div className="invalid-feedback d-block mt-1">
-                                {formErrors.halfDayTypeEnd}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
 
                       {/* Reason */}
                       <div className="mb-4">

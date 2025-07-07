@@ -673,6 +673,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                       </td>
                       <td className={"text-center " + rowClass}>
                         <span
+                          title={fullStatus}
                           className={`badge rounded-pill px-3 py-1 ${
                             shortStatus === "P"
                               ? "bg-success-subtle text-success"
