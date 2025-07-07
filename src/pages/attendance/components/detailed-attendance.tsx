@@ -161,21 +161,30 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
       .padStart(2, "0")}`;
   };
 
-  const calculateWorkingHours = (punches: PunchData[], date: number) => {
+  const calculateTotalMinutes = (punches: PunchData[], date: number) => {
     const dayPunches = punches
       .filter(
         (p) => p.date === date && (p.isApproved !== false || !p.approvedBy)
       )
       .sort((a, b) => a.hh * 60 + a.mm - (b.hh * 60 + b.mm));
 
-    if (dayPunches.length < 2 || dayPunches.length % 2 !== 0) return "—";
+    if (dayPunches.length < 2) return 0;
 
     let totalMinutes = 0;
-    for (let i = 0; i < dayPunches.length; i += 2) {
+
+    for (let i = 0; i < dayPunches.length - 1; i += 2) {
       const inTime = dayPunches[i].hh * 60 + dayPunches[i].mm;
       const outTime = dayPunches[i + 1].hh * 60 + dayPunches[i + 1].mm;
       totalMinutes += outTime - inTime;
     }
+
+    return totalMinutes;
+  };
+
+  const calculateWorkingHours = (punches: PunchData[], date: number) => {
+    const totalMinutes = calculateTotalMinutes(punches, date);
+
+    if (totalMinutes === 0) return "—";
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -197,7 +206,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
       return attendance.statusAuto;
     }
 
-    // Check if it's Sunday (0 = Sunday in JavaScript)
     const dateObj = new Date(year, month - 1, date);
     if (
       dateObj.getDay() ===
@@ -275,7 +283,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
       completedClasses: 0,
     };
 
-    // Count Sundays as holidays
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month - 1, day);
       if (date.getDay() === 0) {
@@ -598,13 +605,40 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   );
 
                   const fullStatus = getStatusForDate(day);
+                  const totalMinutes = calculateTotalMinutes(
+                    dashboardData.punchData,
+                    day
+                  );
+                  const totalHours = totalMinutes / 60;
+
                   let shortStatus = statusToShortCode[fullStatus] || fullStatus;
-                  if (
-                    !(dayPunches.length > 0 && dayPunches.length % 2 == 0) &&
-                    (shortStatus == "P" || shortStatus === "—")
-                  ) {
-                    shortStatus = "A";
+                  let isHalfDayLeave = false;
+
+                  const isLeaveOrHoliday = [
+                    "WO",
+                    "H",
+                    "SL",
+                    "CL",
+                    "PL",
+                    "UL",
+                    "CO",
+                    "EL",
+                  ].includes(shortStatus);
+
+                  if (!isLeaveOrHoliday) {
+                    if (totalHours >= 8) {
+                      shortStatus = "P";
+                    } else if (totalHours >= 4 && totalHours < 8) {
+                      shortStatus = "P/2";
+
+                      if (fullStatus === "HALF_DAY") {
+                        isHalfDayLeave = true;
+                      }
+                    } else {
+                      shortStatus = "A";
+                    }
                   }
+
                   const date = new Date(year, month - 1, day);
                   const dateStr = `${year}-${month
                     .toString()
@@ -679,7 +713,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                               ? "bg-success-subtle text-success"
                               : shortStatus === "A"
                               ? "bg-danger-subtle text-danger"
-                              : shortStatus === "HD"
+                              : shortStatus === "P/2"
                               ? "bg-warning-subtle text-warning"
                               : shortStatus === "WO" || shortStatus === "H"
                               ? "bg-primary-subtle text-primary"
@@ -687,6 +721,9 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                           }`}
                         >
                           {shortStatus}
+                          {isHalfDayLeave && (
+                            <small className="ms-1">(Leave)</small>
+                          )}
                         </span>
                       </td>
                       <td className={"text-center " + rowClass}>
@@ -916,7 +953,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                 {punchRequests.length > 0 ? (
                   punchRequests
                     .sort((a, b) => {
-                      // Sort by date (latest first)
                       const dateA = new Date(a.year, a.month - 1, a.date);
                       const dateB = new Date(b.year, b.month - 1, b.date);
                       return dateB.getTime() - dateA.getTime();

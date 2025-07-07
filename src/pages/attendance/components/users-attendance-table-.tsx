@@ -16,6 +16,7 @@ import attendanceDashboardService from "../../../services/api-services/attendanc
 import Avatar from "../../../components/avatar";
 import { SearchBox } from "../../../components/ui/search";
 import { Colors } from "../../../utils/constants";
+
 const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
 
 interface UsersAttendanceTableProps {
