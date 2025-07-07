@@ -15,7 +15,7 @@ export const useLeaveTransactions = () => {
     try {
       const params: LeaveTransactionFilters = {
         page: 1,
-        limit: 101,
+        limit: 2000,
       };
       const transactionResponse =
         await leaveTransactionService.getLeaveTransactions(params);
