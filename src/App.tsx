@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "./store/store";
 import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
+import AttendanceReport from "./pages/attendance/components/sheet-download";
 
 const VideoPage = React.lazy(() => import("./pages/video-details"));
 const Home = React.lazy(() => import("./pages/home"));
@@ -64,6 +65,7 @@ function App() {
           path="users/list"
           element={<Navigate to="/hrm/users/list" replace />}
         />
+        <Route path="/sheet" element={<AttendanceReport />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

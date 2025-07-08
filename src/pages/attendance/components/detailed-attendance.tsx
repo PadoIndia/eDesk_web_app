@@ -23,6 +23,8 @@ import {
   UserDashboardData,
 } from "../../../types/attendance-dashboard.types";
 import { convertDayNameToInt } from "../../../utils/helper";
+import { LeaveRequestResponse } from "../../../types/leave.types";
+import leaveRequestService from "../../../services/api-services/leave-request.service";
 
 interface UserDetailedAttendanceProps {
   userId: number;
@@ -52,6 +54,15 @@ const statusToShortCode: { [key: string]: string } = {
   UNPAID_LEAVE: "UL",
   COMPENSATORY_LEAVE: "CO",
   EARNED_LEAVE: "EL",
+};
+
+const leaveTypeToShortCode: { [key: string]: string } = {
+  "SICK LEAVE": "SL",
+  "CASUAL LEAVE": "CL",
+  "PAID LEAVE": "PL",
+  "UNPAID LEAVE": "UL",
+  "COMPENSATORY LEAVE": "CO",
+  "EARNED LEAVE": "EL",
 };
 
 const statusConfig: {
@@ -116,6 +127,9 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   );
   const [month, setMonth] = useState(fromMonth || new Date().getMonth() + 1);
   const [year, setYear] = useState(fromYear || new Date().getFullYear());
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestResponse[]>(
+    []
+  );
 
   const [activeTab, setActiveTab] = useState<
     "attendance" | "calls" | "classes" | "punchRequests"
@@ -145,6 +159,8 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
       if (response.status === "success" && response.data) {
         setDashboardData(response.data);
+        const resp = await leaveRequestService.getLeaveRequests({ userId });
+        if (resp.status === "success") setLeaveRequests(resp.data);
       } else {
         toast.error("Failed to fetch dashboard data");
       }
@@ -216,10 +232,29 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
       dateObj.getDay() ===
       convertDayNameToInt(dashboardData.user.userDetails?.weekoff || "SUNDAY")
     ) {
-      return "HOLIDAY";
+      return "WEEK_OFF";
     }
 
     return "—";
+  };
+
+  const getLeaveRequestForDate = (date: number) => {
+    const currentDate = new Date(year, month - 1, date);
+    currentDate.setHours(0, 0, 0, 0);
+
+    return leaveRequests.find((leave) => {
+      const startDate = new Date(leave.startDate);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(leave.endDate);
+      endDate.setHours(0, 0, 0, 0);
+
+      return currentDate >= startDate && currentDate <= endDate;
+    });
+  };
+
+  const isLeaveApproved = (leave: LeaveRequestResponse) => {
+    return leave.managerStatus === "APPROVED" || leave.hrStatus === "APPROVED";
   };
 
   const getPunchApprovalIcon = (punch: PunchData) => {
@@ -363,6 +398,98 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
     if (!dashboardData) return [];
 
     return dashboardData.punchData.filter((punch) => punch.type === "MANUAL");
+  };
+
+  const getStatusDisplay = (day: number) => {
+    // Calculate total working minutes for the day
+    const totalMinutes = calculateTotalMinutes(
+      dashboardData?.punchData || [],
+      day
+    );
+    const totalHours = totalMinutes / 60;
+
+    // If 8 or more hours, user is definitely present - no need to check leave
+    if (totalHours >= 8) {
+      return {
+        code: "P",
+        isApproved: true,
+        isPending: false,
+        badgeClass: "bg-success-subtle text-success",
+        title: "Present",
+      };
+    }
+
+    // Only check for leave requests if working hours < 8
+    if (totalHours < 8) {
+      const leaveRequest = getLeaveRequestForDate(day);
+
+      if (leaveRequest) {
+        const leaveTypeName = leaveRequest.leaveType.name.toUpperCase();
+        const shortCode = leaveTypeToShortCode[leaveTypeName] || "PL";
+        const isApproved = isLeaveApproved(leaveRequest);
+
+        // If duration is 0.5, show with /2
+        const displayCode =
+          leaveRequest.duration === 0.5 ? `${shortCode}/2` : shortCode;
+
+        return {
+          code: displayCode,
+          isApproved,
+          isPending: !isApproved,
+          badgeClass: isApproved
+            ? "bg-warning-subtle text-warning"
+            : "bg-warning-subtle text-warning",
+          title: `${leaveRequest.leaveType.name}${
+            !isApproved ? " (Pending)" : ""
+          }`,
+        };
+      }
+    }
+
+    // No leave request found, determine status based on working hours
+    if (totalHours >= 4 && totalHours < 8) {
+      // Half-day hours without leave
+      return {
+        code: "HD",
+        isApproved: true,
+        isPending: false,
+        badgeClass: "bg-warning-subtle text-warning",
+        title: "Half Day",
+      };
+    } else if (totalHours > 0 && totalHours < 4) {
+      // Less than half-day - absent
+      return {
+        code: "A",
+        isApproved: true,
+        isPending: false,
+        badgeClass: "bg-danger-subtle text-danger",
+        title: "Absent",
+      };
+    }
+
+    // No punches - check attendance status
+    const status = getStatusForDate(day);
+    const shortCode = statusToShortCode[status] || status;
+
+    // Determine badge class based on status
+    let badgeClass = "bg-secondary-subtle text-secondary";
+    if (shortCode === "P") {
+      badgeClass = "bg-success-subtle text-success";
+    } else if (shortCode === "A") {
+      badgeClass = "bg-danger-subtle text-danger";
+    } else if (shortCode === "HD") {
+      badgeClass = "bg-warning-subtle text-warning";
+    } else if (shortCode === "WO" || shortCode === "H") {
+      badgeClass = "bg-primary-subtle text-primary";
+    }
+
+    return {
+      code: shortCode,
+      isApproved: true,
+      isPending: false,
+      badgeClass,
+      title: status,
+    };
   };
 
   if (loading) {
@@ -610,55 +737,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   );
 
                   const fullStatus = getStatusForDate(day);
-                  const totalMinutes = calculateTotalMinutes(
-                    dashboardData.punchData,
-                    day
-                  );
-                  const totalHours = totalMinutes / 60;
-
-                  let shortStatus = statusToShortCode[fullStatus] || fullStatus;
-                  let isHalfDayLeave = false;
-                  let leaveType = null;
-
-                  const leaveStatuses = [
-                    "SICK_LEAVE",
-                    "CASUAL_LEAVE",
-                    "PAID_LEAVE",
-                    "UNPAID_LEAVE",
-                    "COMPENSATORY_LEAVE",
-                    "EARNED_LEAVE",
-                    "HALF_DAY",
-                  ];
-
-                  const isFullDayOff = ["WEEK_OFF", "HOLIDAY"].includes(
-                    fullStatus
-                  );
-
-                  let attendanceStatus = "";
-                  if (totalHours >= 8) {
-                    attendanceStatus = "P";
-                  } else if (totalHours >= 4 && totalHours < 8) {
-                    attendanceStatus = "P/2";
-                  } else if (totalHours > 0) {
-                    attendanceStatus = "A";
-                  }
-
-                  if (isFullDayOff) {
-                    shortStatus = statusToShortCode[fullStatus] || fullStatus;
-                  } else {
-                    if (
-                      attendanceStatus === "P/2" &&
-                      leaveStatuses.includes(fullStatus)
-                    ) {
-                      shortStatus = "P/2";
-                      isHalfDayLeave = true;
-                      leaveType = fullStatus;
-                    } else if (attendanceStatus) {
-                      shortStatus = attendanceStatus;
-                    } else {
-                      shortStatus = statusToShortCode[fullStatus] || fullStatus;
-                    }
-                  }
+                  const statusDisplay = getStatusDisplay(day);
 
                   const date = new Date(year, month - 1, day);
                   const dateStr = `${year}-${month
@@ -727,38 +806,13 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                         </span>
                       </td>
                       <td className={"text-center " + rowClass}>
-                        <div className="d-flex flex-column align-items-center gap-1">
-                          <span
-                            title={fullStatus}
-                            className={`badge rounded-pill px-3 py-1 ${
-                              shortStatus === "P"
-                                ? "bg-success-subtle text-success"
-                                : shortStatus === "A"
-                                ? "bg-danger-subtle text-danger"
-                                : shortStatus === "P/2"
-                                ? "bg-warning-subtle text-warning"
-                                : shortStatus === "WO" || shortStatus === "H"
-                                ? "bg-primary-subtle text-primary"
-                                : "bg-secondary-subtle text-secondary"
-                            }`}
-                          >
-                            {shortStatus}
-                          </span>
-                          {isHalfDayLeave && leaveType && (
-                            <span
-                              className={`badge rounded-pill px-2 py-1 ${
-                                statusConfig[leaveType]?.bgClass ||
-                                "bg-secondary-subtle"
-                              } ${
-                                statusConfig[leaveType]?.textClass ||
-                                "text-secondary"
-                              }`}
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {statusToShortCode[leaveType] || leaveType}
-                            </span>
-                          )}
-                        </div>
+                        <span
+                          title={statusDisplay.title}
+                          className={`badge rounded-pill px-3 py-1 ${statusDisplay.badgeClass} d-inline-flex align-items-center gap-1`}
+                        >
+                          {statusDisplay.code}
+                          {statusDisplay.isPending && <FaClock size={12} />}
+                        </span>
                       </td>
                       <td className={"text-center " + rowClass}>
                         {isWeekOff && !dayPunches.length ? (
@@ -783,22 +837,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                                 MP
                               </button>
                             )}
-                            {/* {onManualStatusChange && dashboardData && (
-                              <button
-                                className="btn btn-outline-warning btn-sm"
-                                onClick={() =>
-                                  onManualStatusChange(
-                                    userId,
-                                    dateStr,
-                                    shortStatus,
-                                    dashboardData.user.name
-                                  )
-                                }
-                                title="Change Status"
-                              >
-                                <FaEdit />
-                              </button>
-                            )} */}
                           </div>
                         )}
                       </td>

@@ -12,6 +12,15 @@ class AttendanceDashboardService extends ApiService {
     super("/admin/attendance");
   }
 
+  getSheetData(params: {
+    departmentId?: number;
+    month: number;
+    year: number;
+    leaveSchemeId: number;
+  }): ApiResponse {
+    return this.getData(`/sheet`, { params });
+  }
+
   getDashboardData(
     userId: number,
     month?: number,
