@@ -67,6 +67,11 @@ const statusConfig: {
     bgClass: "bg-info bg-opacity-10",
     textClass: "text-info",
   },
+  HALF_DAY: {
+    icon: <FaCalendarAlt size={14} />,
+    bgClass: "bg-warning bg-opacity-10",
+    textClass: "text-warning",
+  },
   SICK_LEAVE: {
     icon: <FaHospital size={14} />,
     bgClass: "bg-warning bg-opacity-10",
@@ -613,29 +618,45 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
                   let shortStatus = statusToShortCode[fullStatus] || fullStatus;
                   let isHalfDayLeave = false;
+                  let leaveType = null;
 
-                  const isLeaveOrHoliday = [
-                    "WO",
-                    "H",
-                    "SL",
-                    "CL",
-                    "PL",
-                    "UL",
-                    "CO",
-                    "EL",
-                  ].includes(shortStatus);
+                  const leaveStatuses = [
+                    "SICK_LEAVE",
+                    "CASUAL_LEAVE",
+                    "PAID_LEAVE",
+                    "UNPAID_LEAVE",
+                    "COMPENSATORY_LEAVE",
+                    "EARNED_LEAVE",
+                    "HALF_DAY",
+                  ];
 
-                  if (!isLeaveOrHoliday) {
-                    if (totalHours >= 8) {
-                      shortStatus = "P";
-                    } else if (totalHours >= 4 && totalHours < 8) {
+                  const isFullDayOff = ["WEEK_OFF", "HOLIDAY"].includes(
+                    fullStatus
+                  );
+
+                  let attendanceStatus = "";
+                  if (totalHours >= 8) {
+                    attendanceStatus = "P";
+                  } else if (totalHours >= 4 && totalHours < 8) {
+                    attendanceStatus = "P/2";
+                  } else if (totalHours > 0) {
+                    attendanceStatus = "A";
+                  }
+
+                  if (isFullDayOff) {
+                    shortStatus = statusToShortCode[fullStatus] || fullStatus;
+                  } else {
+                    if (
+                      attendanceStatus === "P/2" &&
+                      leaveStatuses.includes(fullStatus)
+                    ) {
                       shortStatus = "P/2";
-
-                      if (fullStatus === "HALF_DAY") {
-                        isHalfDayLeave = true;
-                      }
+                      isHalfDayLeave = true;
+                      leaveType = fullStatus;
+                    } else if (attendanceStatus) {
+                      shortStatus = attendanceStatus;
                     } else {
-                      shortStatus = "A";
+                      shortStatus = statusToShortCode[fullStatus] || fullStatus;
                     }
                   }
 
@@ -706,25 +727,38 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                         </span>
                       </td>
                       <td className={"text-center " + rowClass}>
-                        <span
-                          title={fullStatus}
-                          className={`badge rounded-pill px-3 py-1 ${
-                            shortStatus === "P"
-                              ? "bg-success-subtle text-success"
-                              : shortStatus === "A"
-                              ? "bg-danger-subtle text-danger"
-                              : shortStatus === "P/2"
-                              ? "bg-warning-subtle text-warning"
-                              : shortStatus === "WO" || shortStatus === "H"
-                              ? "bg-primary-subtle text-primary"
-                              : "bg-secondary-subtle text-secondary"
-                          }`}
-                        >
-                          {shortStatus}
-                          {isHalfDayLeave && (
-                            <small className="ms-1">(Leave)</small>
+                        <div className="d-flex flex-column align-items-center gap-1">
+                          <span
+                            title={fullStatus}
+                            className={`badge rounded-pill px-3 py-1 ${
+                              shortStatus === "P"
+                                ? "bg-success-subtle text-success"
+                                : shortStatus === "A"
+                                ? "bg-danger-subtle text-danger"
+                                : shortStatus === "P/2"
+                                ? "bg-warning-subtle text-warning"
+                                : shortStatus === "WO" || shortStatus === "H"
+                                ? "bg-primary-subtle text-primary"
+                                : "bg-secondary-subtle text-secondary"
+                            }`}
+                          >
+                            {shortStatus}
+                          </span>
+                          {isHalfDayLeave && leaveType && (
+                            <span
+                              className={`badge rounded-pill px-2 py-1 ${
+                                statusConfig[leaveType]?.bgClass ||
+                                "bg-secondary-subtle"
+                              } ${
+                                statusConfig[leaveType]?.textClass ||
+                                "text-secondary"
+                              }`}
+                              style={{ fontSize: "0.7rem" }}
+                            >
+                              {statusToShortCode[leaveType] || leaveType}
+                            </span>
                           )}
-                        </span>
+                        </div>
                       </td>
                       <td className={"text-center " + rowClass}>
                         {isWeekOff && !dayPunches.length ? (
