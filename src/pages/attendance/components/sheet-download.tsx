@@ -19,6 +19,7 @@ interface EmployeeAttendanceRow {
   name: string;
   userId: number;
   dailyAttendance: { [day: number]: string };
+  department: string;
   summary: {
     present: number;
     weekOff: number;
@@ -141,6 +142,7 @@ const AttendanceReport = () => {
       [
         "Empcode",
         "Name",
+        "Department",
         ...Array.from({ length: 31 }, (_, i) => (i + 1).toString()),
         "Pre",
         "WO",
@@ -157,6 +159,7 @@ const AttendanceReport = () => {
       const row = [
         employee.empCode,
         employee.name,
+        employee.department,
         ...Array.from({ length: 31 }, (_, i) => {
           const day = i + 1;
           const originalStatus = employee.dailyAttendance[day] || "";
@@ -509,6 +512,9 @@ const AttendanceReport = () => {
                     <th className="border-end" style={{ minWidth: "180px" }}>
                       Name
                     </th>
+                    <th className="border-end" style={{ minWidth: "180px" }}>
+                      Department
+                    </th>
                     {Array.from({ length: daysInMonth }, (_, i) => (
                       <th
                         key={i + 1}
@@ -565,6 +571,7 @@ const AttendanceReport = () => {
                         {employee.empCode}
                       </td>
                       <td className="border-end">{employee.name}</td>
+                      <td className="border-end">{employee.department}</td>
                       {Array.from({ length: daysInMonth }, (_, i) => {
                         // Always check for leave request first, regardless of original status
                         const day = i + 1;
