@@ -4,7 +4,9 @@ import { useAppDispatch, useAppSelector } from "./store/store";
 import { useEffect } from "react";
 import { checkAuth } from "./features/auth.slice";
 import Layout from "./components/layout";
-import AttendanceReport from "./pages/attendance/components/sheet-download";
+const AttendanceReport = React.lazy(
+  () => import("./pages/attendance/components/sheet-download")
+);
 
 const VideoPage = React.lazy(() => import("./pages/video-details"));
 const Home = React.lazy(() => import("./pages/home"));
