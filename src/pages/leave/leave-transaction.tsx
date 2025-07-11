@@ -102,7 +102,7 @@ const LeaveTransactions: React.FC = () => {
 
         <div className="card-body">
           <TransactionTable
-            transactions={paginatedTransactions} // Use paginated transactions instead of filtered
+            transactions={paginatedTransactions}
             loading={loading}
           />
         </div>

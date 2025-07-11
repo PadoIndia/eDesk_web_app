@@ -1,12 +1,11 @@
-import { lazy, useEffect, useState } from "react";
+import { lazy, useCallback, useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
 import { toast } from "react-toastify";
-import attendanceDashboardService from "../../services/api-services/attendance-dashboard.service";
-
 import DashboardHeader from "./components/header";
-
-import { Punch } from "../../types/attendance.types";
 import UserDetailedAttendance from "./components/detailed-attendance";
+import punchDataService from "../../services/api-services/punch-data.service";
+import { PunchResponse } from "../../types/punch-data.types";
+import generalService from "../../services/api-services/general.service";
 
 const RequestsTable = lazy(() => import("./components/requests-table"));
 
@@ -15,16 +14,20 @@ const ApproveRejectModal = lazy(
   () => import("./components/approve-reject-modal")
 );
 const UsersAttendanceTable = lazy(
-  () => import("./components/users-attendance-table-")
+  () => import("./components/users-attendance-table")
 );
 
 const AttendanceDashboard = () => {
   const userId = useAppSelector((state) => state.auth.userData?.user.id);
-  const [missPunchRequests, setMissPunchRequests] = useState<Punch[]>([]);
+  const [missPunchRequests, setMissPunchRequests] = useState<PunchResponse[]>(
+    []
+  );
 
   const [showMissPunchForm, setShowMissPunchForm] = useState(false);
   const [showApproveRejectModal, setShowApproveRejectModal] = useState(false);
-  const [currentRequest, setCurrentRequest] = useState<Punch | null>(null);
+  const [currentRequest, setCurrentRequest] = useState<PunchResponse | null>(
+    null
+  );
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(
     null
   );
@@ -42,22 +45,13 @@ const AttendanceDashboard = () => {
   const [currentView, setCurrentView] = useState<
     "attendance" | "users-attendance" | "punch-requests"
   >("attendance");
+
   const currentUser = useAppSelector((s) => s.auth.userData?.user);
   const permissions = currentUser?.permissions || [];
   const isAdmin =
     permissions.some((p) =>
       ["is_admin", "is_team_admin", "is_department_admin"].includes(p)
     ) || false;
-
-  const filteredRequests = missPunchRequests.filter((request) => {
-    if (!currentUser) return false;
-
-    if (isAdmin) {
-      return true;
-    }
-
-    return request.userId === userId && request.isApproved === undefined;
-  });
 
   const handleMissPunchRequest = (
     date: string,
@@ -73,80 +67,9 @@ const AttendanceDashboard = () => {
       date,
       time: "",
       reason: "",
-
       targetUserId: user.id,
     });
     setShowMissPunchForm(true);
-  };
-
-  const handleManualStatusChange = async (
-    userId: number,
-    date: string,
-    newStatus: string,
-    comment: string
-  ): Promise<void> => {
-    try {
-      const [year, month, day] = date.split("-").map(Number);
-
-      const statusData = {
-        userId,
-        date: day,
-        month,
-        year,
-        status: newStatus as
-          | "PRESENT"
-          | "ABSENT"
-          | "HALF_DAY"
-          | "WEEK_OFF"
-          | "HOLIDAY"
-          | "SICK_LEAVE"
-          | "CASUAL_LEAVE"
-          | "PAID_LEAVE"
-          | "UNPAID_LEAVE"
-          | "COMPENSATORY_LEAVE",
-        comment,
-        commentBy: currentUser?.id,
-      };
-
-      const response = await attendanceDashboardService.updateManualStatus(
-        statusData
-      );
-
-      if (response.status !== "success") {
-        throw new Error(response.message || "Failed to update status");
-      }
-
-      toast.success("Manual status updated successfully");
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Failed to update status: " + errorMessage);
-    }
-  };
-
-  const autoApproveMissPunchRequest = async (
-    requestId: number
-  ): Promise<Punch | null> => {
-    try {
-      const approvalData = {
-        isApproved: true,
-        comment: "Auto-approved by admin",
-        approvedBy: currentUser?.id,
-      };
-
-      const response = await attendanceDashboardService.approveMissPunchRequest(
-        requestId,
-        approvalData
-      );
-
-      if (response.status !== "success") {
-        throw new Error(response.message || "Failed to auto-approve request");
-      }
-
-      return response.data;
-    } catch (err) {
-      console.error("Error auto-approving request:", err);
-      throw err;
-    }
   };
 
   const handleFormSubmit = async (
@@ -157,90 +80,50 @@ const AttendanceDashboard = () => {
       !currentUser ||
       !formData.time ||
       !formData.reason ||
-      !formData.targetUserId
+      (isAdmin && !formData.targetUserId)
     ) {
       toast.error("Please fill all required fields");
       return;
     }
 
-    try {
-      const [hours, minutes] = formData.time.split(":").map(Number);
-      const [year, month, day] = formData.date.split("-").map(Number);
+    const [hours, minutes] = formData.time.split(":").map(Number);
+    const [year, month, day] = formData.date.split("-").map(Number);
 
-      if (!year || !month || !day) {
-        toast.error("Invalid date format");
-        return;
-      }
+    if (!year || !month || !day) {
+      toast.error("Invalid date format");
+      return;
+    }
 
-      const requestData = {
-        userId: formData.targetUserId,
-        date: day,
-        month,
-        year,
-        hh: hours,
-        mm: minutes,
-        missPunchReason: formData.reason,
-      };
+    const requestData = {
+      date: day,
+      month,
+      year,
+      hh: hours,
+      mm: minutes,
+      userId: formData.targetUserId,
+      missPunchReason: formData.reason,
+    };
 
-      const response = await attendanceDashboardService.createMissPunchRequest(
-        requestData
-      );
+    const isSameUser = userId == formData.targetUserId;
 
-      if (response.status !== "success") {
-        throw new Error(
-          response.message || "Failed to create miss punch request"
-        );
-      }
+    const resp = isSameUser
+      ? await generalService.createPunchRequest(requestData)
+      : await punchDataService.createPunchData(requestData);
 
-      let finalRequestData = response.data;
-
-      const isAdminRequestForOtherUser =
-        isAdmin && formData.targetUserId !== currentUser.id;
-
-      if (isAdminRequestForOtherUser) {
-        try {
-          const approvedRequest = await autoApproveMissPunchRequest(
-            response.data.id
-          );
-          if (approvedRequest) {
-            finalRequestData = approvedRequest;
-            toast.success(`Miss punch request created and auto-approved!`);
-          }
-        } catch (approvalErr) {
-          console.error("Auto-approval failed:", approvalErr);
-          toast.success(
-            `Miss punch request submitted! (Auto-approval failed, will need manual approval)`
-          );
-        }
-      } else {
-        toast.success(`Miss punch request submitted successfully!`);
-      }
-
-      setMissPunchRequests((prevRequests) => {
-        const filteredRequests = prevRequests.filter(
-          (req) => req.id !== finalRequestData.id
-        );
-        return [...filteredRequests, finalRequestData];
-      });
-
+    if (resp.status == "success") {
       setShowMissPunchForm(false);
-
       setFormData({
         name: "",
         date: "",
         time: "",
         reason: "",
-
         targetUserId: 0,
       });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Failed to submit request: " + errorMessage);
-    }
+    } else toast.error(resp.message);
   };
 
   const handleApproveReject = (
-    request: Punch,
+    request: PunchResponse,
     action: "approve" | "reject"
   ): void => {
     setCurrentRequest(request);
@@ -256,45 +139,36 @@ const AttendanceDashboard = () => {
       const approvalData = {
         isApproved: actionType === "approve",
         comment: actionType === "reject" ? rejectionReason : undefined,
-        approvedBy: currentUser.id,
       };
 
-      const response = await attendanceDashboardService.approveMissPunchRequest(
+      const resp = await punchDataService.approvePunch(
         currentRequest.id,
         approvalData
       );
 
-      if (response.status !== "success") {
-        throw new Error(response.message || "Failed to process request");
-      }
-
-      setMissPunchRequests((prevRequests) =>
-        prevRequests.map((req) =>
-          req.id === currentRequest.id ? response.data : req
-        )
-      );
-
-      toast.success(
-        `Request ${
-          actionType === "approve" ? "approved" : "rejected"
-        } successfully!`
-      );
-      setShowApproveRejectModal(false);
+      if (resp.status == "success") {
+        fetchPunchRequests();
+        toast.success(resp.message);
+        setShowApproveRejectModal(false);
+      } else toast.error(resp.message);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Failed to ${actionType} request: ` + errorMessage);
     }
   };
-  useEffect(() => {
+
+  const fetchPunchRequests = useCallback(() => {
     if (currentUser && currentUser.id) {
-      attendanceDashboardService
-        .getPendingRequests(currentUser.id)
-        .then((res) => {
-          if (res.status === "success") {
-            setMissPunchRequests(res.data);
-          }
-        });
+      punchDataService.getPunches({ type: "MANUAL" }).then((res) => {
+        if (res.status === "success") {
+          setMissPunchRequests(res.data);
+        }
+      });
     }
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetchPunchRequests();
   }, []);
 
   return (
@@ -304,15 +178,12 @@ const AttendanceDashboard = () => {
           currentView={currentView}
           setCurrentView={setCurrentView}
           punchRequestsCount={
-            filteredRequests.filter(
-              (req) => req.isApproved === null || req.isApproved === undefined
-            ).length
+            missPunchRequests.filter((r) => !r.approvedBy).length
           }
           isAdmin={isAdmin}
         />
         {currentView === "attendance" && userId && (
           <UserDetailedAttendance
-            onManualStatusChange={handleManualStatusChange}
             onMissPunchRequest={handleMissPunchRequest}
             userId={userId}
           />
@@ -323,14 +194,13 @@ const AttendanceDashboard = () => {
         )}
         {currentView === "punch-requests" && (
           <RequestsTable
-            filteredRequests={filteredRequests}
+            filteredRequests={missPunchRequests}
             handleApproveReject={handleApproveReject}
             isAdmin={isAdmin}
           />
         )}
       </div>
 
-      {/* Miss Punch Request Modal */}
       {showMissPunchForm && (
         <MissPunchForm
           formData={formData}

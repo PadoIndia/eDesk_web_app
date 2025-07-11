@@ -33,7 +33,7 @@ import {
   LeaveTypeResponse,
 } from "../types/leave.types";
 import generalService from "../services/api-services/general.service";
-import { DAY } from "../types/attendance-dashboard.types";
+import { DAY, PunchData } from "../types/attendance-dashboard.types";
 import uploadService from "../services/api-services/upload-service";
 
 export const getOperatingSystem = () => {
@@ -353,27 +353,28 @@ export const getWeekOff = async (userId: number): Promise<string> => {
   }
   return "";
 };
+const calculateTotalMinutes = (punches: PunchData[], date: number) => {
+  const dayPunches = punches
+    .filter((p) => p.date === date && (p.isApproved !== false || !p.approvedBy))
+    .sort((a, b) => a.hh * 60 + a.mm - (b.hh * 60 + b.mm));
 
-export const calculateWorkingHours = (punches: Punch[]): string => {
-  const validPunches = punches.filter(
-    (p) => p.isApproved !== false || !p.approvedBy
-  );
+  if (dayPunches.length < 2) return 0;
 
-  if (validPunches.length % 2 !== 0 || validPunches.length === 0) return "—";
-
-  // Punches are already sorted, so we can calculate directly
   let totalMinutes = 0;
 
-  for (let i = 0; i < validPunches.length; i += 2) {
-    if (i + 1 < validPunches.length) {
-      const inTime = validPunches[i];
-      const outTime = validPunches[i + 1];
-      totalMinutes +=
-        (outTime.hh ?? 0) * 60 +
-        (outTime.mm ?? 0) -
-        ((inTime.hh ?? 0) * 60 + (inTime.mm ?? 0));
-    }
+  for (let i = 0; i < dayPunches.length - 1; i += 2) {
+    const inTime = dayPunches[i].hh * 60 + dayPunches[i].mm;
+    const outTime = dayPunches[i + 1].hh * 60 + dayPunches[i + 1].mm;
+    totalMinutes += outTime - inTime;
   }
+
+  return totalMinutes;
+};
+
+export const calculateWorkingHours = (punches: PunchData[], date: number) => {
+  const totalMinutes = calculateTotalMinutes(punches, date);
+
+  if (totalMinutes === 0) return "—";
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

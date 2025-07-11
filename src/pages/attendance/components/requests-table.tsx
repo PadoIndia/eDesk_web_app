@@ -11,15 +11,18 @@ import {
   FaCheck,
   FaTimes,
 } from "react-icons/fa";
-import { Punch } from "../../../types/attendance.types";
+import { PunchResponse } from "../../../types/punch-data.types";
 
-interface RequestsTableProps {
-  filteredRequests: Punch[];
-  handleApproveReject: (request: Punch, action: "approve" | "reject") => void;
+interface Props {
+  filteredRequests: PunchResponse[];
+  handleApproveReject: (
+    request: PunchResponse,
+    action: "approve" | "reject"
+  ) => void;
   isAdmin: boolean;
 }
 
-const RequestsTable: React.FC<RequestsTableProps> = ({
+const RequestsTable: React.FC<Props> = ({
   filteredRequests,
   handleApproveReject,
   isAdmin,
@@ -30,8 +33,8 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       .padStart(2, "0")}`;
   };
 
-  const getStatusBadge = (isApproved: boolean | null) => {
-    if (isApproved === null) {
+  const getStatusBadge = (isApproved: boolean | null, approvedBy?: number) => {
+    if (!approvedBy) {
       return (
         <span className="badge bg-warning text-dark rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1">
           <FaExclamationCircle size={12} />
@@ -139,7 +142,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                       </td>
                       <td className="px-4 py-3">
                         <span className="badge bg-primary-subtle text-primary fw-normal rounded-pill px-3 py-1">
-                          {request.userDepartment || "Unknown"}
+                          {request.department?.name || "Unknown"}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -187,12 +190,12 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {getStatusBadge(request.isApproved)}
+                        {getStatusBadge(request.isApproved, request.approvedBy)}
                       </td>
 
                       {isAdmin && (
                         <td className="px-4 py-3">
-                          {request.isApproved === null ? (
+                          {request.approvedBy === null ? (
                             <div className="d-flex gap-2 justify-content-center">
                               <button
                                 className="btn btn-success btn-sm d-inline-flex align-items-center gap-1 px-3"

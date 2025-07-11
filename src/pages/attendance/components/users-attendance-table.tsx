@@ -19,16 +19,10 @@ import { Colors } from "../../../utils/constants";
 
 const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
 
-interface UsersAttendanceTableProps {
+interface Props {
   onMissPunchRequest?: (
     date: string,
     data: { id: number; name: string }
-  ) => void;
-  onManualStatusChange?: (
-    userId: number,
-    date: string,
-    currentStatus: string,
-    userName: string
   ) => void;
 }
 
@@ -43,9 +37,7 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-const UsersAttendanceTable: React.FC<UsersAttendanceTableProps> = ({
-  onMissPunchRequest,
-}) => {
+const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
   const [users, setUsers] = useState<UserAttendanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

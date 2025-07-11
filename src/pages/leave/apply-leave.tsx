@@ -101,7 +101,6 @@ const ApplyLeave = () => {
     return null;
   }, [currentUserPermissions]);
 
-  // Check if it's a single day leave
   const isSingleDayLeave = useMemo(() => {
     if (!formData.startDate || !formData.endDate) return false;
 
@@ -113,7 +112,6 @@ const ApplyLeave = () => {
     return start.getTime() === end.getTime();
   }, [formData.startDate, formData.endDate]);
 
-  // Reset leavePeriod to FULL_DAY when it becomes a multi-day leave
   useEffect(() => {
     if (!isSingleDayLeave && formData.leavePeriod !== "FULL_DAY") {
       setFormData((prev) => ({ ...prev, leavePeriod: "FULL_DAY" }));
@@ -272,12 +270,10 @@ const ApplyLeave = () => {
     const diffTime = end.getTime() - start.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 3600 * 24)) + 1;
 
-    // For single day leave, use the leavePeriod to calculate duration
     if (diffDays === 1) {
       return formData.leavePeriod === "FULL_DAY" ? 1 : 0.5;
     }
 
-    // For multi-day leaves, return full days only
     return diffDays;
   };
 

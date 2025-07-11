@@ -1,36 +1,5 @@
 import { Department } from "./department-team.types";
 
-export interface MissPunchRequestData {
-  userId: number;
-  date: number;
-  month: number;
-  year: number;
-  hh: number;
-  mm: number;
-  missPunchReason: string;
-  departmentId?: number;
-}
-
-export interface ManualStatusData {
-  userId: number;
-  date: number;
-  month: number;
-  year: number;
-  status:
-    | "PRESENT"
-    | "ABSENT"
-    | "HALF_DAY"
-    | "WEEK_OFF"
-    | "HOLIDAY"
-    | "SICK_LEAVE"
-    | "CASUAL_LEAVE"
-    | "PAID_LEAVE"
-    | "UNPAID_LEAVE"
-    | "COMPENSATORY_LEAVE";
-  comment?: string;
-  commentBy?: number;
-}
-
 export interface UserAttendanceItem {
   id: number;
   name: string;
@@ -110,6 +79,7 @@ export type DAY =
   | "FRIDAY"
   | "SATURDAY"
   | "SUNDAY";
+
 export interface UserDashboardData {
   user: {
     id: number;
@@ -141,6 +111,14 @@ type AutoAttendanceStatus =
   | "HOLIDAY"
   | "SICK_LEAVE"
   | "CASUAL_LEAVE"
-  | "PAID_LEAVE"
+  | "FESTIVAL"
+  | "EARNED_LEAVE"
   | "UNPAID_LEAVE"
-  | "COMPENSATORY_LEAVE";
+  | "COMPENSATORY"
+  | "SICK_LEAVE/2"
+  | "CASUAL_LEAVE/2"
+  | "FESTIVAL/2"
+  | "UNPAID_LEAVE/2"
+  | "COMPENSATORY/2"
+  | "EARNED_LEAVE/2"
+  | "ABSENT/2";

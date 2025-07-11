@@ -1,34 +1,55 @@
-export type punchData = {
+export type PunchPayload = {
   userId: number;
   date: number;
   month: number;
   year: number;
   hh: number;
   mm: number;
-  type: 'AUTO'|'MANUAL';
-  isApproved?: boolean;
-  approvedBy?: number;
   missPunchReason?: string;
   comment?: string;
-  approvedOn?: string;
 };
 
-export type updatePunchData = {
-  date?: number;
-  month?: number;
+export interface PunchQueryParams {
   year?: number;
-  hh?: number;
-  mm?: number;
-  type?: 'AUTO'|'MANUAL';
+  month?: number;
+  date?: number;
   isApproved?: boolean;
-  approvedBy?: number;
+  userId?: number;
+  type?: "AUTO" | "MANUAL";
+}
+
+export interface PunchResponse {
+  id: number;
+  userId: number;
+  date: number;
+  month: number;
+  year: number;
+  hh: number;
+  mm: number;
+  type: "AUTO" | "MANUAL";
+  isApproved: boolean;
   missPunchReason?: string;
   comment?: string;
-  approvedOn?: string;
-};
+  approvedBy?: number;
+  approvedOn: string | null;
+  createdOn: string;
+  updatedOn?: string;
+  user: {
+    name: string | null;
+    empCode: string | null;
+    profileImg: {
+      url: string;
+    } | null;
+  };
+  department?: {
+    name: string;
+  };
+  approverUser: {
+    name: string | null;
+  } | null;
+}
 
-
-export type getPunchData = {
-    month:number;
-    year:number;
-};
+export interface ApprovePayload {
+  comment?: string;
+  isApproved: boolean;
+}

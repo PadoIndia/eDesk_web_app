@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { lazy, useEffect, useState } from "react";
 import {
   FaPlus,
   FaCalendarAlt,
@@ -8,11 +8,6 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaExclamationCircle,
-  FaUmbrellaBeach,
-  FaHospital,
-  FaBriefcase,
-  FaMoneyBillWave,
-  FaCalendarTimes,
   FaClipboardList,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -22,100 +17,30 @@ import {
   PunchData,
   UserDashboardData,
 } from "../../../types/attendance-dashboard.types";
-import { convertDayNameToInt } from "../../../utils/helper";
-import { LeaveRequestResponse } from "../../../types/leave.types";
-import leaveRequestService from "../../../services/api-services/leave-request.service";
+import {
+  calculateWorkingHours,
+  convertDayNameToInt,
+  formatTime,
+  getDaysInMonth,
+} from "../../../utils/helper";
+import { statusToShortCode } from "../../../utils/constants";
+import { STATUS_ICON_CONFIG } from "../../../utils/icons";
 
-interface UserDetailedAttendanceProps {
+const ClassesTable = lazy(() => import("./classes-table"));
+const CallsTable = lazy(() => import("./calls-table"));
+const MissPunchesTable = lazy(() => import("./miss-punches-table"));
+
+interface Props {
   userId: number;
   onMissPunchRequest?: (
     date: string,
     user: { id: number; name: string }
   ) => void;
-  onManualStatusChange?: (
-    userId: number,
-    date: string,
-    currentStatus: string,
-    userName: string
-  ) => void;
   fromMonth?: number;
   fromYear?: number;
 }
 
-const statusToShortCode: { [key: string]: string } = {
-  PRESENT: "P",
-  ABSENT: "A",
-  HALF_DAY: "HD",
-  WEEK_OFF: "WO",
-  HOLIDAY: "H",
-  SICK_LEAVE: "SL",
-  CASUAL_LEAVE: "CL",
-  PAID_LEAVE: "PL",
-  UNPAID_LEAVE: "UL",
-  COMPENSATORY_LEAVE: "CO",
-  EARNED_LEAVE: "EL",
-};
-
-const leaveTypeToShortCode: { [key: string]: string } = {
-  "SICK LEAVE": "SL",
-  "CASUAL LEAVE": "CL",
-  "PAID LEAVE": "PL",
-  "UNPAID LEAVE": "UL",
-  "COMPENSATORY LEAVE": "CO",
-  "EARNED LEAVE": "EL",
-};
-
-const statusConfig: {
-  [key: string]: { icon: React.ReactNode; bgClass: string; textClass: string };
-} = {
-  WEEK_OFF: {
-    icon: <FaCalendarAlt size={14} />,
-    bgClass: "bg-light",
-    textClass: "text-secondary",
-  },
-  HOLIDAY: {
-    icon: <FaUmbrellaBeach size={14} />,
-    bgClass: "bg-info bg-opacity-10",
-    textClass: "text-info",
-  },
-  HALF_DAY: {
-    icon: <FaCalendarAlt size={14} />,
-    bgClass: "bg-warning bg-opacity-10",
-    textClass: "text-warning",
-  },
-  SICK_LEAVE: {
-    icon: <FaHospital size={14} />,
-    bgClass: "bg-warning bg-opacity-10",
-    textClass: "text-warning",
-  },
-  CASUAL_LEAVE: {
-    icon: <FaBriefcase size={14} />,
-    bgClass: "bg-warning bg-opacity-10",
-    textClass: "text-warning",
-  },
-  PAID_LEAVE: {
-    icon: <FaMoneyBillWave size={14} />,
-    bgClass: "bg-success bg-opacity-10",
-    textClass: "text-success",
-  },
-  UNPAID_LEAVE: {
-    icon: <FaCalendarTimes size={14} />,
-    bgClass: "bg-secondary bg-opacity-10",
-    textClass: "text-secondary",
-  },
-  COMPENSATORY_LEAVE: {
-    icon: <FaCalendarAlt size={14} />,
-    bgClass: "bg-primary bg-opacity-10",
-    textClass: "text-primary",
-  },
-  EARNED_LEAVE: {
-    icon: <FaCalendarAlt size={14} />,
-    bgClass: "bg-primary bg-opacity-10",
-    textClass: "text-primary",
-  },
-};
-
-const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
+const UserDetailedAttendance: React.FC<Props> = ({
   userId,
   onMissPunchRequest,
   fromMonth,
@@ -127,9 +52,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   );
   const [month, setMonth] = useState(fromMonth || new Date().getMonth() + 1);
   const [year, setYear] = useState(fromYear || new Date().getFullYear());
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestResponse[]>(
-    []
-  );
 
   const [activeTab, setActiveTab] = useState<
     "attendance" | "calls" | "classes" | "punchRequests"
@@ -159,8 +81,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
       if (response.status === "success" && response.data) {
         setDashboardData(response.data);
-        const resp = await leaveRequestService.getLeaveRequests({ userId });
-        if (resp.status === "success") setLeaveRequests(resp.data);
       } else {
         toast.error("Failed to fetch dashboard data");
       }
@@ -170,46 +90,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const formatTime = (hh: number, mm: number) => {
-    return `${hh.toString().padStart(2, "0")}:${mm
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  const calculateTotalMinutes = (punches: PunchData[], date: number) => {
-    const dayPunches = punches
-      .filter(
-        (p) => p.date === date && (p.isApproved !== false || !p.approvedBy)
-      )
-      .sort((a, b) => a.hh * 60 + a.mm - (b.hh * 60 + b.mm));
-
-    if (dayPunches.length < 2) return 0;
-
-    let totalMinutes = 0;
-
-    for (let i = 0; i < dayPunches.length - 1; i += 2) {
-      const inTime = dayPunches[i].hh * 60 + dayPunches[i].mm;
-      const outTime = dayPunches[i + 1].hh * 60 + dayPunches[i + 1].mm;
-      totalMinutes += outTime - inTime;
-    }
-
-    return totalMinutes;
-  };
-
-  const calculateWorkingHours = (punches: PunchData[], date: number) => {
-    const totalMinutes = calculateTotalMinutes(punches, date);
-
-    if (totalMinutes === 0) return "—";
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m`;
   };
 
   const getStatusForDate = (date: number) => {
@@ -236,25 +116,6 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
     }
 
     return "—";
-  };
-
-  const getLeaveRequestForDate = (date: number) => {
-    const currentDate = new Date(year, month - 1, date);
-    currentDate.setHours(0, 0, 0, 0);
-
-    return leaveRequests.find((leave) => {
-      const startDate = new Date(leave.startDate);
-      startDate.setHours(0, 0, 0, 0);
-
-      const endDate = new Date(leave.endDate);
-      endDate.setHours(0, 0, 0, 0);
-
-      return currentDate >= startDate && currentDate <= endDate;
-    });
-  };
-
-  const isLeaveApproved = (leave: LeaveRequestResponse) => {
-    return leave.managerStatus === "APPROVED" || leave.hrStatus === "APPROVED";
   };
 
   const getPunchApprovalIcon = (punch: PunchData) => {
@@ -290,7 +151,8 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
   };
 
   const getRowClass = (status: string) => {
-    const config = statusConfig[status];
+    const baseStatus = status.replace("/2", "");
+    const config = STATUS_ICON_CONFIG[baseStatus];
     return config ? config.bgClass : "";
   };
 
@@ -337,6 +199,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
     dashboardData.attendance.forEach((att) => {
       const status = att.statusManual || att.statusAuto;
+
       switch (status) {
         case "PRESENT":
           summary.presentDays++;
@@ -355,11 +218,22 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
           break;
         case "SICK_LEAVE":
         case "CASUAL_LEAVE":
-        case "PAID_LEAVE":
+        case "FESTIVAL":
         case "UNPAID_LEAVE":
-        case "COMPENSATORY_LEAVE":
+        case "COMPENSATORY":
+        case "EARNED_LEAVE":
           summary.leaves++;
           break;
+      }
+
+      if (status.includes("/2")) {
+        if (status === "ABSENT/2") {
+          summary.absentDays += 0.5;
+          summary.presentDays += 0.5;
+        } else {
+          summary.leaves += 0.5;
+          summary.presentDays += 0.5;
+        }
       }
     });
 
@@ -396,99 +270,43 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
 
   const getPunchRequests = () => {
     if (!dashboardData) return [];
-
     return dashboardData.punchData.filter((punch) => punch.type === "MANUAL");
   };
 
   const getStatusDisplay = (day: number) => {
-    // Calculate total working minutes for the day
-    const totalMinutes = calculateTotalMinutes(
-      dashboardData?.punchData || [],
-      day
-    );
-    const totalHours = totalMinutes / 60;
-
-    // If 8 or more hours, user is definitely present - no need to check leave
-    if (totalHours >= 8) {
-      return {
-        code: "P",
-        isApproved: true,
-        isPending: false,
-        badgeClass: "bg-success-subtle text-success",
-        title: "Present",
-      };
-    }
-
-    // Only check for leave requests if working hours < 8
-    if (totalHours < 8) {
-      const leaveRequest = getLeaveRequestForDate(day);
-
-      if (leaveRequest) {
-        const leaveTypeName = leaveRequest.leaveType.name.toUpperCase();
-        const shortCode = leaveTypeToShortCode[leaveTypeName] || "PL";
-        const isApproved = isLeaveApproved(leaveRequest);
-
-        // If duration is 0.5, show with /2
-        const displayCode =
-          leaveRequest.duration === 0.5 ? `${shortCode}/2` : shortCode;
-
-        return {
-          code: displayCode,
-          isApproved,
-          isPending: !isApproved,
-          badgeClass: isApproved
-            ? "bg-warning-subtle text-warning"
-            : "bg-warning-subtle text-warning",
-          title: `${leaveRequest.leaveType.name}${
-            !isApproved ? " (Pending)" : ""
-          }`,
-        };
-      }
-    }
-
-    // No leave request found, determine status based on working hours
-    if (totalHours >= 4 && totalHours < 8) {
-      // Half-day hours without leave
-      return {
-        code: "HD",
-        isApproved: true,
-        isPending: false,
-        badgeClass: "bg-warning-subtle text-warning",
-        title: "Half Day",
-      };
-    } else if (totalHours > 0 && totalHours < 4) {
-      // Less than half-day - absent
-      return {
-        code: "A",
-        isApproved: true,
-        isPending: false,
-        badgeClass: "bg-danger-subtle text-danger",
-        title: "Absent",
-      };
-    }
-
-    // No punches - check attendance status
     const status = getStatusForDate(day);
     const shortCode = statusToShortCode[status] || status;
 
-    // Determine badge class based on status
     let badgeClass = "bg-secondary-subtle text-secondary";
-    if (shortCode === "P") {
+
+    if (status === "PRESENT") {
       badgeClass = "bg-success-subtle text-success";
-    } else if (shortCode === "A") {
+    } else if (status === "ABSENT") {
       badgeClass = "bg-danger-subtle text-danger";
-    } else if (shortCode === "HD") {
+    } else if (status === "ABSENT/2") {
+      badgeClass = "bg-danger-subtle text-danger";
+    } else if (status === "HALF_DAY" || status.includes("/2")) {
       badgeClass = "bg-warning-subtle text-warning";
-    } else if (shortCode === "WO" || shortCode === "H") {
+    } else if (status === "WEEK_OFF" || status === "HOLIDAY") {
       badgeClass = "bg-primary-subtle text-primary";
+    } else if (status === "FESTIVAL" || status === "FESTIVAL/2") {
+      badgeClass = "bg-purple-subtle text-purple";
+    } else if (
+      [
+        "SICK_LEAVE",
+        "CASUAL_LEAVE",
+        "UNPAID_LEAVE",
+        "COMPENSATORY",
+        "EARNED_LEAVE",
+      ].includes(status)
+    ) {
+      badgeClass = "bg-warning-subtle text-warning";
     }
 
     return {
       code: shortCode,
-      isApproved: true,
-      isPending: false,
       badgeClass,
-      title: status,
+      title: status.replace(/_/g, " ").replace("/2", " (Half Day)"),
     };
   };
 
@@ -672,7 +490,7 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
             >
               <FaClipboardList className="me-2" />
               Punch Requests
-              {punchRequests.length > 0 && (
+              {punchRequests.filter((p) => !p.approvedBy).length > 0 && (
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                   {punchRequests.length}
                   <span className="visually-hidden">punch requests</span>
@@ -743,7 +561,8 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                   const dateStr = `${year}-${month
                     .toString()
                     .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
-                  const config = statusConfig[fullStatus];
+                  const baseStatus = fullStatus.replace("/2", "");
+                  const config = STATUS_ICON_CONFIG[baseStatus];
                   const rowClass = getRowClass(fullStatus);
                   const isWeekOff =
                     date.getDay() ===
@@ -808,10 +627,9 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
                       <td className={"text-center " + rowClass}>
                         <span
                           title={statusDisplay.title}
-                          className={`badge rounded-pill px-3 py-1 ${statusDisplay.badgeClass} d-inline-flex align-items-center gap-1`}
+                          className={`badge rounded-pill px-3 py-1 ${statusDisplay.badgeClass}`}
                         >
                           {statusDisplay.code}
-                          {statusDisplay.isPending && <FaClock size={12} />}
                         </span>
                       </td>
                       <td className={"text-center " + rowClass}>
@@ -849,270 +667,15 @@ const UserDetailedAttendance: React.FC<UserDetailedAttendanceProps> = ({
         )}
 
         {activeTab === "calls" && (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
-                <tr className="bg-light">
-                  <th>Date</th>
-                  <th className="text-center">Incoming Calls</th>
-                  <th className="text-center">Outgoing Calls</th>
-                  <th className="text-center">Missed Calls</th>
-                  <th className="text-center">Total Duration</th>
-                  <th>Comment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.callDetails.length > 0 ? (
-                  dashboardData.callDetails.map((call) => (
-                    <tr key={call.id}>
-                      <td>
-                        <div className="fw-bold">{call.date}</div>
-                        <small className="text-muted">
-                          {new Date(
-                            call.year,
-                            call.month - 1,
-                            call.date
-                          ).toLocaleDateString("en-US", { weekday: "short" })}
-                        </small>
-                      </td>
-                      <td className="text-center">
-                        <span className="badge bg-success rounded-pill px-3">
-                          {call.incomingCalls}
-                        </span>
-                      </td>
-                      <td className="text-center">
-                        <span className="badge bg-primary rounded-pill px-3">
-                          {call.outgoingCalls}
-                        </span>
-                      </td>
-                      <td className="text-center">
-                        <span className="badge bg-danger rounded-pill px-3">
-                          {call.missedCalls}
-                        </span>
-                      </td>
-                      <td className="text-center">
-                        <span className="fw-semibold">
-                          {Math.floor(call.callDuration / 60)}h{" "}
-                          {call.callDuration % 60}m
-                        </span>
-                      </td>
-                      <td>{call.comment || "—"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8">
-                      <div className="text-muted">
-                        <FaPhone className="mb-2" size={48} />
-                        <p>No call data available</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <CallsTable calls={dashboardData.callDetails} />
         )}
 
         {activeTab === "classes" && (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
-                <tr className="bg-light">
-                  <th>Date</th>
-                  <th>Class Type</th>
-                  <th>Scheduled Time</th>
-                  <th>Actual Time</th>
-                  <th className="text-center">Status</th>
-                  <th>Comment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.classDetails.length > 0 ? (
-                  dashboardData.classDetails.map((cls) => (
-                    <tr key={cls.id}>
-                      <td>
-                        <div className="fw-bold">{cls.date}</div>
-                        <small className="text-muted">
-                          {new Date(
-                            cls.year,
-                            cls.month - 1,
-                            cls.date
-                          ).toLocaleDateString("en-US", { weekday: "short" })}
-                        </small>
-                      </td>
-                      <td>
-                        <span className="badge bg-info rounded-pill px-3">
-                          {cls.classType}
-                        </span>
-                      </td>
-                      <td>
-                        {new Date(cls.startTime).toLocaleTimeString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        -
-                        {new Date(cls.endTime).toLocaleTimeString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                      <td>
-                        {cls.actualStartTime && cls.actualEndTime ? (
-                          <>
-                            {new Date(cls.actualStartTime).toLocaleTimeString(
-                              "en-US",
-                              { hour: "2-digit", minute: "2-digit" }
-                            )}{" "}
-                            -
-                            {new Date(cls.actualEndTime).toLocaleTimeString(
-                              "en-US",
-                              { hour: "2-digit", minute: "2-digit" }
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="text-center">
-                        <span
-                          className={`badge rounded-pill px-3 ${
-                            cls.classStatus === "COMPLETED"
-                              ? "bg-success"
-                              : cls.classStatus === "IN_PROGRESS"
-                              ? "bg-warning text-dark"
-                              : cls.classStatus.includes("CANCELLED")
-                              ? "bg-danger"
-                              : "bg-secondary"
-                          }`}
-                        >
-                          {cls.classStatus.replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td>{cls.comment || "—"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8">
-                      <div className="text-muted">
-                        <FaChalkboardTeacher className="mb-2" size={48} />
-                        <p>No class data available</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ClassesTable classes={dashboardData.classDetails} />
         )}
 
         {activeTab === "punchRequests" && (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
-                <tr className="bg-light">
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Reason</th>
-                  <th className="text-center">Status</th>
-                  <th>Approved By</th>
-                  <th>Approved On</th>
-                  <th>Comment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {punchRequests.length > 0 ? (
-                  punchRequests
-                    .sort((a, b) => {
-                      const dateA = new Date(a.year, a.month - 1, a.date);
-                      const dateB = new Date(b.year, b.month - 1, b.date);
-                      return dateB.getTime() - dateA.getTime();
-                    })
-                    .map((punch) => (
-                      <tr key={punch.id}>
-                        <td>
-                          <div className="fw-bold">{punch.date}</div>
-                          <small className="text-muted">
-                            {new Date(
-                              punch.year,
-                              punch.month - 1,
-                              punch.date
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </small>
-                        </td>
-                        <td>
-                          <span className="badge bg-secondary rounded-pill px-3">
-                            {formatTime(punch.hh, punch.mm)}
-                          </span>
-                        </td>
-                        <td>{punch.missPunchReason || "—"}</td>
-                        <td className="text-center">
-                          {punch.approvedBy ? (
-                            punch.isApproved === true ? (
-                              <span className="badge bg-success rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                                <FaCheckCircle size={12} />
-                                Approved
-                              </span>
-                            ) : (
-                              <span className="badge bg-danger rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                                <FaTimesCircle size={12} />
-                                Rejected
-                              </span>
-                            )
-                          ) : (
-                            <span className="badge bg-warning text-dark rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                              <FaExclamationCircle size={12} />
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {punch.approvedBy ? (
-                            <span className="text-muted">
-                              User #{punch.approvedBy}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>
-                          {punch.approvedOn ? (
-                            <small className="text-muted">
-                              {new Date(punch.approvedOn).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </small>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>{punch.comment || "—"}</td>
-                      </tr>
-                    ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8">
-                      <div className="text-muted">
-                        <FaClipboardList className="mb-2" size={48} />
-                        <p>No punch requests found</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <MissPunchesTable missPunches={punchRequests} />
         )}
       </div>
     </div>

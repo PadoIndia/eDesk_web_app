@@ -1,3 +1,11 @@
+import {
+  FaBriefcase,
+  FaCalendarAlt,
+  FaCalendarTimes,
+  FaHospital,
+  FaUmbrellaBeach,
+} from "react-icons/fa";
+
 type Props = {
   className?: string;
   size?: number;
@@ -117,3 +125,53 @@ const WpUser = ({ className = "", size = 32 }: Props) => (
 );
 
 export { WpCog, WpMessages, WpPeople, WpUser };
+
+export const STATUS_ICON_CONFIG: {
+  [key: string]: { icon: React.ReactNode; bgClass: string; textClass: string };
+} = {
+  WEEK_OFF: {
+    icon: <FaCalendarAlt size={14} />,
+    bgClass: "bg-light",
+    textClass: "text-secondary",
+  },
+  HOLIDAY: {
+    icon: <FaUmbrellaBeach size={14} />,
+    bgClass: "bg-info bg-opacity-10",
+    textClass: "text-info",
+  },
+  HALF_DAY: {
+    icon: <FaCalendarAlt size={14} />,
+    bgClass: "bg-warning bg-opacity-10",
+    textClass: "text-warning",
+  },
+  SICK_LEAVE: {
+    icon: <FaHospital size={14} />,
+    bgClass: "bg-warning bg-opacity-10",
+    textClass: "text-warning",
+  },
+  CASUAL_LEAVE: {
+    icon: <FaBriefcase size={14} />,
+    bgClass: "bg-warning bg-opacity-10",
+    textClass: "text-warning",
+  },
+  FESTIVAL: {
+    icon: <FaUmbrellaBeach size={14} />,
+    bgClass: "bg-purple bg-opacity-10",
+    textClass: "text-purple",
+  },
+  UNPAID_LEAVE: {
+    icon: <FaCalendarTimes size={14} />,
+    bgClass: "bg-secondary bg-opacity-10",
+    textClass: "text-secondary",
+  },
+  COMPENSATORY: {
+    icon: <FaCalendarAlt size={14} />,
+    bgClass: "bg-primary bg-opacity-10",
+    textClass: "text-primary",
+  },
+  EARNED_LEAVE: {
+    icon: <FaCalendarAlt size={14} />,
+    bgClass: "bg-primary bg-opacity-10",
+    textClass: "text-primary",
+  },
+};

@@ -1,32 +1,34 @@
 import { ApiResponse } from "../../types/axios.types";
 import ApiService from "./api-service";
-import { punchData, getPunchData, updatePunchData } from "../../types/punch-data.types";
+import {
+  ApprovePayload,
+  PunchPayload,
+  PunchQueryParams,
+  PunchResponse,
+} from "../../types/punch-data.types";
 
-class punchDataService extends ApiService {
+class PunchDataService extends ApiService {
   constructor() {
-    super("/admin/punch-data");
+    super("/admin/punches");
   }
 
-  createPunchData(data:punchData): ApiResponse{
+  createPunchData(data: PunchPayload): ApiResponse<PunchResponse> {
     return this.postData("/", data);
   }
 
-  getPunchDataById(userId:number,data:getPunchData): ApiResponse{
-    return this.getData(`/${userId}/${data.month}/${data.year}`);
+  getPunches(params?: PunchQueryParams): ApiResponse<PunchResponse[]> {
+    return this.getData(``, { params });
   }
 
-  updatePunchData(userId:number, data: updatePunchData): ApiResponse{
-    return this.putData(`/${userId}`,data);
+  approvePunch(id: number, data: ApprovePayload): ApiResponse<number> {
+    return this.postData(`/${id}/approve`, data);
   }
-
-  deletePunchData(userId: number): ApiResponse{
-    return this.deleteData(`/${userId}`);
+  updatePunch(
+    id: number,
+    data: Partial<PunchResponse>
+  ): ApiResponse<PunchResponse> {
+    return this.putData(`/${id}`, data);
   }
-
-  getMissPunchData(): ApiResponse{
-    return this.getData("/miss-punch-data");
-  }
-
 }
 
-export default new punchDataService();
+export default new PunchDataService();

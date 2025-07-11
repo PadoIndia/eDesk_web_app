@@ -7,6 +7,11 @@ import {
   LeaveRequestResponse,
 } from "../../types/leave.types";
 import { UserDepartmentResp, UserTeamResp } from "../../types/user.types";
+import {
+  PunchPayload,
+  PunchQueryParams,
+  PunchResponse,
+} from "../../types/punch-data.types";
 
 class GeneralService extends ApiService {
   constructor() {
@@ -33,10 +38,6 @@ class GeneralService extends ApiService {
     });
   }
 
-  createLeaveRequest(data: LeaveRequestPayload): ApiResponse<number> {
-    return this.postData("/users/leave-requests", data);
-  }
-
   getUserDepartments(userId: number): ApiResponse<UserDepartmentResp[]> {
     return this.getData(`/users/${userId}/departments`);
   }
@@ -45,10 +46,33 @@ class GeneralService extends ApiService {
     return this.getData(`/users/${userId}/teams`);
   }
 
+  // Leave Request related api calls for current logged in user
+  createLeaveRequest(data: LeaveRequestPayload): ApiResponse<number> {
+    return this.postData("/users/leave-requests", data);
+  }
   getMyLeaveRequests(
     params?: GetLeaveRequestsQuery
   ): ApiResponse<LeaveRequestResponse[]> {
     return this.getData(`/users/leave-requests`, { params });
+  }
+
+  // Punch related api calls for current logged in user
+  getUserPunchRequests(
+    params: Omit<PunchQueryParams, "type" | "userId">
+  ): ApiResponse<PunchResponse[]> {
+    return this.getData(`/users/punches`, { params });
+  }
+
+  createPunchRequest(data: PunchPayload): ApiResponse<PunchResponse> {
+    return this.postData(`/users/punches`, data);
+  }
+
+  updatePunch(punchId: number, data: Partial<PunchPayload>) {
+    return this.putData(`/users/punches/${punchId}`, data);
+  }
+
+  deletePunchRequest(punchId: number): ApiResponse<number> {
+    return this.deleteData(`/users/punches/${punchId}`);
   }
 }
 

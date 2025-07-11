@@ -1,6 +1,4 @@
 import {
-  ManualStatusData,
-  MissPunchRequestData,
   UserAttendanceItem,
   UserDashboardData,
 } from "../../types/attendance-dashboard.types";
@@ -42,29 +40,6 @@ class AttendanceDashboardService extends ApiService {
     if (year) params.append("year", year.toString());
 
     return this.getData(`/department-users?${params.toString()}`);
-  }
-
-  getPendingRequests(adminUserId: number): ApiResponse {
-    return this.getData(`/pending-requests/${adminUserId}`);
-  }
-
-  createMissPunchRequest(requestData: MissPunchRequestData): ApiResponse {
-    return this.postData(`/miss-punch-request`, requestData);
-  }
-
-  updateManualStatus(statusData: ManualStatusData): ApiResponse {
-    return this.putData("/manual-status", statusData);
-  }
-
-  approveMissPunchRequest(
-    punchId: number,
-    approvalData: {
-      isApproved: boolean;
-      comment?: string;
-      approvedBy?: number;
-    }
-  ): ApiResponse {
-    return this.putData(`/miss-punch-request/${punchId}/approve`, approvalData);
   }
 
   syncUserAttendance(

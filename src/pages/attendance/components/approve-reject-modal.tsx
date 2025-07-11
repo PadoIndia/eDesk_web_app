@@ -1,8 +1,8 @@
 import React from "react";
-import { Punch } from "../../../types/attendance.types";
+import { PunchResponse } from "../../../types/punch-data.types";
 
-interface ApproveRejectModalProps {
-  currentRequest: Punch;
+interface Props {
+  currentRequest: PunchResponse;
   actionType: "approve" | "reject" | null;
   rejectionReason: string;
   setRejectionReason: React.Dispatch<React.SetStateAction<string>>;
@@ -10,7 +10,7 @@ interface ApproveRejectModalProps {
   setShowApproveRejectModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
+const ApproveRejectModal: React.FC<Props> = ({
   currentRequest,
   actionType,
   rejectionReason,
@@ -48,7 +48,7 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
               </div>
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Department:</p>
-                <p>{currentRequest.userDepartment || "N/A"}</p>
+                <p>{currentRequest.department?.name || "N/A"}</p>
               </div>
             </div>
             <div className="row mb-3">
@@ -64,7 +64,9 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
               </div>
               <div className="col-sm-6">
                 <p className="mb-1 fw-bold">Time:</p>
-                <p>{currentRequest.time}</p>
+                <p>
+                  {currentRequest.hh}:{currentRequest.mm}
+                </p>
               </div>
             </div>
             <div className="mb-3">

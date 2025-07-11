@@ -190,4 +190,6 @@ export type TPermission =
   | "can_add_leaves"
   | "is_admin"
   | "is_admin_department"
-  | "is_admin_team";
+  | "is_admin_team"
+  | "can_create_approve_punches"
+  | "can_manage_department_team";

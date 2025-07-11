@@ -64,3 +64,24 @@ export const WEEK_DAYS = [
   "SATURDAY",
   "SUNDAY",
 ] as const;
+
+export const statusToShortCode: { [key: string]: string } = {
+  PRESENT: "P",
+  ABSENT: "A",
+  "ABSENT/2": "A/2",
+  HALF_DAY: "HD",
+  WEEK_OFF: "WO",
+  HOLIDAY: "H",
+  SICK_LEAVE: "SL",
+  CASUAL_LEAVE: "CL",
+  FESTIVAL: "FL",
+  UNPAID_LEAVE: "UL",
+  COMPENSATORY: "CO",
+  EARNED_LEAVE: "EL",
+  "SICK_LEAVE/2": "SL/2",
+  "CASUAL_LEAVE/2": "CL/2",
+  "FESTIVAL/2": "FL/2",
+  "UNPAID_LEAVE/2": "UL/2",
+  "COMPENSATORY/2": "CO/2",
+  "EARNED_LEAVE/2": "EL/2",
+} as const;
