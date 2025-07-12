@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import attendanceDashboardService from "../../../services/api-services/attendance-dashboard.service";
 import { DepartmentResponse } from "../../../types/department-team.types";
-import { LeaveScheme, LeaveRequestResponse } from "../../../types/leave.types";
+import { LeaveScheme } from "../../../types/leave.types";
 import departmentService from "../../../services/api-services/department.service";
 import leaveSchemeService from "../../../services/api-services/leave-scheme.service";
-import leaveRequestService from "../../../services/api-services/leave-request.service";
+import { statusToShortCode } from "../../../utils/constants";
+import { Spinner } from "../../../components/loading";
 
 interface AttendanceData {
   departmentName: string;
@@ -31,15 +32,6 @@ interface EmployeeAttendanceRow {
   };
 }
 
-const leaveTypeToShortCode: { [key: string]: string } = {
-  "SICK LEAVE": "SL",
-  "CASUAL LEAVE": "CL",
-  "PAID LEAVE": "PL",
-  "UNPAID LEAVE": "UL",
-  "COMPENSATORY LEAVE": "CO",
-  "EARNED LEAVE": "EL",
-};
-
 const AttendanceReport = () => {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<AttendanceData | null>(null);
@@ -49,17 +41,15 @@ const AttendanceReport = () => {
   const [leaveSchemeId, setLeaveSchemeId] = useState<number | undefined>();
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [leaveSchemes, setLeaveSchemes] = useState<LeaveScheme[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestResponse[]>(
-    []
-  );
   const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   useEffect(() => {
-    departmentService.getDepartments().then((res) => {
-      if (res.status === "success") setDepartments(res.data);
-    });
-    leaveSchemeService.getLeaveSchemes().then((res) => {
-      if (res.status === "success") setLeaveSchemes(res.data);
+    Promise.all([
+      departmentService.getDepartments(),
+      leaveSchemeService.getLeaveSchemes(),
+    ]).then(([deptRes, schemeRes]) => {
+      if (deptRes.status === "success") setDepartments(deptRes.data);
+      if (schemeRes.status === "success") setLeaveSchemes(schemeRes.data);
     });
   }, []);
 
@@ -72,16 +62,8 @@ const AttendanceReport = () => {
   const fetchReport = async () => {
     try {
       if (!leaveSchemeId) return;
-
       setLoading(true);
 
-      // Fetch leave requests first
-      const leaveResp = await leaveRequestService.getLeaveRequests({});
-      if (leaveResp.status === "success") {
-        setLeaveRequests(leaveResp.data);
-      }
-
-      // Then fetch attendance data
       const response = await attendanceDashboardService.getSheetData({
         leaveSchemeId,
         year,
@@ -99,39 +81,19 @@ const AttendanceReport = () => {
     }
   };
 
-  const getLeaveRequestForDate = (userId: number, day: number) => {
-    // Create current date with time reset to start of day
-    const currentDate = new Date(year, month - 1, day);
-    currentDate.setHours(0, 0, 0, 0);
-
-    return leaveRequests.find((leave) => {
-      if (leave.userId !== userId) return false;
-
-      // Reset hours for start and end dates for accurate comparison
-      const startDate = new Date(leave.startDate);
-      startDate.setHours(0, 0, 0, 0);
-
-      const endDate = new Date(leave.endDate);
-      endDate.setHours(0, 0, 0, 0);
-
-      return currentDate >= startDate && currentDate <= endDate;
-    });
-  };
-
-  const isLeaveApproved = (leave: LeaveRequestResponse) => {
-    return leave.managerStatus === "APPROVED" || leave.hrStatus === "APPROVED";
+  const getStatusShortCode = (status: string): string => {
+    return statusToShortCode[status] || status;
   };
 
   const downloadExcel = async () => {
     if (!reportData) return;
-
     setDownloadingExcel(true);
 
     try {
       const XLSX = await import("xlsx-js-style");
-
       const wb = XLSX.utils.book_new();
 
+      // Header rows
       const wsData = [
         [
           `Dept. Name: ${reportData.departmentName}`,
@@ -156,30 +118,15 @@ const AttendanceReport = () => {
         ],
       ];
 
+      // Data rows
       reportData.data.forEach((employee) => {
         const row = [
           employee.empCode,
           employee.name,
           employee.department,
           ...Array.from({ length: 31 }, (_, i) => {
-            const day = i + 1;
-            const originalStatus = employee.dailyAttendance[day] || "";
-
-            // Check if there's a leave request for this date
-            const leaveRequest = getLeaveRequestForDate(employee.userId, day);
-
-            if (leaveRequest) {
-              // Leave request exists, use leave type
-              const leaveTypeName = leaveRequest.leaveType.name.toUpperCase();
-              const shortCode = leaveTypeToShortCode[leaveTypeName] || "PL";
-
-              // Always use leave type when leave request exists
-              return leaveRequest.duration === 0.5
-                ? `${shortCode}/2`
-                : shortCode;
-            }
-
-            return originalStatus;
+            const status = employee.dailyAttendance[i + 1] || "";
+            return getStatusShortCode(status);
           }),
           employee.summary.present,
           employee.summary.weekOff,
@@ -190,15 +137,14 @@ const AttendanceReport = () => {
           employee.summary.overtime,
           employee.summary.breakHours,
         ];
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         wsData.push(row as any);
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      // Simplified styling - only essential styles
-      const colWidths = [
+      // Column widths
+      ws["!cols"] = [
         { wch: 12 },
         { wch: 20 },
         { wch: 20 },
@@ -212,25 +158,96 @@ const AttendanceReport = () => {
         { wch: 8 },
         { wch: 8 },
       ];
-      ws["!cols"] = colWidths;
 
       const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
 
-      // Apply minimal styling only to headers
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const headerCell = XLSX.utils.encode_cell({ r: 2, c: C });
-        if (ws[headerCell]) {
-          ws[headerCell].s = {
-            font: { bold: true },
-            fill: { patternType: "solid", fgColor: { rgb: "E2E8F0" } },
-            alignment: { horizontal: "center" },
-          };
+      // Apply styles
+      for (let R = 0; R <= range.e.r; ++R) {
+        for (let C = 0; C <= range.e.c; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) continue;
+
+          // Header row styling
+          if (R === 2) {
+            ws[cellRef].s = {
+              font: { bold: true, color: { rgb: "FFFFFF" } },
+              fill: { patternType: "solid", fgColor: { rgb: "2E7D32" } },
+              alignment: { horizontal: "center", vertical: "center" },
+              border: {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } },
+              },
+            };
+          }
+          // Title row styling
+          else if (R === 0) {
+            ws[cellRef].s = {
+              font: { bold: true, size: 12 },
+              alignment: { horizontal: "left" },
+            };
+          }
+          // Data rows styling
+          else if (R > 2) {
+            const cellValue = ws[cellRef].v?.toString() || "";
+            let bgColor = "FFFFFF";
+            let fontColor = "000000";
+
+            // Status column styling (columns 3-33)
+            if (C >= 3 && C <= 33) {
+              if (cellValue === "P") {
+                bgColor = "E8F5E9";
+                fontColor = "2E7D32";
+              } else if (cellValue === "A") {
+                bgColor = "FFEBEE";
+                fontColor = "C62828";
+              } else if (cellValue.includes("/2")) {
+                bgColor = "FFF3E0";
+                fontColor = "EF6C00";
+              } else if (cellValue === "WO") {
+                bgColor = "E3F2FD";
+                fontColor = "1565C0";
+              } else if (cellValue === "H") {
+                bgColor = "E1F5FE";
+                fontColor = "0277BD";
+              } else if (
+                ["SL", "CL", "FL", "UL", "CO", "EL"].includes(cellValue)
+              ) {
+                bgColor = "F3E5F5";
+                fontColor = "6A1B9A";
+              }
+            }
+            // Summary columns styling
+            else if (C === 34) {
+              // Present
+              bgColor = "E8F5E9";
+              fontColor = "2E7D32";
+            } else if (C === 38) {
+              // Absent
+              bgColor = "FFEBEE";
+              fontColor = "C62828";
+            }
+
+            ws[cellRef].s = {
+              fill: { patternType: "solid", fgColor: { rgb: bgColor } },
+              font: { color: { rgb: fontColor }, bold: C >= 34 && C <= 38 },
+              alignment: { horizontal: "center", vertical: "center" },
+              border: {
+                top: { style: "thin", color: { rgb: "E0E0E0" } },
+                bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+                left: { style: "thin", color: { rgb: "E0E0E0" } },
+                right: { style: "thin", color: { rgb: "E0E0E0" } },
+              },
+            };
+          }
         }
       }
 
+      // Merge cells for title
       ws["!merges"] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
-        { s: { r: 0, c: 2 }, e: { r: 0, c: 3 } },
+        { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } },
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
@@ -248,16 +265,34 @@ const AttendanceReport = () => {
     return date.toLocaleDateString("en-US", { weekday: "short" }).charAt(0);
   };
 
+  const getStatusStyle = (status: string) => {
+    const shortCode = getStatusShortCode(status);
+
+    switch (shortCode) {
+      case "P":
+        return "text-primary fw-semibold";
+      case "A":
+        return "text-danger fw-semibold";
+      case "WO":
+        return "text-secondary";
+      case "H":
+        return "text-info";
+      case "SL":
+      case "CL":
+      case "FL":
+      case "UL":
+      case "CO":
+      case "EL":
+        return "text-purple";
+      default:
+        return shortCode.includes("/2") ? "text-warning fw-semibold" : "";
+    }
+  };
+
   const daysInMonth = new Date(year, month, 0).getDate();
 
   if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
@@ -466,83 +501,18 @@ const AttendanceReport = () => {
                       <td className="border-end">{employee.name}</td>
                       <td className="border-end">{employee.department}</td>
                       {Array.from({ length: daysInMonth }, (_, i) => {
-                        // Always check for leave request first, regardless of original status
                         const day = i + 1;
-                        const originalStatus =
-                          employee.dailyAttendance[day] || "";
-
-                        // Check if there's a leave request for this date
-                        const leaveRequest = getLeaveRequestForDate(
-                          employee.userId,
-                          day
-                        );
-                        let status = originalStatus;
-                        let isPending = false;
-
-                        if (leaveRequest) {
-                          // Leave request exists, use leave type
-                          const leaveTypeName =
-                            leaveRequest.leaveType.name.toUpperCase();
-                          const shortCode =
-                            leaveTypeToShortCode[leaveTypeName] || "PL";
-                          const isApproved = isLeaveApproved(leaveRequest);
-
-                          // Always use leave type when leave request exists
-                          status =
-                            leaveRequest.duration === 0.5
-                              ? `${shortCode}/2`
-                              : shortCode;
-                          isPending = !isApproved;
-                        }
-
-                        let textColor = "";
-                        let fontWeight = "normal";
-
-                        if (status === "P") {
-                          textColor = "text-primary";
-                          fontWeight = "fw-semibold";
-                        } else if (status === "A") {
-                          textColor = "text-danger";
-                          fontWeight = "fw-semibold";
-                        } else if (status === "P/2" || status.includes("/2")) {
-                          textColor = "text-warning";
-                          fontWeight = "fw-semibold";
-                        } else if (status === "WO") {
-                          textColor = "text-secondary";
-                        } else if (status === "H") {
-                          textColor = "text-info";
-                        } else if (
-                          ["SL", "CL", "PL", "UL", "CO", "EL"].includes(status)
-                        ) {
-                          textColor = "text-purple";
-                        }
+                        const status = employee.dailyAttendance[day] || "";
+                        const shortCode = getStatusShortCode(status);
+                        const styleClass = getStatusStyle(status);
 
                         return (
                           <td
                             key={day}
-                            className={`text-center px-1 ${textColor} ${fontWeight}`}
-                            style={{ fontSize: "12px", position: "relative" }}
-                            title={
-                              leaveRequest
-                                ? `${leaveRequest.leaveType.name}${
-                                    isPending ? " (Pending)" : " (Approved)"
-                                  }`
-                                : ""
-                            }
+                            className={`text-center px-1 ${styleClass}`}
+                            style={{ fontSize: "12px" }}
                           >
-                            {status || "—"}
-                            {isPending && (
-                              <i
-                                className="bi bi-clock-fill text-warning"
-                                style={{
-                                  fontSize: "8px",
-                                  position: "absolute",
-                                  top: "2px",
-                                  right: "2px",
-                                }}
-                                title="Pending Approval"
-                              ></i>
-                            )}
+                            {shortCode || "—"}
                           </td>
                         );
                       })}
@@ -594,14 +564,11 @@ const AttendanceReport = () => {
               <span className="text-info">H</span> - Holiday
             </div>
             <div>
-              <span className="text-purple">SL/CL/PL</span> - Leave Types
+              <span className="text-purple">SL/CL/FL</span> - Leave Types
             </div>
             <div>
               <span className="text-warning fw-semibold">HD/2, SL/2</span> -
               Half Day Leaves
-            </div>
-            <div>
-              <i className="bi bi-clock-fill text-warning"></i> - Pending Leave
             </div>
           </div>
           <div className="text-muted small mt-2">
