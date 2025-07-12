@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import * as XLSX from "xlsx-js-style";
 import attendanceDashboardService from "../../../services/api-services/attendance-dashboard.service";
 import { DepartmentResponse } from "../../../types/department-team.types";
 import { LeaveScheme, LeaveRequestResponse } from "../../../types/leave.types";
@@ -53,6 +52,7 @@ const AttendanceReport = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestResponse[]>(
     []
   );
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   useEffect(() => {
     departmentService.getDepartments().then((res) => {
@@ -78,8 +78,6 @@ const AttendanceReport = () => {
       // Fetch leave requests first
       const leaveResp = await leaveRequestService.getLeaveRequests({});
       if (leaveResp.status === "success") {
-        console.log("Leave requests fetched:", leaveResp.data.length);
-        console.log("Sample leave request:", leaveResp.data[0]);
         setLeaveRequests(leaveResp.data);
       }
 
@@ -92,8 +90,6 @@ const AttendanceReport = () => {
       });
 
       if (response.status === "success") {
-        console.log("Attendance data fetched");
-        console.log("Sample employee data:", response.data.data[0]);
         setReportData(response.data);
       }
     } catch (error) {
@@ -126,242 +122,125 @@ const AttendanceReport = () => {
     return leave.managerStatus === "APPROVED" || leave.hrStatus === "APPROVED";
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     if (!reportData) return;
 
-    const wb = XLSX.utils.book_new();
+    setDownloadingExcel(true);
 
-    const wsData = [
-      [
-        `Dept. Name: ${reportData.departmentName}`,
-        "",
-        "",
-        `Report Month: ${reportData.reportMonth}`,
-      ],
-      [],
-      [
-        "Empcode",
-        "Name",
-        "Department",
-        ...Array.from({ length: 31 }, (_, i) => (i + 1).toString()),
-        "Pre",
-        "WO",
-        "HL",
-        "LV",
-        "Abs",
-        "Work+OT",
-        "OT",
-        "Break",
-      ],
-    ];
+    try {
+      const XLSX = await import("xlsx-js-style");
 
-    reportData.data.forEach((employee) => {
-      const row = [
-        employee.empCode,
-        employee.name,
-        employee.department,
-        ...Array.from({ length: 31 }, (_, i) => {
-          const day = i + 1;
-          const originalStatus = employee.dailyAttendance[day] || "";
+      const wb = XLSX.utils.book_new();
 
-          // Check if there's a leave request for this date
-          const leaveRequest = getLeaveRequestForDate(employee.userId, day);
-
-          if (leaveRequest) {
-            // Leave request exists, use leave type
-            const leaveTypeName = leaveRequest.leaveType.name.toUpperCase();
-            const shortCode = leaveTypeToShortCode[leaveTypeName] || "PL";
-
-            // Always use leave type when leave request exists
-            return leaveRequest.duration === 0.5 ? `${shortCode}/2` : shortCode;
-          }
-
-          return originalStatus;
-        }),
-        employee.summary.present,
-        employee.summary.weekOff,
-        employee.summary.holiday,
-        employee.summary.leave,
-        employee.summary.absent,
-        employee.summary.totalWorkingHours,
-        employee.summary.overtime,
-        employee.summary.breakHours,
+      const wsData = [
+        [
+          `Dept. Name: ${reportData.departmentName}`,
+          "",
+          "",
+          `Report Month: ${reportData.reportMonth}`,
+        ],
+        [],
+        [
+          "Empcode",
+          "Name",
+          "Department",
+          ...Array.from({ length: 31 }, (_, i) => (i + 1).toString()),
+          "Pre",
+          "WO",
+          "HL",
+          "LV",
+          "Abs",
+          "Work+OT",
+          "OT",
+          "Break",
+        ],
       ];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      wsData.push(row as any);
-    });
+      reportData.data.forEach((employee) => {
+        const row = [
+          employee.empCode,
+          employee.name,
+          employee.department,
+          ...Array.from({ length: 31 }, (_, i) => {
+            const day = i + 1;
+            const originalStatus = employee.dailyAttendance[day] || "";
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
+            // Check if there's a leave request for this date
+            const leaveRequest = getLeaveRequestForDate(employee.userId, day);
 
-    const colWidths = [
-      { wch: 12 },
-      { wch: 20 },
-      ...Array.from({ length: 31 }, () => ({ wch: 5 })),
-      { wch: 5 },
-      { wch: 5 },
-      { wch: 5 },
-      { wch: 5 },
-      { wch: 5 },
-      { wch: 10 },
-      { wch: 8 },
-      { wch: 8 },
-    ];
-    ws["!cols"] = colWidths;
+            if (leaveRequest) {
+              // Leave request exists, use leave type
+              const leaveTypeName = leaveRequest.leaveType.name.toUpperCase();
+              const shortCode = leaveTypeToShortCode[leaveTypeName] || "PL";
 
-    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+              // Always use leave type when leave request exists
+              return leaveRequest.duration === 0.5
+                ? `${shortCode}/2`
+                : shortCode;
+            }
 
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
-      if (ws[headerCell]) {
-        ws[headerCell].s = {
-          font: {
-            color: { rgb: "FFFFFF" },
-            name: "Arial",
-            sz: 14,
-            bold: true,
-          },
-          fill: {
-            patternType: "solid",
-            fgColor: { rgb: "4A5568" },
-          },
-        };
-      }
-    }
+            return originalStatus;
+          }),
+          employee.summary.present,
+          employee.summary.weekOff,
+          employee.summary.holiday,
+          employee.summary.leave,
+          employee.summary.absent,
+          employee.summary.totalWorkingHours,
+          employee.summary.overtime,
+          employee.summary.breakHours,
+        ];
 
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const headerCell = XLSX.utils.encode_cell({ r: 2, c: C });
-      if (ws[headerCell]) {
-        ws[headerCell].s = {
-          font: {
-            name: "Arial",
-            sz: 11,
-            bold: true,
-          },
-          fill: {
-            patternType: "solid",
-            fgColor: { rgb: "E2E8F0" },
-          },
-          border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } },
-          },
-          alignment: {
-            horizontal: "center",
-            vertical: "center",
-          },
-        };
-      }
-    }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        wsData.push(row as any);
+      });
 
-    for (let R = 3; R <= range.e.r; ++R) {
-      for (let C = 2; C <= 32; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        const cell = ws[cellAddress];
-        if (cell && cell.v) {
-          const value = cell.v.toString();
-          let color = "000000";
-          let bold = false;
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-          if (value === "P") {
-            color = "1E40AF";
-            bold = true;
-          } else if (value === "A") {
-            color = "DC2626";
-            bold = true;
-          } else if (value === "P/2" || value.includes("/2")) {
-            color = "EA580C";
-            bold = true;
-          } else if (value === "WO") {
-            color = "6B7280";
-          } else if (value === "H") {
-            color = "2563EB";
-          } else if (["SL", "CL", "PL", "UL", "CO", "EL"].includes(value)) {
-            color = "7C3AED";
-          }
+      // Simplified styling - only essential styles
+      const colWidths = [
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 20 },
+        ...Array.from({ length: 31 }, () => ({ wch: 5 })),
+        { wch: 5 },
+        { wch: 5 },
+        { wch: 5 },
+        { wch: 5 },
+        { wch: 5 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 8 },
+      ];
+      ws["!cols"] = colWidths;
 
-          ws[cellAddress].s = {
-            font: {
-              name: "Arial",
-              sz: 10,
-              color: { rgb: color },
-              bold: bold,
-            },
-            alignment: {
-              horizontal: "center",
-              vertical: "center",
-            },
-            border: {
-              top: { style: "thin", color: { rgb: "E5E7EB" } },
-              bottom: { style: "thin", color: { rgb: "E5E7EB" } },
-              left: { style: "thin", color: { rgb: "E5E7EB" } },
-              right: { style: "thin", color: { rgb: "E5E7EB" } },
-            },
+      const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+
+      // Apply minimal styling only to headers
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const headerCell = XLSX.utils.encode_cell({ r: 2, c: C });
+        if (ws[headerCell]) {
+          ws[headerCell].s = {
+            font: { bold: true },
+            fill: { patternType: "solid", fgColor: { rgb: "E2E8F0" } },
+            alignment: { horizontal: "center" },
           };
         }
       }
 
-      for (let C = 33; C <= range.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        if (ws[cellAddress]) {
-          ws[cellAddress].s = {
-            font: {
-              name: "Arial",
-              sz: 10,
-              bold: true,
-            },
-            fill: {
-              patternType: "solid",
-              fgColor: { rgb: "F3F4F6" },
-            },
-            alignment: {
-              horizontal: "center",
-              vertical: "center",
-            },
-            border: {
-              top: { style: "thin", color: { rgb: "D1D5DB" } },
-              bottom: { style: "thin", color: { rgb: "D1D5DB" } },
-              left: { style: "thin", color: { rgb: "D1D5DB" } },
-              right: { style: "thin", color: { rgb: "D1D5DB" } },
-            },
-          };
-        }
-      }
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+        { s: { r: 0, c: 2 }, e: { r: 0, c: 3 } },
+      ];
 
-      for (let C = 0; C <= 1; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        if (ws[cellAddress]) {
-          ws[cellAddress].s = {
-            font: {
-              name: "Arial",
-              sz: 10,
-              bold: true,
-            },
-            alignment: {
-              horizontal: C === 0 ? "center" : "left",
-              vertical: "center",
-            },
-            border: {
-              top: { style: "thin", color: { rgb: "E5E7EB" } },
-              bottom: { style: "thin", color: { rgb: "E5E7EB" } },
-              left: { style: "thin", color: { rgb: "E5E7EB" } },
-              right: { style: "thin", color: { rgb: "E5E7EB" } },
-            },
-          };
-        }
-      }
+      XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
+      XLSX.writeFile(wb, `attendance-report-${month}-${year}.xlsx`);
+    } catch (error) {
+      console.error("Error generating Excel:", error);
+      alert("Failed to generate Excel file. Please try again.");
+    } finally {
+      setDownloadingExcel(false);
     }
-
-    ws["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
-      { s: { r: 0, c: 2 }, e: { r: 0, c: 3 } },
-      { s: { r: 0, c: 4 }, e: { r: 0, c: 5 } },
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, "Attendance Report");
-    XLSX.writeFile(wb, `attendance-report-${month}-${year}.xlsx`);
   };
 
   const getDayOfWeek = (day: number) => {
@@ -474,10 +353,24 @@ const AttendanceReport = () => {
                   className="btn btn-sm btn-primary"
                   onClick={downloadExcel}
                   title="Download Excel"
-                  disabled={!reportData}
+                  disabled={!reportData || downloadingExcel}
                 >
-                  <i className="bi bi-download me-1"></i>
-                  Excel
+                  {downloadingExcel ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-1"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Loading...</span>
+                      </span>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-download me-1"></i>
+                      Excel
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -578,13 +471,6 @@ const AttendanceReport = () => {
                         const originalStatus =
                           employee.dailyAttendance[day] || "";
 
-                        // Debug: Check if userId exists
-                        if (!employee.userId) {
-                          console.warn(
-                            `No userId for employee ${employee.name} (${employee.empCode})`
-                          );
-                        }
-
                         // Check if there's a leave request for this date
                         const leaveRequest = getLeaveRequestForDate(
                           employee.userId,
@@ -594,13 +480,6 @@ const AttendanceReport = () => {
                         let isPending = false;
 
                         if (leaveRequest) {
-                          // Debug: Log when leave is found
-                          console.log(
-                            `Leave found for ${employee.name} on day ${day}:`,
-                            leaveRequest.leaveType.name,
-                            leaveRequest.duration
-                          );
-
                           // Leave request exists, use leave type
                           const leaveTypeName =
                             leaveRequest.leaveType.name.toUpperCase();

@@ -16,8 +16,8 @@ export interface Department {
 export interface DepartmentResponse {
   id: number;
   name: string;
-  createdOn: Date;
-  updatedOn: Date | null;
+  createdOn: string;
+  updatedOn: string | null;
   slug: string;
   responsibilities: string | null;
   teams: Team[];
@@ -33,11 +33,10 @@ export interface UpdateUserTeamPayload {
   teamId: number;
 }
 
-export interface DepartmentTeamLink {
-  id: number;
-  departmentId: number;
-  teamId: number;
-  team: Team;
+export interface TeamPayload {
+  name: string;
+  slug: string;
+  responsibilities: string;
 }
 
 export interface Team {
@@ -45,15 +44,31 @@ export interface Team {
   name: string;
   slug: string;
   responsibilities?: string;
-  createdOn: Date;
-  updatedOn?: Date;
+  createdOn: string;
+  updatedOn?: string;
 }
-export interface DepartmentTeam {
+
+export interface TeamResponse {
+  id: number;
+  name: string;
+  slug: string;
+  responsibilities?: string;
+  createdOn: string;
+  updatedOn?: string;
+  _count: {
+    users: number;
+  };
+}
+export interface SingleTeamResponse extends Omit<TeamResponse, "_count"> {
+  departmentTeams: {
+    departmentId: number;
+  }[];
+}
+
+export interface DepartmentTeamResponse {
   id: number;
   departmentId: number;
   teamId: number;
-  department: Department;
-  team: Team;
 }
 export interface UserDepartment {
   id: number;

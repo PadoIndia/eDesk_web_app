@@ -137,7 +137,6 @@ const AddressesSection: React.FC<Props> = ({ userId }) => {
 
   return (
     <div className="card" style={{ border: "1px solid #f1f1f1" }}>
-      {/* Header */}
       <div className="card-header bg-white border-bottom-0 p-4">
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0 d-flex align-items-center">
@@ -154,6 +153,7 @@ const AddressesSection: React.FC<Props> = ({ userId }) => {
           </h5>
           {!isAdding && (
             <button
+              disabled
               className="btn btn-primary btn-sm d-flex align-items-center gap-2"
               onClick={() => setIsAdding(true)}
             >
@@ -163,7 +163,6 @@ const AddressesSection: React.FC<Props> = ({ userId }) => {
         </div>
       </div>
 
-      {/* Add New Address Form */}
       {isAdding && (
         <div className="bg-light border-bottom p-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
@@ -319,7 +318,6 @@ const AddressesSection: React.FC<Props> = ({ userId }) => {
         </div>
       )}
 
-      {/* Addresses Grid */}
       <div className="card-body p-4">
         {addresses.length === 0 ? (
           <div className="text-center py-5">

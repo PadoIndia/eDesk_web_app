@@ -1,4 +1,10 @@
 import { ApiResponse } from "../../types/axios.types";
+import {
+  SingleTeamResponse,
+  Team,
+  TeamPayload,
+  TeamResponse,
+} from "../../types/department-team.types";
 import ApiService from "./api-service";
 
 class TeamService extends ApiService {
@@ -6,20 +12,20 @@ class TeamService extends ApiService {
     super("/admin/teams");
   }
 
-  createTeam(team: {
-    name: string;
-    slug: string;
-    responsibilities: string;
-  }): ApiResponse {
+  createTeam(team: TeamPayload): ApiResponse<Team> {
     return this.postData("/", team);
   }
 
-  getTeams(): ApiResponse {
+  getTeams(): ApiResponse<TeamResponse[]> {
     return this.getData("/");
   }
 
-  getTeamById(teamId: number): ApiResponse {
+  getTeamById(teamId: number): ApiResponse<SingleTeamResponse> {
     return this.getData(`/${teamId}`);
+  }
+
+  updateTeam(teamId: number, data: Partial<TeamPayload>) {
+    return this.putData(`/${teamId}`, data);
   }
 
   deleteTeam(teamId: number): ApiResponse {

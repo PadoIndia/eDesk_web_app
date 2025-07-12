@@ -17,7 +17,7 @@ const DashboardHeader: React.FC<Props> = React.memo(
         style={{
           border: "1px solid #f1f1f1",
         }}
-        className="bg-white shadow-md  card mb-2 rounded-md text-white p-3 d-flex gap-2"
+        className="bg-white shadow-md  card mb-2 rounded-lg text-white p-3 d-flex gap-2"
       >
         {setCurrentView && (
           <div className="d-flex gap-2">

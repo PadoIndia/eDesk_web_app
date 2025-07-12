@@ -127,7 +127,7 @@ const UsersList = () => {
           className="rounded-lg mx-2 bg-white"
           style={{ border: "1px solid #f1f1f1" }}
         >
-          <div className="p-4 d-flex align-items-center justify-content-between">
+          <div className="p-3 d-flex align-items-center justify-content-between">
             <SearchBox
               value={search}
               onChange={(e) => setSearch(e)}
@@ -146,10 +146,10 @@ const UsersList = () => {
               className="table table-hover align-middle"
               style={{ padding: "10px" }}
             >
-              <thead className="">
+              <thead className="table-light">
                 <tr className="">
                   <th
-                    className="bg-light py-3 text-center text-muted position-relative"
+                    className=" py-3 text-center text-muted position-relative"
                     style={{
                       width: "60px",
                       fontSize: "13px",
@@ -177,46 +177,25 @@ const UsersList = () => {
                       </div>
                     </div>
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Name
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Emp Code
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Contact
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Departments
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Teams
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Status
                   </th>
-                  <th
-                    className="bg-light py-3 text-muted"
-                    style={{ fontSize: "13px" }}
-                  >
+                  <th className=" py-3 text-muted" style={{ fontSize: "13px" }}>
                     Actions
                   </th>
                 </tr>

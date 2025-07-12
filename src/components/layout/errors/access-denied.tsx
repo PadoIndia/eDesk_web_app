@@ -1,4 +1,4 @@
-const MinimalAccessDenied = () => {
+const AccessDenied = () => {
   return (
     <div
       style={{
@@ -35,4 +35,4 @@ const MinimalAccessDenied = () => {
   );
 };
 
-export default MinimalAccessDenied;
+export default AccessDenied;

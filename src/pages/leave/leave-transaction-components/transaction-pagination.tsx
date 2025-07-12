@@ -18,37 +18,33 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
   onItemsPerPageChange,
 }) => {
   const totalPages = Math.ceil(filteredCount / itemsPerPage);
-  
+
   const getVisiblePages = () => {
     const visiblePages = [];
     const maxVisiblePages = 5;
     const halfVisible = Math.floor(maxVisiblePages / 2);
-    
+
     if (totalPages <= maxVisiblePages) {
-      // If total pages is less than max visible, show all pages
       for (let i = 1; i <= totalPages; i++) {
         visiblePages.push(i);
       }
     } else {
-      // Calculate start and end based on current page
       let startPage = Math.max(1, currentPage - halfVisible);
       let endPage = Math.min(totalPages, currentPage + halfVisible);
-      
-      // Adjust if we're near the beginning
+
       if (startPage === 1) {
         endPage = Math.min(totalPages, maxVisiblePages);
       }
-      
-      // Adjust if we're near the end
+
       if (endPage === totalPages) {
         startPage = Math.max(1, totalPages - maxVisiblePages + 1);
       }
-      
+
       for (let i = startPage; i <= endPage; i++) {
         visiblePages.push(i);
       }
     }
-    
+
     return visiblePages;
   };
 
@@ -66,14 +62,16 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
           <div className="text-muted">
-            Showing {filteredCount > 0 ? startIndex : 0} to {endIndex} of {filteredCount} entries
-            {totalCount !== filteredCount && ` (filtered from ${totalCount} total entries)`}
+            Showing {filteredCount > 0 ? startIndex : 0} to {endIndex} of{" "}
+            {filteredCount} entries
+            {totalCount !== filteredCount &&
+              ` (filtered from ${totalCount} total entries)`}
           </div>
           <div className="d-flex align-items-center gap-2">
             <label className="form-label mb-0 text-muted">Show:</label>
             <select
               className="form-select form-select-sm"
-              style={{ width: 'auto' }}
+              style={{ width: "auto" }}
               value={itemsPerPage}
               onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
             >
@@ -89,7 +87,9 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
         {totalPages > 1 && (
           <nav>
             <ul className="pagination pagination-sm mb-0">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
                 <button
                   className="page-link"
                   onClick={() => handlePageClick(currentPage - 1)}
@@ -98,12 +98,14 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
                   Previous
                 </button>
               </li>
-              
-              {/* Show first page if not visible */}
+
               {getVisiblePages()[0] > 1 && (
                 <>
                   <li className="page-item">
-                    <button className="page-link" onClick={() => handlePageClick(1)}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageClick(1)}
+                    >
                       1
                     </button>
                   </li>
@@ -114,9 +116,14 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
                   )}
                 </>
               )}
-              
+
               {getVisiblePages().map((page) => (
-                <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                <li
+                  key={page}
+                  className={`page-item ${
+                    currentPage === page ? "active" : ""
+                  }`}
+                >
                   <button
                     className="page-link"
                     onClick={() => handlePageClick(page)}
@@ -125,24 +132,31 @@ export const TransactionsPagination: React.FC<TransactionsPaginationProps> = ({
                   </button>
                 </li>
               ))}
-              
-              {/* Show last page if not visible */}
+
               {getVisiblePages()[getVisiblePages().length - 1] < totalPages && (
                 <>
-                  {getVisiblePages()[getVisiblePages().length - 1] < totalPages - 1 && (
+                  {getVisiblePages()[getVisiblePages().length - 1] <
+                    totalPages - 1 && (
                     <li className="page-item disabled">
                       <span className="page-link">...</span>
                     </li>
                   )}
                   <li className="page-item">
-                    <button className="page-link" onClick={() => handlePageClick(totalPages)}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageClick(totalPages)}
+                    >
                       {totalPages}
                     </button>
                   </li>
                 </>
               )}
-              
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
                 <button
                   className="page-link"
                   onClick={() => handlePageClick(currentPage + 1)}

@@ -1,36 +1,86 @@
-import { FaUsers } from "react-icons/fa";
-import DepartmentSidebar from "./components/department-sidebar";
-import DepartmentList from "./components/department-list";
+import { lazy, useEffect, useState } from "react";
+import { FaLayerGroup } from "react-icons/fa";
+import { HiMiniRectangleGroup } from "react-icons/hi2";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import { fetchUserPermissions } from "../../features/auth.slice";
+
+const AccessDenied = lazy(
+  () => import("../../components/layout/errors/access-denied")
+);
+const DepartmentTable = lazy(() => import("./components/department-table"));
+const TeamTable = lazy(() => import("./components/team-table"));
+
+type Tab = "departments" | "teams";
 
 const DepartmentManagement = () => {
+  const [activeTab, setActiveTab] = useState<Tab>("departments");
+  const userId = useAppSelector((s) => s.auth.userData?.user.id);
+  const dispatch = useAppDispatch();
+
+  const permissions =
+    useAppSelector((s) => s.auth.userData?.user.permissions) || [];
+  const haveAccess =
+    permissions.includes("is_admin") ||
+    permissions.includes("can_manage_department_team");
+
+  useEffect(() => {
+    if (userId) dispatch(fetchUserPermissions(userId));
+  }, []);
+
+  const canViewDepts =
+    haveAccess ||
+    permissions.some((e) =>
+      ["is_admin_team", "is_admin_department"].includes(e)
+    );
 
   return (
-    <div className="container p-4">
-      <div className="row g-4">
-        <div className="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">
-            <FaUsers className="me-2" />
-            Departments & Teams
-          </h5>
-          <div>
-          </div>
-        </div>
-        <DepartmentSidebar />
-        <div className="col-lg-9">
-          <div className="card shadow">
-            <div className="card-header bg-primary text-white py-3">
-              <h5 className="mb-0 d-flex align-items-center">
-                <FaUsers className="me-2 fs-4" />
-                Departments & Teams
-              </h5>
+    <div className="p-2">
+      {canViewDepts ? (
+        <>
+          <div
+            className="rounded-lg mx-2 bg-white mb-2"
+            style={{ border: "1px solid #f1f1f1" }}
+          >
+            <div className="d-flex gap-2 p-3">
+              <button
+                className={`btn ${
+                  activeTab === "departments"
+                    ? "btn-primary"
+                    : "btn-outline-secondary"
+                }`}
+                onClick={() => setActiveTab("departments")}
+              >
+                <FaLayerGroup className="me-1" /> Departments
+              </button>
+
+              <button
+                className={`btn ${
+                  activeTab === "teams"
+                    ? "btn-primary"
+                    : "btn-outline-secondary"
+                }`}
+                onClick={() => setActiveTab("teams")}
+              >
+                <HiMiniRectangleGroup className="me-1" /> Teams
+              </button>
             </div>
-            <div className="card-body p-0">
-              <DepartmentList />
-            </div>
           </div>
-        </div>
-      </div>
+          <div
+            className="rounded-lg mx-2 bg-white"
+            style={{ border: "1px solid #f1f1f1" }}
+          >
+            {activeTab === "departments" ? (
+              <DepartmentTable haveAccess={haveAccess} />
+            ) : (
+              <TeamTable haveAccess={haveAccess} />
+            )}
+          </div>
+        </>
+      ) : (
+        <AccessDenied />
+      )}
     </div>
   );
 };
+
 export default DepartmentManagement;

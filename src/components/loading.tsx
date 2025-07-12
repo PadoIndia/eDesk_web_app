@@ -32,3 +32,11 @@ function LottieLoader() {
     </div>
   );
 }
+
+export const Spinner = () => (
+  <div className="d-flex justify-content-center align-items-center">
+    <div className="text-center">
+      <div className="spinner-border text-primary mb-3" role="status"></div>
+    </div>
+  </div>
+);

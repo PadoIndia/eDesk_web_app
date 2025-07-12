@@ -92,7 +92,6 @@ const ContactsSection: React.FC<Props> = ({ userId }) => {
       }
 
       if (editingId) {
-        // Update existing contact
         const updatedContact = await updateContact(editingId, newContact);
         if ("id" in updatedContact) {
           setContacts(
@@ -108,7 +107,6 @@ const ContactsSection: React.FC<Props> = ({ userId }) => {
           toast.success("Contact updated successfully");
         }
       } else {
-        // Create new contact
         const createdContact = await createNewContact(newContact);
         if ("id" in createdContact) {
           setContacts([...contacts, createdContact as ContactResponse]);
@@ -184,6 +182,7 @@ const ContactsSection: React.FC<Props> = ({ userId }) => {
           </h5>
           {!isAdding && !editingId && (
             <button
+              disabled
               className="btn btn-primary btn-sm d-flex align-items-center gap-2"
               onClick={() => setIsAdding(true)}
             >

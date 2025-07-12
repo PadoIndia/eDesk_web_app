@@ -18,7 +18,6 @@ const UsersAttendanceTable = lazy(
 );
 
 const AttendanceDashboard = () => {
-  const userId = useAppSelector((state) => state.auth.userData?.user.id);
   const [missPunchRequests, setMissPunchRequests] = useState<PunchResponse[]>(
     []
   );
@@ -47,6 +46,7 @@ const AttendanceDashboard = () => {
   >("attendance");
 
   const currentUser = useAppSelector((s) => s.auth.userData?.user);
+  const userId = currentUser?.id;
   const permissions = currentUser?.permissions || [];
   const isAdmin =
     permissions.some((p) =>
