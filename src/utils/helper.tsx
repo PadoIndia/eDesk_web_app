@@ -21,6 +21,8 @@ import {
   FaImage,
   FaFilePdf,
   FaFile,
+  FaClock,
+  FaBan,
 } from "react-icons/fa";
 import { Punch } from "../types/attendance.types";
 import { RootState } from "../store/store";
@@ -33,8 +35,11 @@ import {
   LeaveTypeResponse,
 } from "../types/leave.types";
 import generalService from "../services/api-services/general.service";
-import { DAY, PunchData } from "../types/attendance-dashboard.types";
+import { DAY } from "../types/attendance-dashboard.types";
 import uploadService from "../services/api-services/upload-service";
+import { RiCloseCircleFill } from "react-icons/ri";
+import { IoCheckmarkCircle } from "react-icons/io5";
+import { PunchResponse } from "../types/punch-data.types";
 
 export const getOperatingSystem = () => {
   const userAgent = navigator.userAgent || navigator.vendor || "";
@@ -353,7 +358,7 @@ export const getWeekOff = async (userId: number): Promise<string> => {
   }
   return "";
 };
-const calculateTotalMinutes = (punches: PunchData[], date: number) => {
+const calculateTotalMinutes = (punches: PunchResponse[], date: number) => {
   const dayPunches = punches
     .filter((p) => p.date === date && (p.isApproved !== false || !p.approvedBy))
     .sort((a, b) => a.hh * 60 + a.mm - (b.hh * 60 + b.mm));
@@ -371,7 +376,10 @@ const calculateTotalMinutes = (punches: PunchData[], date: number) => {
   return totalMinutes;
 };
 
-export const calculateWorkingHours = (punches: PunchData[], date: number) => {
+export const calculateWorkingHours = (
+  punches: PunchResponse[],
+  date: number
+) => {
   const totalMinutes = calculateTotalMinutes(punches, date);
 
   if (totalMinutes === 0) return "—";
@@ -574,4 +582,57 @@ export const generateSlug = (name: string): string => {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+};
+
+export const getLeaveStatusBadge = (status: LeaveRequestStatus) => {
+  switch (status) {
+    case LeaveRequestStatus.APPROVED:
+      return (
+        <span
+          className="badge bg-success-ultralight text-dark d-flex align-items-center gap-1"
+          style={{ width: "90px" }}
+        >
+          <div>
+            <IoCheckmarkCircle size={14} className="text-success opacity-75" />
+          </div>
+          {status}
+        </span>
+      );
+    case LeaveRequestStatus.REJECTED:
+      return (
+        <span
+          className="badge bg-danger-ultralight text-dark d-flex align-items-center gap-1"
+          style={{ width: "90px" }}
+        >
+          <div>
+            <RiCloseCircleFill size={14} className="text-danger opacity-75" />
+          </div>
+          {status}
+        </span>
+      );
+    case LeaveRequestStatus.PENDING:
+      return (
+        <span
+          className="badge bg-info-ultralight text-dark d-flex align-items-center gap-1"
+          style={{ width: "90px" }}
+        >
+          <div>
+            <FaClock size={12} className="text-info opacity-75" />
+          </div>
+          {status}
+        </span>
+      );
+    case LeaveRequestStatus.CANCELLED:
+      return (
+        <span
+          className="badge bg-warning-ultralight text-dark d-flex align-items-center gap-1"
+          style={{ width: "90px" }}
+        >
+          <div>
+            <FaBan size={12} className="text-warning opacity-75" />
+          </div>
+          {status}
+        </span>
+      );
+  }
 };

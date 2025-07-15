@@ -8,7 +8,7 @@ import {
 } from "../../../types/leave.types";
 import Badge from "../../../components/badge";
 
-interface SchemeConfigurationTabProps {
+interface Props {
   schemes: LeaveScheme[];
   schemeId: number | null;
   currentConfigs: LeaveTypeScheme[];
@@ -44,7 +44,7 @@ interface SchemeConfigurationTabProps {
   }) => void;
 }
 
-const SchemeConfigurationTab: React.FC<SchemeConfigurationTabProps> = ({
+const SchemeConfigurationTab: React.FC<Props> = ({
   schemes,
   schemeId,
   currentConfigs,
@@ -65,7 +65,6 @@ const SchemeConfigurationTab: React.FC<SchemeConfigurationTabProps> = ({
 }) => {
   const currentSchemeConfig = schemes.find((s) => s.id === schemeId);
 
-  // Handle empty states and loading
   if (loading) {
     return (
       <div className="d-flex justify-content-center p-5">

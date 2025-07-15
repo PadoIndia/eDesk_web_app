@@ -1,8 +1,10 @@
 import React from "react";
-import { FaPlus, FaEdit, FaTrash, FaInfoCircle } from "react-icons/fa";
+import { FaPlus, FaTrash, FaInfoCircle, FaCog } from "react-icons/fa";
 import { LeaveScheme } from "../../../types/leave.types";
+import { FaPencil } from "react-icons/fa6";
+import { Table } from "../../../components/ui/table";
 
-interface LeaveSchemesTabProps {
+interface Props {
   schemes: LeaveScheme[];
   loading: boolean;
   onAddScheme: () => void;
@@ -11,7 +13,7 @@ interface LeaveSchemesTabProps {
   onConfigureScheme: (schemeId: number) => void;
 }
 
-const LeaveSchemesTab: React.FC<LeaveSchemesTabProps> = ({
+const LeaveSchemesTab: React.FC<Props> = ({
   schemes,
   loading,
   onAddScheme,
@@ -21,8 +23,8 @@ const LeaveSchemesTab: React.FC<LeaveSchemesTabProps> = ({
 }) => {
   return (
     <div className="tab-pane fade show active">
-      <div className="card">
-        <div className="card-header bg-light d-flex justify-content-between align-items-center">
+      <div className="card border-0">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center">
           <h2 className="mb-0">Leave Schemes</h2>
           <button className="btn btn-primary btn-sm" onClick={onAddScheme}>
             <FaPlus className="me-1" /> Add Scheme
@@ -43,66 +45,71 @@ const LeaveSchemesTab: React.FC<LeaveSchemesTabProps> = ({
               <p>Click the "Add Scheme" button to get started</p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Slug</th>
-                    <th>Leave Types</th>
-                    <th>Users</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <Table.Container>
+              <Table>
+                <Table.Head>
+                  <Table.Row>
+                    <Table.Header>NAME</Table.Header>
+                    <Table.Header>DESCRIPTION</Table.Header>
+                    <Table.Header>SLUG</Table.Header>
+                    <Table.Header>LEAVE TYPES</Table.Header>
+                    <Table.Header>USERS</Table.Header>
+                    <Table.Header>ACTIONS</Table.Header>
+                  </Table.Row>
+                </Table.Head>
+                <Table.Body>
                   {schemes.map((scheme) => (
-                    <tr key={scheme.id}>
-                      <td>{scheme.name}</td>
-                      <td>
+                    <Table.Row key={scheme.id}>
+                      <Table.Cell>{scheme.name}</Table.Cell>
+                      <Table.Cell>
                         <small className="text-muted">
                           {scheme.description || "N/A"}
                         </small>
-                      </td>
-                      <td>
+                      </Table.Cell>
+                      <Table.Cell>
                         <code>{scheme.slug}</code>
-                      </td>
-                      <td>
-                        <span>{scheme.leaveTypesCount}</span>
-                      </td>
-                      <td>
-                        <span>{scheme.usersCount}</span>
-                      </td>
-                      <td>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="badge bg-light text-dark">
+                          {scheme.leaveTypesCount}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <span className="badge bg-light text-dark">
+                          {scheme.usersCount}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell>
                         <div className="d-flex gap-2">
                           <button
-                            className="btn btn-sm btn-outline-primary"
                             onClick={() => onEditScheme(scheme)}
-                            aria-label={`Edit ${scheme.name}`}
+                            className="btn btn-sm btn-outline-primary border-primary px-3 rounded-md d-flex align-items-center"
                           >
-                            <FaEdit />
+                            <FaPencil className="me-2" />
+                            Edit
                           </button>
+
                           <button
-                            className="btn btn-sm btn-outline-danger"
                             onClick={() => onDeleteScheme(scheme.id)}
-                            aria-label={`Delete ${scheme.name}`}
+                            className="btn btn-sm btn-outline-danger border-danger px-3 rounded-md d-flex align-items-center"
                           >
-                            <FaTrash />
+                            <FaTrash className="me-2" />
+                            Delete
                           </button>
                           <button
-                            className="btn btn-sm btn-outline-secondary"
                             onClick={() => onConfigureScheme(scheme.id)}
-                            aria-label={`Configure ${scheme.name}`}
+                            className="btn btn-sm btn-outline-info border-info px-3 rounded-md d-flex align-items-center"
                           >
+                            <FaCog className="me-2" />
                             Configure
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </Table.Body>
+              </Table>
+            </Table.Container>
           )}
         </div>
       </div>

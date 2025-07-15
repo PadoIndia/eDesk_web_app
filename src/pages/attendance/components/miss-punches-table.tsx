@@ -1,33 +1,30 @@
-import {
-  FaCheckCircle,
-  FaClipboardList,
-  FaExclamationCircle,
-  FaTimesCircle,
-} from "react-icons/fa";
+import { FaClipboardList } from "react-icons/fa";
 import { FC } from "react";
-import { formatTime } from "../../../utils/helper";
-import { PunchData } from "../../../types/attendance-dashboard.types";
+import { formatTime, getLeaveStatusBadge } from "../../../utils/helper";
+import { PunchResponse } from "../../../types/punch-data.types";
+import { LeaveRequestStatus } from "../../../types/leave.types";
+import { Table } from "../../../components/ui/table";
 
 type Props = {
-  missPunches: PunchData[];
+  missPunches: PunchResponse[];
 };
 
 const MissPunchesTable: FC<Props> = ({ missPunches }) => {
   return (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle">
-        <thead>
-          <tr className="bg-light">
-            <th>Date</th>
-            <th>Time</th>
-            <th>Reason</th>
-            <th className="text-center">Status</th>
-            <th>Approved By</th>
-            <th>Approved On</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
+    <Table.Container>
+      <Table>
+        <Table.Head className="bg-light">
+          <Table.Row>
+            <Table.Header>Date</Table.Header>
+            <Table.Header>Time</Table.Header>
+            <Table.Header>Reason</Table.Header>
+            <Table.Header>Status</Table.Header>
+            <Table.Header>Approved By</Table.Header>
+            <Table.Header>Approved On</Table.Header>
+            <Table.Header>Comment</Table.Header>
+          </Table.Row>
+        </Table.Head>
+        <Table.Body>
           {missPunches.length > 0 ? (
             missPunches
               .sort((a, b) => {
@@ -36,57 +33,44 @@ const MissPunchesTable: FC<Props> = ({ missPunches }) => {
                 return dateB.getTime() - dateA.getTime();
               })
               .map((punch) => (
-                <tr key={punch.id}>
-                  <td>
-                    <div className="fw-bold">{punch.date}</div>
+                <Table.Row key={punch.id}>
+                  <Table.Cell>
                     <small className="text-muted">
                       {new Date(
                         punch.year,
                         punch.month - 1,
                         punch.date
-                      ).toLocaleDateString("en-US", {
+                      ).toLocaleDateString("en-GB", {
                         weekday: "short",
-                        month: "short",
+                        day: "2-digit",
+                        month: "long",
                         year: "numeric",
                       })}
                     </small>
-                  </td>
-                  <td>
-                    <span className="badge bg-secondary rounded-pill px-3">
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span className="badge bg-secondary-subtle text-secondary">
                       {formatTime(punch.hh, punch.mm)}
                     </span>
-                  </td>
-                  <td>{punch.missPunchReason || "—"}</td>
-                  <td className="text-center">
-                    {punch.approvedBy ? (
-                      punch.isApproved === true ? (
-                        <span className="badge bg-success rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                          <FaCheckCircle size={12} />
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="badge bg-danger rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                          <FaTimesCircle size={12} />
-                          Rejected
-                        </span>
-                      )
-                    ) : (
-                      <span className="badge bg-warning text-dark rounded-pill px-3 d-flex align-items-center justify-content-center gap-1">
-                        <FaExclamationCircle size={12} />
-                        Pending
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {punch.approvedBy ? (
+                  </Table.Cell>
+                  <Table.Cell>{punch.missPunchReason || "—"}</Table.Cell>
+                  <Table.Cell className="text-center">
+                    {punch.approvedBy
+                      ? punch.isApproved === true
+                        ? getLeaveStatusBadge(LeaveRequestStatus.APPROVED)
+                        : getLeaveStatusBadge(LeaveRequestStatus.REJECTED)
+                      : getLeaveStatusBadge(LeaveRequestStatus.PENDING)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {punch.approverUser ? (
                       <span className="text-muted">
-                        User #{punch.approvedBy}
+                        {punch.approverUser.name}
                       </span>
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td>
+                  </Table.Cell>
+                  <Table.Cell>
                     {punch.approvedOn ? (
                       <small className="text-muted">
                         {new Date(punch.approvedOn).toLocaleDateString(
@@ -102,23 +86,23 @@ const MissPunchesTable: FC<Props> = ({ missPunches }) => {
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td>{punch.comment || "—"}</td>
-                </tr>
+                  </Table.Cell>
+                  <Table.Cell>{punch.comment || "—"}</Table.Cell>
+                </Table.Row>
               ))
           ) : (
-            <tr>
-              <td colSpan={7} className="text-center py-8">
+            <Table.Row>
+              <Table.Cell colSpan={7} className="text-center py-8">
                 <div className="text-muted">
                   <FaClipboardList className="mb-2" size={48} />
                   <p>No punch requests found</p>
                 </div>
-              </td>
-            </tr>
+              </Table.Cell>
+            </Table.Row>
           )}
-        </tbody>
-      </table>
-    </div>
+        </Table.Body>
+      </Table>
+    </Table.Container>
   );
 };
 

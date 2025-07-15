@@ -5,11 +5,9 @@ import DashboardHeader from "./components/header";
 import UserDetailedAttendance from "./components/detailed-attendance";
 import punchDataService from "../../services/api-services/punch-data.service";
 import { PunchResponse } from "../../types/punch-data.types";
-import generalService from "../../services/api-services/general.service";
 
 const RequestsTable = lazy(() => import("./components/requests-table"));
 
-const MissPunchForm = lazy(() => import("./components/miss-punch-form"));
 const ApproveRejectModal = lazy(
   () => import("./components/approve-reject-modal")
 );
@@ -22,7 +20,6 @@ const AttendanceDashboard = () => {
     []
   );
 
-  const [showMissPunchForm, setShowMissPunchForm] = useState(false);
   const [showApproveRejectModal, setShowApproveRejectModal] = useState(false);
   const [currentRequest, setCurrentRequest] = useState<PunchResponse | null>(
     null
@@ -31,15 +28,6 @@ const AttendanceDashboard = () => {
     null
   );
   const [rejectionReason, setRejectionReason] = useState("");
-
-  const [formData, setFormData] = useState({
-    name: "",
-    date: "",
-    time: "",
-    reason: "",
-
-    targetUserId: 0,
-  });
 
   const [currentView, setCurrentView] = useState<
     "attendance" | "users-attendance" | "punch-requests"
@@ -52,75 +40,6 @@ const AttendanceDashboard = () => {
     permissions.some((p) =>
       ["is_admin", "is_team_admin", "is_department_admin"].includes(p)
     ) || false;
-
-  const handleMissPunchRequest = (
-    date: string,
-    user: { id: number; name: string }
-  ) => {
-    if (!user) {
-      toast.error("Target user not found");
-      return;
-    }
-
-    setFormData({
-      name: user.name,
-      date,
-      time: "",
-      reason: "",
-      targetUserId: user.id,
-    });
-    setShowMissPunchForm(true);
-  };
-
-  const handleFormSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
-    if (
-      !currentUser ||
-      !formData.time ||
-      !formData.reason ||
-      (isAdmin && !formData.targetUserId)
-    ) {
-      toast.error("Please fill all required fields");
-      return;
-    }
-
-    const [hours, minutes] = formData.time.split(":").map(Number);
-    const [year, month, day] = formData.date.split("-").map(Number);
-
-    if (!year || !month || !day) {
-      toast.error("Invalid date format");
-      return;
-    }
-
-    const requestData = {
-      date: day,
-      month,
-      year,
-      hh: hours,
-      mm: minutes,
-      userId: formData.targetUserId,
-      missPunchReason: formData.reason,
-    };
-
-    const isSameUser = userId == formData.targetUserId;
-
-    const resp = isSameUser
-      ? await generalService.createPunchRequest(requestData)
-      : await punchDataService.createPunchData(requestData);
-
-    if (resp.status == "success") {
-      setShowMissPunchForm(false);
-      setFormData({
-        name: "",
-        date: "",
-        time: "",
-        reason: "",
-        targetUserId: 0,
-      });
-    } else toast.error(resp.message);
-  };
 
   const handleApproveReject = (
     request: PunchResponse,
@@ -183,15 +102,10 @@ const AttendanceDashboard = () => {
           isAdmin={isAdmin}
         />
         {currentView === "attendance" && userId && (
-          <UserDetailedAttendance
-            onMissPunchRequest={handleMissPunchRequest}
-            userId={userId}
-          />
+          <UserDetailedAttendance userId={userId} />
         )}
 
-        {currentView === "users-attendance" && (
-          <UsersAttendanceTable onMissPunchRequest={handleMissPunchRequest} />
-        )}
+        {currentView === "users-attendance" && <UsersAttendanceTable />}
         {currentView === "punch-requests" && (
           <RequestsTable
             filteredRequests={missPunchRequests}
@@ -200,15 +114,6 @@ const AttendanceDashboard = () => {
           />
         )}
       </div>
-
-      {showMissPunchForm && (
-        <MissPunchForm
-          formData={formData}
-          setFormData={setFormData}
-          handleFormSubmit={handleFormSubmit}
-          setShowMissPunchForm={setShowMissPunchForm}
-        />
-      )}
 
       {/* Approve/Reject Modal */}
       {showApproveRejectModal && currentRequest && (

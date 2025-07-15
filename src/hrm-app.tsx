@@ -16,17 +16,17 @@ const DepartmentManagement = React.lazy(
 const LeaveDashboard = React.lazy(
   () => import("./pages/leave/leave-dashboard-page")
 );
-const ApplyLeave = React.lazy(() => import("./pages/leave/apply-leave"));
-const LeaveRequests = React.lazy(() => import("./pages/leave/leave-requests"));
-const LeaveTransactions = React.lazy(
-  () => import("./pages/leave/leave-transaction")
-);
-const LeaveConfiguration = React.lazy(
-  () => import("./pages/leave/leave-configuration")
-);
-const UserLeaveBalances = React.lazy(
-  () => import("./pages/leave/user-leave-balance")
-);
+// const ApplyLeave = React.lazy(() => import("./pages/leave/apply-leave"));
+// const LeaveRequests = React.lazy(() => import("./pages/leave/leave-requests"));
+// const LeaveTransactions = React.lazy(
+//   () => import("./pages/leave/leave-transaction")
+// );
+// const LeaveConfiguration = React.lazy(
+//   () => import("./pages/leave/leave-configuration")
+// );
+// const UserLeaveBalances = React.lazy(
+//   () => import("./pages/leave/user-leave-balance")
+// );
 
 const UsersList = React.lazy(() => import("./pages/users/user-list"));
 
@@ -51,11 +51,10 @@ function HrmApp() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users/list" element={<UsersList />} />
           <Route path="/leave" element={<LeaveDashboard />} />
-          <Route path="/apply-leave" element={<ApplyLeave />} />
-          <Route path="/leave-requests" element={<LeaveRequests />} />
+          {/* <Route path="/leave-requests" element={<LeaveRequests />} />
           <Route path="/leave-transactions" element={<LeaveTransactions />} />
           <Route path="/leave-config" element={<LeaveConfiguration />} />
-          <Route path="/user-leave-balances" element={<UserLeaveBalances />} />
+          <Route path="/user-leave-balances" element={<UserLeaveBalances />} /> */}
           <Route path="/attendance" element={<Attendance />} />
           <Route
             path="/department-management"

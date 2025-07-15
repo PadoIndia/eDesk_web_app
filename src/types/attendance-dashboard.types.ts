@@ -1,4 +1,5 @@
 import { Department } from "./department-team.types";
+import { PunchResponse } from "./punch-data.types";
 
 export interface UserAttendanceItem {
   id: number;
@@ -11,24 +12,6 @@ export interface UserAttendanceItem {
   leaveDays: number;
   missPunchCount: number;
   todayStatus: string;
-}
-
-export interface PunchData {
-  id: number;
-  userId: number;
-  date: number;
-  month: number;
-  year: number;
-  hh: number;
-  mm: number;
-  type: "AUTO" | "MANUAL";
-  isApproved?: boolean;
-  approvedBy?: number;
-  missPunchReason?: string;
-  comment?: string;
-  approvedOn?: string;
-  userName: string;
-  userDepartment: string;
 }
 
 export interface AttendanceData {
@@ -98,7 +81,7 @@ export interface UserDashboardData {
     isAdmin: boolean;
   };
   attendance: AttendanceData[];
-  punchData: PunchData[];
+  punchData: PunchResponse[];
   callDetails: CallData[];
   classDetails: ClassData[];
 }

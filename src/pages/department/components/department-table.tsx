@@ -94,34 +94,32 @@ const DepartmentTable: FC<Props> = ({ haveAccess }) => {
         >
           <thead className="table-light">
             <tr className="">
-              <th className="py-3 text-center text-muted position-relative rounded-tl-lg">
+              <th className="text-center text-muted position-relative rounded-tl-lg">
                 <div className="d-flex align-items-center justify-content-center gap-1">
-                  <span style={{ fontSize: "13px" }}>ID</span>
+                  <span style={{ fontSize: "11px" }}>ID</span>
                 </div>
               </th>
-              <th className="py-3 text-muted" style={{ fontSize: "13px" }}>
-                Name
+              <th className="text-muted" style={{ fontSize: "11px" }}>
+                NAME
               </th>
-              <th className="py-3 text-muted" style={{ fontSize: "13px" }}>
-                Slug
+              <th className="text-muted" style={{ fontSize: "11px" }}>
+                SLUG
               </th>
-              <th className="py-3 text-muted" style={{ fontSize: "13px" }}>
-                Teams
+              <th className="text-muted" style={{ fontSize: "11px" }}>
+                TEAMS
               </th>
               <th
-                className={`py-3 text-muted ${
-                  haveAccess ? "" : "rounded-tr-lg"
-                }`}
-                style={{ fontSize: "13px" }}
+                className={`text-muted ${haveAccess ? "" : "rounded-tr-lg"}`}
+                style={{ fontSize: "11px" }}
               >
-                Created On
+                CREATED ON
               </th>
               {haveAccess && (
                 <th
-                  className="py-3 text-muted rounded-tr-lg"
-                  style={{ fontSize: "13px" }}
+                  className="text-muted rounded-tr-lg"
+                  style={{ fontSize: "11px" }}
                 >
-                  Actions
+                  ACTIONS
                 </th>
               )}
             </tr>

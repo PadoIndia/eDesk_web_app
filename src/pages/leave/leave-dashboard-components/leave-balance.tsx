@@ -1,100 +1,106 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaChartBar, FaCircle } from "react-icons/fa";
+import { FC, useEffect, useState } from "react";
 import { LeaveBalance } from "../../../types/leave.types";
-import { Badge } from "../../../components/ui/badge";
+import { buildLeaveBalances } from "../../../utils/helper";
+import leaveTypeService from "../../../services/api-services/leave-type.service";
+import leaveTransactionService from "../../../services/api-services/leave-transaction.service";
+import { toast } from "react-toastify";
+import { Spinner } from "../../../components/loading";
+import { IoCheckmarkCircle } from "react-icons/io5";
+import { Table } from "../../../components/ui/table";
 
-interface LeaveBalanceProps {
-  leaveBalance: LeaveBalance[];
-  loading?: boolean;
-}
+type Props = {
+  userId?: number;
+};
 
-const LeaveBalanceComponent: React.FC<LeaveBalanceProps> = ({
-  leaveBalance,
-  loading = false,
-}) => {
+const LeaveBalanceComponent: FC<Props> = ({ userId }) => {
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const resp = await leaveTransactionService.getLeaveTransactions({
+          userId,
+        });
+
+        if (resp.status === "success") {
+          const typesResp = await leaveTypeService.getLeaveTypes();
+          if (typesResp.status === "success") {
+            setLeaveBalance(buildLeaveBalances(typesResp.data, resp.data));
+          }
+        } else toast.error(resp.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
+
   if (loading) {
-    return (
-      <div className="card h-100">
-        <div className="card-header bg-light">
-          <h5 className="mb-0">
-            <FaChartBar className="me-2" /> Leave Balance
-          </h5>
-        </div>
-        <div className="card-body d-flex justify-content-center align-items-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
-    <div className="card h-100">
-      <div className="card-header bg-light">
-        <h5 className="mb-0">
-          <FaChartBar className="me-2" /> Leave Balance
-        </h5>
+    <div className="p-0 m-0">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="mb-0">Leave Dashboard</h1>
       </div>
-      <div className="card-body d-flex flex-column">
-        <div className="flex-grow-1">
-          {leaveBalance.length > 0 ? (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Leave Type</th>
-                    <th>Total</th>
-                    <th>Used</th>
-                    <th>Remaining</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaveBalance.map((leave) => (
-                    <tr key={leave.id}>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <FaCircle
-                            className="me-2"
-                            color={leave.isPaid ? "#28a745" : "#6c757d"}
-                            size={10}
-                          />
-                          {leave.type}
-                          {leave.isPaid && (
-                            <Badge className="ms-2" variant="success">
-                              Paid
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td>{leave.total}</td>
-                      <td>{leave.used}</td>
-                      <td>
-                        <span className="badge bg-primary">
-                          {leave.remaining}
+      {leaveBalance.length > 0 ? (
+        <Table.Container className="rounded-lg p-0">
+          <Table hover>
+            <Table.Head>
+              <Table.Row>
+                <Table.Header className="rounded-tl-lg">
+                  <span className="ms-1">ID</span>
+                </Table.Header>
+                <Table.Header>LEAVE TYPE</Table.Header>
+                <Table.Header className="text-center">TOTAL</Table.Header>
+                <Table.Header className="text-center">USED</Table.Header>
+                <Table.Header className="text-center rounded-tr-lg">
+                  REMAINING
+                </Table.Header>
+              </Table.Row>
+            </Table.Head>
+            <Table.Body>
+              {leaveBalance.map((leave) => (
+                <Table.Row key={leave.id}>
+                  <Table.Cell>
+                    <span className="ms-1">{leave.id}</span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="d-flex align-items-center">
+                      {leave.type}
+                      {leave.isPaid && (
+                        <span className="ms-2 badge bg-success-ultralight text-dark d-flex align-items-center gap-1">
+                          <div>
+                            <IoCheckmarkCircle
+                              size={14}
+                              className="text-success opacity-75"
+                            />
+                          </div>
+                          Paid
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center text-muted py-4">
-              <p>No leave balance data available</p>
-            </div>
-          )}
+                      )}
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell className="text-center">{leave.total}</Table.Cell>
+                  <Table.Cell className="text-center">{leave.used}</Table.Cell>
+                  <Table.Cell className="text-center">
+                    {leave.remaining}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        </Table.Container>
+      ) : (
+        <div className="text-center text-muted py-4">
+          <p>No leave balance data available</p>
         </div>
-        <div className="mt-auto text-center pt-3">
-          <Link
-            to="/hrm/leave-transactions"
-            className="btn btn-outline-primary btn-sm"
-          >
-            View Leave Transaction History
-          </Link>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

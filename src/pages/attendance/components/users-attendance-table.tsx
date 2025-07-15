@@ -1,4 +1,11 @@
-import React, { useEffect, useState, useMemo, lazy } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  lazy,
+  useRef,
+  useCallback,
+} from "react";
 import {
   FaUser,
   FaCheckCircle,
@@ -16,15 +23,9 @@ import attendanceDashboardService from "../../../services/api-services/attendanc
 import Avatar from "../../../components/avatar";
 import { SearchBox } from "../../../components/ui/search";
 import { Colors } from "../../../utils/constants";
+import { Table } from "../../../components/ui/table";
 
 const UserDetailedAttendance = lazy(() => import("./detailed-attendance"));
-
-interface Props {
-  onMissPunchRequest?: (
-    date: string,
-    data: { id: number; name: string }
-  ) => void;
-}
 
 type SortField =
   | "name"
@@ -37,7 +38,7 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
+const UsersAttendanceTable = () => {
   const [users, setUsers] = useState<UserAttendanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +47,41 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [expandedHeights, setExpandedHeights] = useState<
+    Record<number, number>
+  >({});
+  const detailRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  useEffect(() => {
+    resizeObserverRef.current = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const userId = Number(entry.target.getAttribute("data-user-id"));
+        if (!isNaN(userId) && expandedRows.has(userId)) {
+          setExpandedHeights((prev) => ({
+            ...prev,
+            [userId]: entry.contentRect.height,
+          }));
+        }
+      });
+    });
+
+    return () => {
+      resizeObserverRef.current?.disconnect();
+    };
+  }, [expandedRows]);
+
+  const updateHeight = useCallback((userId: number) => {
+    const element = detailRefs.current[userId];
+    if (element && resizeObserverRef.current) {
+      resizeObserverRef.current.observe(element);
+
+      setTimeout(() => {
+        const height = element.scrollHeight;
+        setExpandedHeights((prev) => ({ ...prev, [userId]: height }));
+      }, 100);
+    }
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -86,8 +122,15 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
       const newSet = new Set(prev);
       if (newSet.has(userId)) {
         newSet.delete(userId);
+
+        if (detailRefs.current[userId] && resizeObserverRef.current) {
+          resizeObserverRef.current.unobserve(detailRefs.current[userId]);
+        }
+        setExpandedHeights((prev) => ({ ...prev, [userId]: 0 }));
       } else {
         newSet.add(userId);
+
+        setTimeout(() => updateHeight(userId), 50);
       }
       return newSet;
     });
@@ -106,7 +149,6 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
       );
     }
 
-    // Sort the filtered results
     const sorted = [...filtered].sort((a, b) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
@@ -201,7 +243,7 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
   const stats = getTotalStats();
 
   return (
-    <div className="card  rounded-lg" style={{ border: "1px solid #f1f1f1" }}>
+    <div className="card rounded-lg" style={{ border: "1px solid #f1f1f1" }}>
       <div className="card-body p-6">
         <div className="row mb-6">
           <div className="col-lg-6 d-flex gap-3 mb-4 mb-lg-0">
@@ -246,28 +288,28 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
 
           <div className="col-lg-6">
             <div className="d-flex justify-content-lg-end flex-wrap gap-2">
-              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
+              <div className="badge bg-light text-dark p-3 rounded-lg hover-shadow-sm">
                 <FaCheckCircle className="text-success me-2" />
                 Present:{" "}
                 <strong className="text-gradient-success">
                   {stats.totalPresent}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
+              <div className="badge bg-light text-dark p-3 rounded-lg hover-shadow-sm">
                 <FaTimesCircle className="text-danger me-2" />
                 Absent:{" "}
                 <strong className="text-gradient-danger">
                   {stats.totalAbsent}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
+              <div className="badge bg-light text-dark p-3 rounded-lg hover-shadow-sm">
                 <FaCalendarTimes className="text-warning me-2" />
                 Leave:{" "}
                 <strong className="text-gradient-warning">
                   {stats.totalLeave}
                 </strong>
               </div>
-              <div className="badge bg-light text-dark p-3 rounded-lg  hover-shadow-sm">
+              <div className="badge bg-light text-dark p-3 rounded-lg hover-shadow-sm">
                 <FaClock className="text-info me-2" />
                 Miss Punch:{" "}
                 <strong className="text-gradient-info">
@@ -278,92 +320,92 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
           </div>
         </div>
 
-        <div className="table-responsive">
-          <table className="table table-hover align-middle">
-            <thead>
-              <tr className="border-0">
-                <th
+        <Table.Container>
+          <Table>
+            <Table.Head>
+              <Table.Row className="border-0">
+                <Table.Header
                   className="bg-light rounded-tl-md"
-                  style={{ width: "40px" }}
+                  style={{ width: "40px", fontSize: "14px" }}
                 >
                   ID
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("name")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Employee
                     {getSortIcon("name")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("department")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Department
                     {getSortIcon("department")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap text-center cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("presentDays")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Present
                     {getSortIcon("presentDays")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap text-center cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("absentDays")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Absent
                     {getSortIcon("absentDays")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap text-center cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("leaveDays")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Leave
                     {getSortIcon("leaveDays")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap text-center cursor-pointer bg-light hover-bg-primary hover-text-white"
                   onClick={() => handleSort("missPunchCount")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Miss Punch
                     {getSortIcon("missPunchCount")}
                   </small>
-                </th>
-                <th
+                </Table.Header>
+                <Table.Header
                   className="text-nowrap cursor-pointer bg-light rounded-tr-md hover-bg-primary hover-text-white"
                   onClick={() => handleSort("todayStatus")}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "14px" }}
                 >
                   <small className="text-uppercase fw-bold">
                     Today's Status
                     {getSortIcon("todayStatus")}
                   </small>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </Table.Header>
+              </Table.Row>
+            </Table.Head>
+            <Table.Body>
               {filteredAndSortedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-10">
+                <Table.Row>
+                  <Table.Cell colSpan={8} className="text-center py-10">
                     <div className="text-muted">
                       <FaUser className="mb-3 animate-bounce" size={48} />
                       <h5 className="mb-1">No employees found</h5>
@@ -373,21 +415,20 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                         </p>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ) : (
                 filteredAndSortedUsers.flatMap((user) => {
                   const isExpanded = expandedRows.has(user.id);
                   return [
-                    // Main Row
-                    <tr
+                    <Table.Row
                       key={user.id}
                       className={`hover-shadow-sm ${
                         isExpanded ? "bg-light" : ""
                       }`}
                       style={{ cursor: "pointer" }}
                     >
-                      <td
+                      <Table.Cell
                         className="text-center"
                         onClick={() => toggleRowExpansion(user.id)}
                       >
@@ -400,8 +441,8 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             }}
                           />
                         </button>
-                      </td>
-                      <td onClick={() => toggleRowExpansion(user.id)}>
+                      </Table.Cell>
+                      <Table.Cell onClick={() => toggleRowExpansion(user.id)}>
                         <div className="d-flex align-items-center py-2">
                           <div>
                             <Avatar
@@ -418,13 +459,13 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             <small className="text-muted">ID: {user.id}</small>
                           </div>
                         </div>
-                      </td>
-                      <td onClick={() => toggleRowExpansion(user.id)}>
+                      </Table.Cell>
+                      <Table.Cell onClick={() => toggleRowExpansion(user.id)}>
                         <span className="text-secondary fw-medium">
                           {user.department}
                         </span>
-                      </td>
-                      <td
+                      </Table.Cell>
+                      <Table.Cell
                         className="text-center"
                         onClick={() => toggleRowExpansion(user.id)}
                       >
@@ -437,8 +478,8 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             {user.presentDays}
                           </span>
                         </div>
-                      </td>
-                      <td
+                      </Table.Cell>
+                      <Table.Cell
                         className="text-center"
                         onClick={() => toggleRowExpansion(user.id)}
                       >
@@ -451,8 +492,8 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             {user.absentDays}
                           </span>
                         </div>
-                      </td>
-                      <td
+                      </Table.Cell>
+                      <Table.Cell
                         className="text-center"
                         onClick={() => toggleRowExpansion(user.id)}
                       >
@@ -465,8 +506,8 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             {user.leaveDays}
                           </span>
                         </div>
-                      </td>
-                      <td
+                      </Table.Cell>
+                      <Table.Cell
                         className="text-center"
                         onClick={() => toggleRowExpansion(user.id)}
                       >
@@ -476,34 +517,71 @@ const UsersAttendanceTable: React.FC<Props> = ({ onMissPunchRequest }) => {
                             {user.missPunchCount}
                           </span>
                         </div>
-                      </td>
-                      <td onClick={() => toggleRowExpansion(user.id)}>
+                      </Table.Cell>
+                      <Table.Cell onClick={() => toggleRowExpansion(user.id)}>
                         {getStatusBadge(user.todayStatus)}
-                      </td>
-                    </tr>,
-                    // Expanded Detail Row
-                    isExpanded && (
-                      <tr key={`${user.id}-detail`}>
-                        <td colSpan={8} className="p-0">
-                          <div className="animate-fade-in">
-                            <div className="bg-white border-top border-bottom p-4">
-                              <UserDetailedAttendance
-                                userId={user.id}
-                                fromMonth={month}
-                                fromYear={year}
-                                onMissPunchRequest={onMissPunchRequest}
-                              />
-                            </div>
+                      </Table.Cell>
+                    </Table.Row>,
+
+                    <Table.Row key={`${user.id}-detail`}>
+                      <Table.Cell colSpan={8} className="p-0">
+                        <div
+                          style={{
+                            height: isExpanded
+                              ? expandedHeights[user.id] || "auto"
+                              : 0,
+                            overflow: "hidden",
+                            transition:
+                              "height 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
+                        >
+                          <div
+                            ref={(el) => {
+                              detailRefs.current[user.id] = el;
+                              if (
+                                el &&
+                                isExpanded &&
+                                !expandedHeights[user.id]
+                              ) {
+                                updateHeight(user.id);
+                              }
+                            }}
+                            data-user-id={user.id}
+                          >
+                            {isExpanded && (
+                              <div className="bg-white border-top border-bottom p-4">
+                                <React.Suspense
+                                  fallback={
+                                    <div className="text-center py-3">
+                                      <div
+                                        className="spinner-border spinner-border-sm"
+                                        role="status"
+                                      >
+                                        <span className="visually-hidden">
+                                          Loading...
+                                        </span>
+                                      </div>
+                                    </div>
+                                  }
+                                >
+                                  <UserDetailedAttendance
+                                    userId={user.id}
+                                    fromMonth={month}
+                                    fromYear={year}
+                                  />
+                                </React.Suspense>
+                              </div>
+                            )}
                           </div>
-                        </td>
-                      </tr>
-                    ),
-                  ].filter(Boolean);
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>,
+                  ];
                 })
               )}
-            </tbody>
-          </table>
-        </div>
+            </Table.Body>
+          </Table>
+        </Table.Container>
 
         {filteredAndSortedUsers.length > 0 && (
           <div className="mt-6 d-flex justify-content-between align-items-center">

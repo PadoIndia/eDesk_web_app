@@ -1,112 +1,136 @@
-import { useState, useEffect, lazy } from "react";
-import { FaCalendarAlt, FaPlus } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import leaveTransactionService from "../../services/api-services/leave-transaction.service";
+import { useState, useEffect, lazy, useCallback } from "react";
+import { FaCog } from "react-icons/fa";
 import { useAppSelector } from "../../store/store";
-import RecentLeaveRequestsComponent from "./leave-dashboard-components/recent-leave-request";
-import { toast } from "react-toastify";
-import leaveTypeService from "../../services/api-services/leave-type.service";
-import { buildLeaveBalances } from "../../utils/helper";
-import { LeaveBalance, LeaveRequestResponse } from "../../types/leave.types";
-import generalService from "../../services/api-services/general.service";
+import { LeaveRequestStatus } from "../../types/leave.types";
+import { GrTransaction } from "react-icons/gr";
+import { BiGitPullRequest } from "react-icons/bi";
+import { PiPiggyBankBold } from "react-icons/pi";
+import { MdOutlineSend } from "react-icons/md";
+import leaveRequestService from "../../services/api-services/leave-request.service";
 
+const LeaveConfiguration = lazy(() => import("./leave-configuration"));
+const ApplyLeave = lazy(() => import("./apply-leave"));
+const LeaveRequests = lazy(() => import("./leave-requests"));
+const LeaveTransactions = lazy(() => import("./leave-transaction"));
 const LeaveBalanceComponent = lazy(
   () => import("./leave-dashboard-components/leave-balance")
 );
 
 const LeaveDashboard = () => {
-  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
-  const [recentRequests, setRecentRequests] = useState<LeaveRequestResponse[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
-
   const user = useAppSelector((s) => s.auth.userData?.user);
   const userId = user?.id;
   const permissions = user?.permissions || [];
   const isAdmin = permissions.some((p) =>
     ["is_admin", "is_admin_department", "is_admin_team"].includes(p)
   );
+  const [leaveReqCount, setLeaveReqCount] = useState<number>(0);
+  const [currentTab, setCurrentTab] = useState<
+    "balance" | "transactions" | "config" | "requests" | "apply"
+  >("balance");
+
+  const fetchData = useCallback(async () => {
+    if (!userId || !isAdmin) return;
+
+    try {
+      const requestsRes = await leaveRequestService.getLeaveRequests({
+        hrStatus: LeaveRequestStatus.PENDING,
+        managerStatus: LeaveRequestStatus.PENDING,
+      });
+      if (requestsRes.status === "success")
+        setLeaveReqCount(requestsRes.data.length);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    }
+  }, [userId, isAdmin]);
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!userId) return;
-
-      setLoading(true);
-      try {
-        const resp = await leaveTransactionService.getLeaveTransactions({
-          userId,
-        });
-
-        if (resp.status === "success") {
-          const typesResp = await leaveTypeService.getLeaveTypes();
-          if (typesResp.status === "success") {
-            setLeaveBalance(buildLeaveBalances(typesResp.data, resp.data));
-          }
-        } else toast.error(resp.message);
-
-        const requestsRes = await generalService.getMyLeaveRequests({
-          limit: 3,
-          userId,
-          sortBy: "submittedOn",
-          sortOrder: "desc",
-        });
-        if (requestsRes.status === "success")
-          setRecentRequests(requestsRes.data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [userId]);
-
-  if (loading) {
-    return (
-      <div
-        className="container d-flex justify-content-center align-items-center"
-        style={{ minHeight: "70vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  }, [fetchData]);
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="mb-0">Leave Dashboard</h1>
-        <div className="gap-2 d-flex">
-          <Link to="/hrm/apply-leave" className="btn btn-primary">
-            <FaPlus className="me-2" /> Apply for Leave
-          </Link>
+    <div className="p-2 mx-2">
+      <div
+        style={{
+          border: "1px solid #f1f1f1",
+        }}
+        className="bg-white shadow-md  card mb-2 rounded-lg text-white p-3 d-flex gap-2"
+      >
+        <div className="d-flex gap-2 align-items-center">
+          <button
+            className={`btn ${
+              currentTab === "balance" ? "btn-primary" : "btn-outline-secondary"
+            }`}
+            onClick={() => setCurrentTab("balance")}
+          >
+            <PiPiggyBankBold className="me-1" /> Leave Balance
+          </button>
           {isAdmin && (
-            <Link to="/hrm/leave-config" className="btn btn-primary">
-              <FaCalendarAlt className="me-2" /> Leave Configuration
-            </Link>
+            <button
+              className={`btn ${
+                currentTab === "transactions"
+                  ? "btn-primary"
+                  : "btn-outline-secondary"
+              }`}
+              onClick={() => setCurrentTab("transactions")}
+            >
+              <GrTransaction className="me-1" /> Leave Transactions
+            </button>
           )}
+          {isAdmin && (
+            <button
+              className={`btn ${
+                currentTab === "config"
+                  ? "btn-primary"
+                  : "btn-outline-secondary"
+              }`}
+              onClick={() => setCurrentTab("config")}
+            >
+              <FaCog className="me-1" /> Leave Configuration
+            </button>
+          )}
+          <button
+            className={`btn position-relative ${
+              currentTab === "requests"
+                ? "btn-primary"
+                : "btn-outline-secondary"
+            }`}
+            onClick={() => setCurrentTab("requests")}
+          >
+            <BiGitPullRequest className="me-1" /> Leave Requests
+            {leaveReqCount > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {leaveReqCount}
+                <span className="visually-hidden">leave requests</span>
+              </span>
+            )}
+          </button>
+          <button
+            className={`btn ${
+              currentTab === "apply" ? "btn-primary" : "btn-outline-secondary"
+            }`}
+            onClick={() => setCurrentTab("apply")}
+          >
+            <MdOutlineSend className="me-1" /> Apply Leave
+          </button>
         </div>
       </div>
-
-      <div className="row g-4">
-        {/* Leave Balance Component */}
-        <div className="col-md-6">
-          <LeaveBalanceComponent
-            leaveBalance={leaveBalance}
-            loading={loading}
-          />
-        </div>
-
-        {/* Recent Leave Requests Component */}
-        <div className="col-md-6">
-          <RecentLeaveRequestsComponent
-            recentRequests={recentRequests}
-            loading={loading}
-          />
-        </div>
+      <div
+        style={{
+          border: "1px solid #f1f1f1",
+        }}
+        className="bg-white shadow-md  card mb-2 rounded-lg text-white p-3 d-flex gap-2"
+      >
+        {currentTab === "balance" ? (
+          <LeaveBalanceComponent userId={userId} />
+        ) : currentTab === "requests" ? (
+          <LeaveRequests refetch={fetchData} />
+        ) : currentTab === "transactions" ? (
+          <LeaveTransactions />
+        ) : currentTab === "apply" ? (
+          <ApplyLeave />
+        ) : (
+          <LeaveConfiguration />
+        )}
       </div>
     </div>
   );

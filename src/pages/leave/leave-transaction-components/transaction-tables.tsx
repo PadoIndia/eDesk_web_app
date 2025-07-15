@@ -1,14 +1,15 @@
 import React from "react";
 import { FaInfoCircle } from "react-icons/fa";
-import { LeaveTransaction } from "./type";
 import { TransactionRow } from "./transaction-rows";
+import { LeaveTransactionResponse } from "../../../types/leave.types";
+import { Table } from "../../../components/ui/table";
 
-interface TransactionTableProps {
-  transactions: LeaveTransaction[];
+interface Props {
+  transactions: LeaveTransactionResponse[];
   loading: boolean;
 }
 
-export const TransactionTable: React.FC<TransactionTableProps> = ({
+export const TransactionTable: React.FC<Props> = ({
   transactions,
   loading,
 }) => {
@@ -33,24 +34,24 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   }
 
   return (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Employee</th>
-            <th>Leave Type</th>
-            <th>Days</th>
-            <th>Comment</th>
-            <th>Assigned By</th>
-          </tr>
-        </thead>
-        <tbody>
+    <Table.Container>
+      <Table>
+        <Table.Head variant="light">
+          <Table.Row>
+            <Table.Header>DATE</Table.Header>
+            <Table.Header>EMPLOYEE</Table.Header>
+            <Table.Header>LEAVE TYPE</Table.Header>
+            <Table.Header>DAYS</Table.Header>
+            <Table.Header>COMMENT</Table.Header>
+            <Table.Header>ASSIGNED BY</Table.Header>
+          </Table.Row>
+        </Table.Head>
+        <Table.Body>
           {transactions.map((transaction) => (
             <TransactionRow key={transaction.id} transaction={transaction} />
           ))}
-        </tbody>
-      </table>
-    </div>
+        </Table.Body>
+      </Table>
+    </Table.Container>
   );
 };

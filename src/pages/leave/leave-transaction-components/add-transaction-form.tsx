@@ -16,19 +16,13 @@ interface TransactionItem {
 interface Props {
   users: { label: string; value: number }[];
   onSave: (transaction: CreateLeaveTransactionRequest) => void;
-  onCancel: () => void;
 }
 
-export const AddTransactionForm: React.FC<Props> = ({
-  users,
-  onSave,
-  onCancel,
-}) => {
+const AddTransactionForm: React.FC<Props> = ({ users, onSave }) => {
   const [userId, setUserId] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch leave types when user is selected
   useEffect(() => {
     if (userId) {
       setLoading(true);
@@ -36,7 +30,6 @@ export const AddTransactionForm: React.FC<Props> = ({
         .getLeaveTypesByUserId(userId)
         .then((res) => {
           if (res.status === "success") {
-            // Initialize all leave types as transaction items
             const initialTransactions = res.data.map((leaveType) => ({
               leaveTypeId: leaveType.id,
               leaveTypeName: leaveType.name,
@@ -94,7 +87,6 @@ export const AddTransactionForm: React.FC<Props> = ({
       return;
     }
 
-    // Validate all selected transactions have non-zero count
     const invalidTransactions = selectedTransactions.filter(
       (t) => t.count === 0
     );
@@ -120,7 +112,7 @@ export const AddTransactionForm: React.FC<Props> = ({
       if (resp.status === "success") {
         toast.success(resp.message);
         onSave(transactionData);
-        // Reset form
+
         setUserId(null);
         setTransactions([]);
       } else {
@@ -138,9 +130,8 @@ export const AddTransactionForm: React.FC<Props> = ({
   const selectedCount = transactions.filter((t) => t.selected).length;
 
   return (
-    <div className="p-4">
+    <div className="p-4" style={{ height: "50vh" }}>
       <div className="space-y-4">
-        {/* User Selection */}
         <div className="mb-4">
           <label className="form-label d-block mb-2 fw-semibold">
             Employee
@@ -154,7 +145,6 @@ export const AddTransactionForm: React.FC<Props> = ({
           />
         </div>
 
-        {/* Loading State */}
         {loading && (
           <div className="text-center p-4">
             <div className="spinner-border text-primary" role="status">
@@ -163,7 +153,6 @@ export const AddTransactionForm: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Transactions Table */}
         {!loading && transactions.length > 0 && (
           <div className="mb-4">
             <div className="card shadow-sm">
@@ -268,7 +257,6 @@ export const AddTransactionForm: React.FC<Props> = ({
           </div>
         )}
 
-        {/* No Leave Types Message */}
         {!loading && userId && transactions.length === 0 && (
           <div className="alert alert-warning">
             <div className="d-flex align-items-center">
@@ -288,7 +276,6 @@ export const AddTransactionForm: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Helper Text */}
         {transactions.length > 0 && selectedCount === 0 && (
           <div className="text-muted small">
             <em>
@@ -298,15 +285,7 @@ export const AddTransactionForm: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="d-flex justify-content-end gap-2 mt-4">
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
           <button
             type="button"
             className="btn btn-primary"
@@ -321,3 +300,5 @@ export const AddTransactionForm: React.FC<Props> = ({
     </div>
   );
 };
+
+export default AddTransactionForm;

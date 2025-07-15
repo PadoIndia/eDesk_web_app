@@ -20,18 +20,17 @@ import {
 import leaveTypeService from "../../services/api-services/leave-type.service";
 import leaveSchemeService from "../../services/api-services/leave-scheme.service";
 import leaveTypeSchemeService from "../../services/api-services/leave-type-scheme.service";
+import { toast } from "react-toastify";
+import { Spinner } from "../../components/loading";
 
 const LeaveConfiguration = () => {
-  // Tab state
   const [activeTab, setActiveTab] = useState("leave-types");
 
-  // Data state
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeResponse[]>([]);
   const [schemes, setSchemes] = useState<LeaveScheme[]>([]);
   const [configurations, setConfigurations] = useState<LeaveTypeScheme[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal state
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [currentType, setCurrentType] = useState<LeaveTypeResponse | null>(
     null
@@ -39,7 +38,6 @@ const LeaveConfiguration = () => {
   const [showSchemeModal, setShowSchemeModal] = useState(false);
   const [currentScheme, setCurrentScheme] = useState<LeaveScheme | null>(null);
 
-  // Configuration state
   const [schemeId, setSchemeId] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newConfig, setNewConfig] = useState({
@@ -49,7 +47,6 @@ const LeaveConfiguration = () => {
     isEarned: IsEarned.YES,
   });
 
-  // Computed values
   const currentSchemeConfig = schemes.find((s) => s.id === schemeId);
   const currentConfigs = configurations.filter(
     (c) => c.leaveSchemeId === schemeId
@@ -58,7 +55,6 @@ const LeaveConfiguration = () => {
     (lt) => !currentConfigs.some((c) => c.leaveTypeId === lt.id)
   );
 
-  // Fetch all data
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -73,7 +69,6 @@ const LeaveConfiguration = () => {
       setSchemes(schemesResponse.data);
       setConfigurations(configsResponse.data);
 
-      // Set default scheme if available
       if (schemesResponse.data.length > 0 && !schemeId) {
         setSchemeId(schemesResponse.data[0].id);
       }
@@ -84,12 +79,10 @@ const LeaveConfiguration = () => {
     }
   };
 
-  // Initial data load
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Leave Type handlers
   const handleAddType = () => {
     setCurrentType(null);
     setShowTypeModal(true);
@@ -122,35 +115,41 @@ const LeaveConfiguration = () => {
 
   const handleSaveType = async (type: LeaveTypeResponse) => {
     try {
-      let response: { data: LeaveTypeResponse };
-
       if (type.id) {
         const updateData: UpdateLeaveTypeRequest = {
           name: type.name,
           isPaid: type.isPaid,
           description: type.description,
         };
-        response = await leaveTypeService.updateLeaveType(type.id, updateData);
-        setLeaveTypes((prev) =>
-          prev.map((t) => (t.id === type.id ? response.data : t))
+        const response = await leaveTypeService.updateLeaveType(
+          type.id,
+          updateData
         );
+        if (response.status === "success") {
+          setLeaveTypes((prev) =>
+            prev.map((t) => (t.id === type.id ? response.data : t))
+          );
+          setShowTypeModal(false);
+          toast.success(response.message);
+        } else toast.error(response.message);
       } else {
         const createData: CreateLeaveTypeRequest = {
           name: type.name,
           isPaid: type.isPaid,
           description: type.description,
         };
-        response = await leaveTypeService.createLeaveType(createData);
-        setLeaveTypes((prev) => [...prev, response.data]);
+        const response = await leaveTypeService.createLeaveType(createData);
+        if (response.status === "success") {
+          setLeaveTypes((prev) => [...prev, response.data]);
+          toast.success(response.status);
+          setShowTypeModal(false);
+        } else toast.error(response.message);
       }
-
-      setShowTypeModal(false);
     } catch (error) {
       console.error("Failed to save leave type:", error);
     }
   };
 
-  // Leave Scheme handlers
   const handleAddScheme = () => {
     setCurrentScheme(null);
     setShowSchemeModal(true);
@@ -177,7 +176,6 @@ const LeaveConfiguration = () => {
         prev.filter((config) => config.leaveSchemeId !== id)
       );
 
-      // Update selected scheme if it was deleted
       if (schemeId === id) {
         const remainingSchemes = schemes.filter((s) => s.id !== id);
         setSchemeId(
@@ -241,7 +239,6 @@ const LeaveConfiguration = () => {
       );
       setConfigurations((prev) => [...prev, response.data]);
 
-      // Reset form
       setNewConfig({
         leaveTypeId: 0,
         maxCarryForward: 0,
@@ -279,7 +276,6 @@ const LeaveConfiguration = () => {
 
       await Promise.all(updatePromises);
 
-      // Refresh configurations
       const updatedConfigsResponse =
         await leaveTypeSchemeService.getLeaveTypeSchemes();
       setConfigurations(updatedConfigsResponse.data);
@@ -288,7 +284,6 @@ const LeaveConfiguration = () => {
     }
   };
 
-  // Configuration update methods
   const updateConfigCarryForward = (
     configId: number,
     maxCarryForward: number
@@ -323,32 +318,11 @@ const LeaveConfiguration = () => {
   };
 
   if (loading) {
-    return (
-      <div className="container py-4">
-        <div className="d-flex justify-content-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="mb-0">Leave Configuration</h1>
-        <button
-          className="btn btn-outline-secondary btn-sm"
-          onClick={fetchData}
-          disabled={loading}
-        >
-          <i className="bi bi-arrow-clockwise me-1"></i>
-          Refresh
-        </button>
-      </div>
-
-      {/* Tabs navigation */}
+    <div className="">
       <ul className="nav nav-tabs" id="leaveConfigTabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
@@ -393,10 +367,19 @@ const LeaveConfiguration = () => {
             )}
           </button>
         </li>
+        <div className="ms-auto">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <i className="bi bi-arrow-clockwise me-1"></i>
+            Refresh
+          </button>
+        </div>
       </ul>
 
-      <div className="tab-content p-3 border border-top-0 rounded-bottom">
-        {/* Leave Types Tab */}
+      <div className="tab-content py-1 border-0 rounded-bottom">
         {activeTab === "leave-types" && (
           <LeaveTypesTab
             leaveTypes={leaveTypes}
@@ -407,7 +390,6 @@ const LeaveConfiguration = () => {
           />
         )}
 
-        {/* Leave Schemes Tab */}
         {activeTab === "leave-schemes" && (
           <LeaveSchemesTab
             schemes={schemes}
@@ -419,7 +401,6 @@ const LeaveConfiguration = () => {
           />
         )}
 
-        {/* Scheme Configuration Tab */}
         {activeTab === "scheme-config" && (
           <SchemeConfigurationTab
             schemes={schemes}
@@ -443,7 +424,6 @@ const LeaveConfiguration = () => {
         )}
       </div>
 
-      {/* Leave Type Modal */}
       <Modal
         show={showTypeModal}
         title={currentType ? "Edit Leave Type" : "Add New Leave Type"}
@@ -456,7 +436,6 @@ const LeaveConfiguration = () => {
         />
       </Modal>
 
-      {/* Leave Scheme Modal */}
       <Modal
         show={showSchemeModal}
         title={currentScheme ? "Edit Leave Scheme" : "Add New Leave Scheme"}

@@ -13,10 +13,7 @@ import {
 import { toast } from "react-toastify";
 import attendanceDashboardService from "../../../services/api-services/attendance-dashboard.service";
 import Avatar from "../../../components/avatar";
-import {
-  PunchData,
-  UserDashboardData,
-} from "../../../types/attendance-dashboard.types";
+import { UserDashboardData } from "../../../types/attendance-dashboard.types";
 import {
   calculateWorkingHours,
   convertDayNameToInt,
@@ -25,24 +22,24 @@ import {
 } from "../../../utils/helper";
 import { statusToShortCode } from "../../../utils/constants";
 import { STATUS_ICON_CONFIG } from "../../../utils/icons";
+import Modal from "../../../components/ui/modals";
+import { useAppSelector } from "../../../store/store";
+import punchDataService from "../../../services/api-services/punch-data.service";
+import { PunchResponse } from "../../../types/punch-data.types";
 
 const ClassesTable = lazy(() => import("./classes-table"));
 const CallsTable = lazy(() => import("./calls-table"));
 const MissPunchesTable = lazy(() => import("./miss-punches-table"));
+const MissPunchForm = lazy(() => import("../components/miss-punch-form"));
 
 interface Props {
   userId: number;
-  onMissPunchRequest?: (
-    date: string,
-    user: { id: number; name: string }
-  ) => void;
   fromMonth?: number;
   fromYear?: number;
 }
 
 const UserDetailedAttendance: React.FC<Props> = ({
   userId,
-  onMissPunchRequest,
   fromMonth,
   fromYear,
 }) => {
@@ -52,10 +49,26 @@ const UserDetailedAttendance: React.FC<Props> = ({
   );
   const [month, setMonth] = useState(fromMonth || new Date().getMonth() + 1);
   const [year, setYear] = useState(fromYear || new Date().getFullYear());
+  const [showMissPunchForm, setShowMissPunchForm] = useState(false);
 
+  const [formData, setFormData] = useState({
+    name: "",
+    date: "",
+    time: "",
+    reason: "",
+
+    targetUserId: 0,
+  });
   const [activeTab, setActiveTab] = useState<
     "attendance" | "calls" | "classes" | "punchRequests"
   >("attendance");
+
+  const currentUser = useAppSelector((s) => s.auth.userData?.user);
+  const permissions = currentUser?.permissions || [];
+  const isAdmin =
+    permissions.some((p) =>
+      ["is_admin", "is_team_admin", "is_department_admin"].includes(p)
+    ) || false;
 
   useEffect(() => {
     fetchDashboardData();
@@ -91,6 +104,24 @@ const UserDetailedAttendance: React.FC<Props> = ({
       setLoading(false);
     }
   };
+  const handleMissPunchRequest = (
+    date: string,
+    user: { id: number; name: string }
+  ) => {
+    if (!user) {
+      toast.error("Target user not found");
+      return;
+    }
+
+    setFormData({
+      name: user.name,
+      date,
+      time: "",
+      reason: "",
+      targetUserId: user.id,
+    });
+    setShowMissPunchForm(true);
+  };
 
   const getStatusForDate = (date: number) => {
     if (!dashboardData) return "—";
@@ -118,7 +149,7 @@ const UserDetailedAttendance: React.FC<Props> = ({
     return "—";
   };
 
-  const getPunchApprovalIcon = (punch: PunchData) => {
+  const getPunchApprovalIcon = (punch: PunchResponse) => {
     if (punch.approvedBy) {
       if (punch.isApproved === true) {
         return (
@@ -310,6 +341,32 @@ const UserDetailedAttendance: React.FC<Props> = ({
     };
   };
 
+  const handleFormClose = () => {
+    setShowMissPunchForm(false);
+    setFormData({
+      name: "",
+      date: "",
+      reason: "",
+      targetUserId: 0,
+      time: "",
+    });
+  };
+
+  const handleMissPunchSuccess = () => {
+    punchDataService.getPunches({ year, month }).then((res) => {
+      if (res.status === "success") {
+        if (dashboardData) {
+          const obj: UserDashboardData = {
+            ...dashboardData,
+            punchData: res.data,
+          };
+          setDashboardData(obj);
+        }
+      }
+    });
+    handleFormClose();
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-20">
@@ -340,6 +397,23 @@ const UserDetailedAttendance: React.FC<Props> = ({
 
   return (
     <div className="card rounded-lg" style={{ border: "1px solid #f1f1f1" }}>
+      {userId && (
+        <Modal
+          title="Add Misspunch"
+          isOpen={showMissPunchForm}
+          onClose={handleFormClose}
+          showCloseIcon
+          size="lg"
+        >
+          <MissPunchForm
+            formData={formData}
+            setFormData={setFormData}
+            userId={userId}
+            isAdmin={isAdmin}
+            onSuccess={handleMissPunchSuccess}
+          />
+        </Modal>
+      )}
       <div className="card-body p-6">
         <div className="d-flex align-items-center bg-light border p-3 rounded mb-4">
           <div className="rounded-circle bg-white d-flex align-items-center justify-content-center me-3">
@@ -492,7 +566,7 @@ const UserDetailedAttendance: React.FC<Props> = ({
               Punch Requests
               {punchRequests.filter((p) => !p.approvedBy).length > 0 && (
                 <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {punchRequests.length}
+                  {punchRequests.filter((p) => !p.approvedBy).length}
                   <span className="visually-hidden">punch requests</span>
                 </span>
               )}
@@ -640,11 +714,11 @@ const UserDetailedAttendance: React.FC<Props> = ({
                           </span>
                         ) : (
                           <div className="d-flex gap-2 justify-content-center">
-                            {onMissPunchRequest && (
+                            {
                               <button
                                 className="btn btn-outline-primary btn-sm"
                                 onClick={() =>
-                                  onMissPunchRequest(dateStr, {
+                                  handleMissPunchRequest(dateStr, {
                                     id: userId,
                                     name: dashboardData.user.name,
                                   })
@@ -654,7 +728,7 @@ const UserDetailedAttendance: React.FC<Props> = ({
                                 <FaPlus className="me-1" />
                                 MP
                               </button>
-                            )}
+                            }
                           </div>
                         )}
                       </td>

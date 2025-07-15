@@ -1,40 +1,35 @@
 import React from "react";
-import { FaUser } from "react-icons/fa";
-import { LeaveTransaction } from "./type";
+import { LeaveTransactionResponse } from "../../../types/leave.types";
+import { Table } from "../../../components/ui/table";
 
-interface TransactionRowProps {
-  transaction: LeaveTransaction;
+interface Props {
+  transaction: LeaveTransactionResponse;
 }
 
-export const TransactionRow: React.FC<TransactionRowProps> = ({
-  transaction,
-}) => {
+export const TransactionRow: React.FC<Props> = ({ transaction }) => {
   return (
-    <tr>
-      <td>
-        {new Date(
-          transaction.year,
-          transaction.month - 1,
-          transaction.date
-        ).toLocaleDateString()}
-      </td>
-      <td>
+    <Table.Row>
+      <Table.Cell>
+        {new Date(transaction.createdOn).toLocaleDateString()}
+      </Table.Cell>
+      <Table.Cell>
         <div className="d-flex align-items-center">
-          <div className="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-            <FaUser className="text-muted" />
-          </div>
           {transaction.user?.name || "Unknown User"}
         </div>
-      </td>
-      <td>{transaction.leaveType || "Unknown Leave Type"}</td>
-      <td className={transaction.count > 0 ? "text-success" : "text-danger"}>
+      </Table.Cell>
+      <Table.Cell>
+        {transaction.leaveType.name || "Unknown Leave Type"}
+      </Table.Cell>
+      <Table.Cell
+        className={transaction.count > 0 ? "text-success" : "text-danger"}
+      >
         {transaction.count > 0 ? "+" : ""}
         {transaction.count}
-      </td>
-      <td>
+      </Table.Cell>
+      <Table.Cell>
         <small className="text-muted">{transaction.comment || "-"}</small>
-      </td>
-      <td>{transaction.assignedBy?.name || "System"}</td>
-    </tr>
+      </Table.Cell>
+      <Table.Cell>{transaction.assignedBy?.name || "System"}</Table.Cell>
+    </Table.Row>
   );
 };

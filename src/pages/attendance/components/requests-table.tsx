@@ -1,17 +1,11 @@
 import React from "react";
-import {
-  FaUserCircle,
-  FaBuilding,
-  FaCalendarAlt,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaExclamationCircle,
-  FaClipboardList,
-  FaCheck,
-  FaTimes,
-} from "react-icons/fa";
+import { FaClipboardList, FaCheck, FaTimes } from "react-icons/fa";
 import { PunchResponse } from "../../../types/punch-data.types";
+import { Table } from "../../../components/ui/table";
+import { getLeaveStatusBadge } from "../../../utils/helper";
+import { LeaveRequestStatus } from "../../../types/leave.types";
+import Avatar from "../../../components/avatar";
+import { Colors } from "../../../utils/constants";
 
 interface Props {
   filteredRequests: PunchResponse[];
@@ -33,71 +27,25 @@ const RequestsTable: React.FC<Props> = ({
       .padStart(2, "0")}`;
   };
 
-  const getStatusBadge = (isApproved: boolean | null, approvedBy?: number) => {
-    if (!approvedBy) {
-      return (
-        <span className="badge bg-warning text-dark rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1">
-          <FaExclamationCircle size={12} />
-          Pending
-        </span>
-      );
-    } else if (isApproved) {
-      return (
-        <span className="badge bg-success rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1">
-          <FaCheckCircle size={12} />
-          Approved
-        </span>
-      );
-    } else {
-      return (
-        <span className="badge bg-danger rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1">
-          <FaTimesCircle size={12} />
-          Rejected
-        </span>
-      );
-    }
-  };
-
   return (
     <div
       className="card rounded-lg bg-white"
       style={{ border: "1px solid #f1f1f1" }}
     >
-      <div className="card-body p-2">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead>
-              <tr className="bg-light">
-                <th className="px-4 py-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <FaUserCircle className="text-muted" size={16} />
-                    Employee
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <FaBuilding className="text-muted" size={16} />
-                    Department
-                  </div>
-                </th>
-                <th className="px-4 py-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <FaCalendarAlt className="text-muted" size={16} />
-                    Date
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-center">
-                  <div className="d-flex align-items-center justify-content-center gap-2">
-                    <FaClock className="text-muted" size={16} />
-                    Time
-                  </div>
-                </th>
-                <th className="px-4 py-3">Reason</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                {isAdmin && <th className="px-4 py-3 text-center">Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
+      <div className="card-body px-4">
+        <Table.Container>
+          <Table className="mb-0">
+            <Table.Head className="table-light">
+              <Table.Row>
+                <Table.Header>EMPLOYEE</Table.Header>
+                <Table.Header>DEPARTMENT</Table.Header>
+                <Table.Header>DATE</Table.Header>
+                <Table.Header>TIME</Table.Header>
+                <Table.Header>REASON</Table.Header>
+                {isAdmin && <Table.Header>ACTIONS</Table.Header>}
+              </Table.Row>
+            </Table.Head>
+            <Table.Body>
               {filteredRequests.length > 0 ? (
                 filteredRequests.map((request, index) => {
                   const requestDate = new Date(
@@ -109,70 +57,57 @@ const RequestsTable: React.FC<Props> = ({
                     requestDate.getDay() === 0 || requestDate.getDay() === 6;
 
                   return (
-                    <tr
+                    <Table.Row
                       key={request.id}
                       className={
                         index % 2 === 0 ? "" : "bg-light bg-opacity-50"
                       }
                     >
-                      <td className="px-4 py-3">
-                        <div className="d-flex align-items-center gap-2">
-                          <div
-                            className="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
-                            style={{
-                              width: "32px",
-                              height: "32px",
-                              fontSize: "14px",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {request.user?.name
-                              ? request.user?.name.charAt(0).toUpperCase()
-                              : "U"}
-                          </div>
+                      <Table.Cell className="py-2 ">
+                        <div className="d-flex align-items-center py-2">
                           <div>
-                            <div className="fw-semibold">
-                              {request.user?.name || "Unknown"}
+                            <Avatar
+                              fontSize={14}
+                              bgColor={Colors.BGColorList[5]}
+                              title={request.user.name || ""}
+                              imageUrl={request.user.profileImg?.url}
+                            />
+                          </div>
+                          <div className="ms-3">
+                            <div className="fw-semibold text-dark">
+                              {request.user.name}
                             </div>
                             <small className="text-muted">
                               ID: {request.userId}
                             </small>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="badge bg-primary-subtle text-primary fw-normal rounded-pill px-3 py-1">
+                      </Table.Cell>
+                      <Table.Cell className="py-2">
+                        <span className="badge bg-primary-ultralight text-primary rounded-pill px-3 py-1">
                           {request.department?.name || "Unknown"}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <div className="fw-semibold">
-                            {requestDate.toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </div>
-                          <small
-                            className={`${
-                              isWeekend
-                                ? "text-danger fw-semibold"
-                                : "text-muted"
-                            }`}
-                          >
-                            {requestDate.toLocaleDateString("en-US", {
-                              weekday: "short",
-                            })}
-                          </small>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="badge bg-secondary rounded-pill px-3 py-2">
+                      </Table.Cell>
+                      <Table.Cell className="py-2">
+                        <small
+                          className={`${
+                            isWeekend ? "text-danger fw-semibold" : "text-muted"
+                          }`}
+                        >
+                          {requestDate.toLocaleDateString("en-GB", {
+                            weekday: "short",
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </small>
+                      </Table.Cell>
+                      <Table.Cell className="py-2">
+                        <span className="badge bg-secondary-ultralight text-secondary rounded-pill px-3 py-2">
                           {formatTime(request.hh || 0, request.mm || 0)}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </Table.Cell>
+                      <Table.Cell className="py-2">
                         <div
                           className="text-truncate"
                           style={{ maxWidth: "250px" }}
@@ -188,51 +123,48 @@ const RequestsTable: React.FC<Props> = ({
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {getStatusBadge(request.isApproved, request.approvedBy)}
-                      </td>
-
+                      </Table.Cell>
                       {isAdmin && (
-                        <td className="px-4 py-3">
+                        <Table.Cell className="py-2">
                           {request.approvedBy === null ? (
-                            <div className="d-flex gap-2 justify-content-center">
+                            <div className="d-flex gap-2">
                               <button
-                                className="btn btn-success btn-sm d-inline-flex align-items-center gap-1 px-3"
+                                className="btn btn-sm btn-success rounded-md d-flex align-items-center gap-1"
                                 onClick={() =>
                                   handleApproveReject(request, "approve")
                                 }
-                                title="Approve Request"
+                                title="Approve"
                               >
-                                <FaCheck size={12} />
+                                <FaCheck />
                                 Approve
                               </button>
                               <button
-                                className="btn btn-danger btn-sm d-inline-flex align-items-center gap-1 px-3"
+                                className="btn btn-sm btn-danger text-light rounded-md d-flex align-items-center gap-1"
                                 onClick={() =>
                                   handleApproveReject(request, "reject")
                                 }
-                                title="Reject Request"
+                                title="Reject"
                               >
-                                <FaTimes size={12} />
+                                <FaTimes />
                                 Reject
                               </button>
                             </div>
+                          ) : request.isApproved ? (
+                            getLeaveStatusBadge(LeaveRequestStatus.APPROVED)
                           ) : (
-                            <div className="text-center">
-                              <span className="badge bg-secondary bg-opacity-25 text-secondary px-3 py-2">
-                                Processed
-                              </span>
-                            </div>
+                            getLeaveStatusBadge(LeaveRequestStatus.REJECTED)
                           )}
-                        </td>
+                        </Table.Cell>
                       )}
-                    </tr>
+                    </Table.Row>
                   );
                 })
               ) : (
-                <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="text-center py-5">
+                <Table.Row>
+                  <Table.Cell
+                    colSpan={isAdmin ? 7 : 6}
+                    className="text-center py-5"
+                  >
                     <div className="text-muted">
                       <FaClipboardList className="mb-3 opacity-50" size={48} />
                       <p className="mb-0 fs-5">No punch requests found</p>
@@ -241,12 +173,12 @@ const RequestsTable: React.FC<Props> = ({
                         requests
                       </small>
                     </div>
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               )}
-            </tbody>
-          </table>
-        </div>
+            </Table.Body>
+          </Table>
+        </Table.Container>
       </div>
     </div>
   );

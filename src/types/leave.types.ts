@@ -181,12 +181,11 @@ export interface UpdateLeaveTransactionRequest {
   comment?: string;
 }
 
-// Query parameter types for Leave Transactions
 export interface LeaveTransactionFilters {
   userId?: number;
   leaveTypeId?: number;
   year?: number;
-  month?: number; // 1-12
+  month?: number;
   search?: string;
   page?: number;
   limit?: number;
@@ -200,17 +199,6 @@ export interface LeaveTransactionFilters {
     | "leaveType";
   sortOrder?: "asc" | "desc";
 }
-
-// export interface LeaveBalance {
-//   userId: number;
-//   leaveTypeId: number;
-//   leaveTypeName: string;
-//   totalAllocated: number;
-//   totalUsed: number;
-//   currentBalance: number;
-//   pendingRequests: number;
-//   availableBalance: number;
-// }
 
 export interface LeaveTransactionResponse {
   id: number;
@@ -233,6 +221,7 @@ export interface LeaveTransactionResponse {
     id: number;
     name: string;
   };
+  assignedBy: { name: string | null } | null;
 }
 
 export interface LeaveBalance {
@@ -269,6 +258,12 @@ export interface LeaveRequestResponse {
     id: number;
     name: string | null;
     username: string;
+    userDepartment: {
+      department: {
+        id: number;
+        name: string;
+      };
+    }[];
   };
 }
 

@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, FC } from "react";
 import {
   FaSearch,
   FaFilter,
   FaCalendarAlt,
-  FaUser,
   FaCheck,
   FaTimes,
   FaInfoCircle,
@@ -17,10 +16,21 @@ import {
   ApproveRejectLeaveRequestRequest,
 } from "../../types/leave.types";
 import { useAppSelector } from "../../store/store";
-import { IsDeptManager, IsHr, isTeamManager } from "../../utils/helper";
+import {
+  getFinalLeaveRequestStatus,
+  getLeaveStatusBadge,
+  IsDeptManager,
+  IsHr,
+  isTeamManager,
+} from "../../utils/helper";
 import { toast } from "react-toastify";
+import { Table } from "../../components/ui/table";
 
-const LeaveRequests = () => {
+type Props = {
+  refetch: () => void;
+};
+
+const LeaveRequests: FC<Props> = ({ refetch }) => {
   const [myRequests, setMyRequests] = useState<LeaveRequestResponse[]>([]);
   const [othersRequests, setOthersRequests] = useState<LeaveRequestResponse[]>(
     []
@@ -146,10 +156,14 @@ const LeaveRequests = () => {
   const filteredRequests = tabRequests.filter((request) => {
     const employeeName = request.user?.name || "";
     const leaveTypeName = request.leaveType?.name || "";
+    const deptname = request.user.userDepartment
+      .map((u) => u.department.name)
+      .join(" ");
 
     const matchesSearch =
       employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      leaveTypeName.toLowerCase().includes(searchTerm.toLowerCase());
+      leaveTypeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      deptname.toLowerCase().includes(searchTerm.toLowerCase());
 
     const effectiveStatus = request.managerStatus;
     const matchesStatus = statusFilter
@@ -201,21 +215,8 @@ const LeaveRequests = () => {
     setIsSubmitting(false);
   };
 
-  const validateComment = () => {
-    if (!comment.trim()) {
-      setCommentError("Comment is required");
-      return false;
-    }
-    if (comment.trim().length < 5) {
-      setCommentError("Comment must be at least 5 characters");
-      return false;
-    }
-    setCommentError("");
-    return true;
-  };
-
   const handleSubmitAction = async () => {
-    if (!validateComment() || !modalAction || !selectedRequestId) {
+    if (!modalAction || !selectedRequestId) {
       return;
     }
 
@@ -236,6 +237,7 @@ const LeaveRequests = () => {
         toast.success(resp.message);
         await refreshRequests();
         closeModal();
+        refetch();
       } else {
         toast.error(resp.message);
       }
@@ -263,8 +265,8 @@ const LeaveRequests = () => {
   const othersRequestsCount = othersRequests.length;
 
   return (
-    <div className="container py-4">
-      <div className="card">
+    <div className="">
+      <div className="card border-0">
         <div className="card-header bg-light">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2 className="mb-0">Leave Requests</h2>
@@ -351,9 +353,7 @@ const LeaveRequests = () => {
               </div>
             </div>
           </div>
-
-          {/* Navigation Tabs - Only show if user is HR or Manager */}
-          {
+          {hasAdminPermissions() && (
             <ul className="nav nav-tabs card-header-tabs">
               <li className="nav-item">
                 <button
@@ -365,20 +365,18 @@ const LeaveRequests = () => {
                   My Requests ({myRequestsCount})
                 </button>
               </li>
-              {hasAdminPermissions() && (
-                <li className="nav-item">
-                  <button
-                    className={`nav-link ${
-                      activeTab === "others-requests" ? "active" : ""
-                    }`}
-                    onClick={() => setActiveTab("others-requests")}
-                  >
-                    Team Requests ({othersRequestsCount})
-                  </button>
-                </li>
-              )}
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${
+                    activeTab === "others-requests" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("others-requests")}
+                >
+                  Team Requests ({othersRequestsCount})
+                </button>
+              </li>
             </ul>
-          }
+          )}{" "}
         </div>
 
         <div className="card-body">
@@ -395,90 +393,100 @@ const LeaveRequests = () => {
               <p>Try adjusting your filters</p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>Employee</th>
-                    <th>Leave Type</th>
-                    <th>Dates</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                    <th>Submitted On</th>
-                    {activeTab === "others-requests" && <th>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
+            <Table.Container>
+              <Table>
+                <Table.Head>
+                  <Table.Row>
+                    <Table.Header>EMPLOYEE</Table.Header>
+                    <Table.Header>DEPARTMENT</Table.Header>
+                    <Table.Header>LEAVE TYPE</Table.Header>
+                    <Table.Header>DATES</Table.Header>
+                    <Table.Header>DURATION</Table.Header>
+                    <Table.Header>SUBMITTED ON</Table.Header>
+                    {activeTab === "others-requests" && (
+                      <Table.Header>ACTIONS</Table.Header>
+                    )}
+                  </Table.Row>
+                </Table.Head>
+                <Table.Body>
                   {filteredRequests.map((request) => {
+                    const finalStatus = getFinalLeaveRequestStatus(
+                      request.managerStatus,
+                      request.hrStatus
+                    );
+
                     return (
-                      <tr key={request.id}>
-                        <td>
+                      <Table.Row key={request.id}>
+                        <Table.Cell>
                           <div className="d-flex align-items-center">
-                            <div className="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
-                              <FaUser className="text-muted" />
-                            </div>
                             {request.user?.name || "Unknown"}
                           </div>
-                        </td>
-                        <td>{request.leaveType?.name || "Unknown"}</td>
-                        <td>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {request.user.userDepartment.map((d) => (
+                            <span className="" key={d.department.id}>
+                              {d.department.name}
+                            </span>
+                          ))}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {request.leaveType?.name || "Unknown"}
+                        </Table.Cell>
+                        <Table.Cell>
                           <div className="d-flex align-items-center">
                             <FaCalendarAlt className="me-2 text-muted" />
                             {formatDate(request.startDate)} -{" "}
                             {formatDate(request.endDate)}
                           </div>
-                        </td>
-                        <td>{request.duration} day(s)</td>
-                        <td>{request.hrStatus}</td>
-                        <td>{formatDate(request.submittedOn)}</td>
+                        </Table.Cell>
+                        <Table.Cell>{request.duration} day(s)</Table.Cell>
+                        <Table.Cell>
+                          {formatDate(request.submittedOn)}
+                        </Table.Cell>
                         {activeTab === "others-requests" && (
-                          <td>
-                            <div className="d-flex gap-2">
-                              <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => handleApprove(request.id)}
-                                title="Approve"
-                                disabled={
-                                  !(
-                                    request.hrStatus === "PENDING" &&
-                                    request.managerStatus === "PENDING"
-                                  )
-                                }
-                              >
-                                <FaCheck />
-                              </button>
-                              <button
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleReject(request.id)}
-                                title="Reject"
-                                disabled={
-                                  !(
-                                    request.hrStatus === "PENDING" &&
-                                    request.managerStatus === "PENDING"
-                                  )
-                                }
-                              >
-                                <FaTimes />
-                              </button>
-                              {request.managerStatus === "APPROVED" && (
-                                <span className="badge bg-success">
-                                  Approved
-                                </span>
-                              )}
-                              {request.managerStatus === "REJECTED" && (
-                                <span className="badge bg-danger">
-                                  Rejected
-                                </span>
-                              )}
-                            </div>
-                          </td>
+                          <Table.Cell>
+                            {finalStatus !== "PENDING" ? (
+                              getLeaveStatusBadge(finalStatus)
+                            ) : (
+                              <div className="d-flex gap-2">
+                                <button
+                                  className="btn btn-sm btn-success rounded-md d-flex align-items-center gap-1"
+                                  onClick={() => handleApprove(request.id)}
+                                  title="Approve"
+                                  disabled={
+                                    !(
+                                      request.hrStatus === "PENDING" &&
+                                      request.managerStatus === "PENDING"
+                                    )
+                                  }
+                                >
+                                  <FaCheck />
+                                  Approve
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger text-light rounded-md d-flex align-items-center gap-1"
+                                  onClick={() => handleReject(request.id)}
+                                  title="Reject"
+                                  disabled={
+                                    !(
+                                      request.hrStatus === "PENDING" &&
+                                      request.managerStatus === "PENDING"
+                                    )
+                                  }
+                                >
+                                  <FaTimes />
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </Table.Cell>
                         )}
-                      </tr>
+                      </Table.Row>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </Table.Body>
+              </Table>
+            </Table.Container>
           )}
         </div>
 
@@ -487,7 +495,7 @@ const LeaveRequests = () => {
             <small className="text-muted">
               Showing {filteredRequests.length} of {tabRequests.length} requests
             </small>
-            <nav>
+            {/* <nav>
               <ul className="pagination pagination-sm mb-0">
                 <li className="page-item disabled">
                   <a className="page-link" href="#" tabIndex={-1}>
@@ -515,7 +523,7 @@ const LeaveRequests = () => {
                   </a>
                 </li>
               </ul>
-            </nav>
+            </nav> */}
           </div>
         </div>
       </div>
@@ -602,7 +610,7 @@ const LeaveRequests = () => {
                     modalAction === "APPROVED" ? "btn-success" : "btn-danger"
                   }`}
                   onClick={handleSubmitAction}
-                  disabled={isSubmitting || !comment.trim()}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <>
