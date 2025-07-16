@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import { toast } from "react-toastify";
 import generalService from "../../../services/api-services/general.service";
 import punchDataService from "../../../services/api-services/punch-data.service";
+import { useAppSelector } from "../../../store/store";
 
 interface Props {
   formData: {
@@ -12,7 +13,6 @@ interface Props {
     targetUserId: number;
   };
   isAdmin: boolean;
-  userId: number;
   setFormData: React.Dispatch<
     React.SetStateAction<{
       name: string;
@@ -26,7 +26,8 @@ interface Props {
 }
 
 const MissPunchForm: React.FC<Props> = React.memo(
-  ({ formData, isAdmin, userId, setFormData, onSuccess }) => {
+  ({ formData, isAdmin, setFormData, onSuccess }) => {
+    const userId = useAppSelector((s) => s.auth.userData?.user.id);
     const handleDateChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({ ...prev, date: e.target.value }));

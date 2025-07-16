@@ -423,7 +423,6 @@ const UserDetailedAttendance: React.FC<Props> = ({
           <MissPunchForm
             formData={formData}
             setFormData={setFormData}
-            userId={userId}
             isAdmin={isAdmin}
             onSuccess={handleMissPunchSuccess}
           />
