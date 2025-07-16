@@ -354,31 +354,7 @@ const UserDetailedAttendance: React.FC<Props> = ({
   };
 
   const handleMissPunchSuccess = () => {
-    if (isAdmin && currentUser?.id != userId)
-      punchDataService.getPunches({ year, month, userId }).then((res) => {
-        if (res.status === "success") {
-          if (dashboardData) {
-            const obj: UserDashboardData = {
-              ...dashboardData,
-              punchData: res.data,
-            };
-            setDashboardData(obj);
-          }
-        }
-      });
-    else {
-      generalService.getUserPunchRequests({ year, month }).then((res) => {
-        if (res.status === "success") {
-          if (dashboardData) {
-            const obj: UserDashboardData = {
-              ...dashboardData,
-              punchData: res.data,
-            };
-            setDashboardData(obj);
-          }
-        }
-      });
-    }
+    fetchDashboardData();
     handleFormClose();
   };
 
