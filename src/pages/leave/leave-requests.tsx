@@ -165,7 +165,11 @@ const LeaveRequests: FC<Props> = ({ refetch }) => {
       leaveTypeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       deptname.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const effectiveStatus = request.managerStatus;
+    const effectiveStatus = getFinalLeaveRequestStatus(
+      request.managerStatus,
+      request.hrStatus
+    );
+
     const matchesStatus = statusFilter
       ? effectiveStatus === statusFilter
       : true;

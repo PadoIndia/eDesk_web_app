@@ -55,7 +55,7 @@ const MissPunchForm: React.FC<Props> = React.memo(
       if (
         !userId ||
         !formData.time ||
-        !formData.reason ||
+        (!isAdmin && !formData.reason) ||
         (isAdmin && !formData.targetUserId)
       ) {
         toast.error("Please fill all required fields");
@@ -77,7 +77,7 @@ const MissPunchForm: React.FC<Props> = React.memo(
         hh: hours,
         mm: minutes,
         userId: formData.targetUserId,
-        missPunchReason: formData.reason,
+        ...(formData.reason && { missPunchReason: formData.reason }),
       };
 
       const isSameUser = userId == formData.targetUserId;
@@ -154,7 +154,7 @@ const MissPunchForm: React.FC<Props> = React.memo(
               value={formData.reason}
               onChange={handleReasonChange}
               placeholder="Please provide a reason for the miss punch request..."
-              required
+              required={!isAdmin}
             />
           </div>
         </div>
@@ -162,7 +162,7 @@ const MissPunchForm: React.FC<Props> = React.memo(
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={!formData.time || !formData.reason}
+            disabled={!formData.time || (!formData.reason && !isAdmin)}
           >
             Submit Request
           </button>

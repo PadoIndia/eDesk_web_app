@@ -26,6 +26,7 @@ import Modal from "../../../components/ui/modals";
 import { useAppSelector } from "../../../store/store";
 import punchDataService from "../../../services/api-services/punch-data.service";
 import { PunchResponse } from "../../../types/punch-data.types";
+import generalService from "../../../services/api-services/general.service";
 
 const ClassesTable = lazy(() => import("./classes-table"));
 const CallsTable = lazy(() => import("./calls-table"));
@@ -353,17 +354,31 @@ const UserDetailedAttendance: React.FC<Props> = ({
   };
 
   const handleMissPunchSuccess = () => {
-    punchDataService.getPunches({ year, month }).then((res) => {
-      if (res.status === "success") {
-        if (dashboardData) {
-          const obj: UserDashboardData = {
-            ...dashboardData,
-            punchData: res.data,
-          };
-          setDashboardData(obj);
+    if (isAdmin && currentUser?.id != userId)
+      punchDataService.getPunches({ year, month, userId }).then((res) => {
+        if (res.status === "success") {
+          if (dashboardData) {
+            const obj: UserDashboardData = {
+              ...dashboardData,
+              punchData: res.data,
+            };
+            setDashboardData(obj);
+          }
         }
-      }
-    });
+      });
+    else {
+      generalService.getUserPunchRequests({ year, month }).then((res) => {
+        if (res.status === "success") {
+          if (dashboardData) {
+            const obj: UserDashboardData = {
+              ...dashboardData,
+              punchData: res.data,
+            };
+            setDashboardData(obj);
+          }
+        }
+      });
+    }
     handleFormClose();
   };
 
