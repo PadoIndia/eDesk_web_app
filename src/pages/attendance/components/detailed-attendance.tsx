@@ -24,9 +24,7 @@ import { statusToShortCode } from "../../../utils/constants";
 import { STATUS_ICON_CONFIG } from "../../../utils/icons";
 import Modal from "../../../components/ui/modals";
 import { useAppSelector } from "../../../store/store";
-import punchDataService from "../../../services/api-services/punch-data.service";
 import { PunchResponse } from "../../../types/punch-data.types";
-import generalService from "../../../services/api-services/general.service";
 
 const ClassesTable = lazy(() => import("./classes-table"));
 const CallsTable = lazy(() => import("./calls-table"));
