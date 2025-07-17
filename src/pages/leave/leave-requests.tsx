@@ -19,9 +19,6 @@ import { useAppSelector } from "../../store/store";
 import {
   getFinalLeaveRequestStatus,
   getLeaveStatusBadge,
-  IsDeptManager,
-  IsHr,
-  isTeamManager,
 } from "../../utils/helper";
 import { toast } from "react-toastify";
 import { Table } from "../../components/ui/table";
@@ -48,7 +45,6 @@ const LeaveRequests: FC<Props> = ({ refetch }) => {
   const [activeTab, setActiveTab] = useState<"my-requests" | "others-requests">(
     "my-requests"
   );
-  const [isTeamManagerState, setIsTeamManagerState] = useState<boolean>(false);
 
   const [showModal, setShowModal] = useState(false);
   const [modalAction, setModalAction] = useState<
@@ -64,40 +60,14 @@ const LeaveRequests: FC<Props> = ({ refetch }) => {
   const userId = useAppSelector((s) => s.auth.userData?.user.id);
   const permissions = useAppSelector((s) => s.auth.userData?.user.permissions);
 
-  const isHR = IsHr();
-  const isDeptManager = IsDeptManager();
-  const isManager = isTeamManagerState || isDeptManager;
+  const isHR =
+    permissions?.includes("is_hr") || permissions?.includes("is_admin");
 
   const hasAdminPermissions = useCallback(() => {
     return permissions?.some((p) =>
       ["is_admin", "is_admin_department", "is_admin_team"].includes(p)
     );
   }, [permissions]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (userId) {
-      const checkTeamManagerStatus = async () => {
-        try {
-          const isTeamManagerResult = await isTeamManager(userId);
-          if (isMounted) {
-            setIsTeamManagerState(isTeamManagerResult);
-          }
-        } catch (error) {
-          console.error("Failed to check team manager status:", error);
-          if (isMounted) {
-            setIsTeamManagerState(false);
-          }
-        }
-      };
-
-      checkTeamManagerStatus();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -141,7 +111,7 @@ const LeaveRequests: FC<Props> = ({ refetch }) => {
     return () => {
       isMounted = false;
     };
-  }, [userId, isHR, isManager, hasAdminPermissions]);
+  }, [userId, isHR, hasAdminPermissions]);
 
   const getRequestsForCurrentTab = () => {
     if (activeTab === "my-requests") {
@@ -449,7 +419,7 @@ const LeaveRequests: FC<Props> = ({ refetch }) => {
                         </Table.Cell>
                         {activeTab === "others-requests" && (
                           <Table.Cell>
-                            {finalStatus !== "PENDING" ? (
+                            {!isHR || finalStatus !== "PENDING" ? (
                               getLeaveStatusBadge(finalStatus)
                             ) : (
                               <div className="d-flex gap-2">

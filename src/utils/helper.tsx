@@ -443,16 +443,6 @@ export const IsDeptManager = (): boolean => {
   return false;
 };
 
-// Current user is in Hr department
-export const IsHr = (): boolean => {
-  const userDepartments = useSelector(
-    (state: RootState) => state.userDepartment.userDepartments
-  );
-  const isHr = userDepartments.some((dept) => dept.department.slug === "hr");
-  if (isHr) return true;
-  return false;
-};
-
 // Current user is in Hr department and is a manager
 export const IsHrManager = (): boolean => {
   const userDepartments = useSelector(

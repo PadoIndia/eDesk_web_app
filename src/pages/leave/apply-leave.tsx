@@ -70,8 +70,9 @@ const ApplyLeave = () => {
 
     const adminPermissionSlugs = [
       "is_admin",
-      "is_department_admin",
-      "is_team_admin",
+      "is_admin_department",
+      "is_admin_team",
+      "is_hr",
     ];
     return currentUserPermissions.some((perm) =>
       adminPermissionSlugs.includes(perm)
@@ -83,8 +84,8 @@ const ApplyLeave = () => {
 
     const adminTypes = [
       { slug: "is_admin", label: "System Admin" },
-      { slug: "is_department_admin", label: "Department Admin" },
-      { slug: "is_team_admin", label: "Team Admin" },
+      { slug: "is_admin_department", label: "Department Admin" },
+      { slug: "is_admin_team", label: "Team Admin" },
     ];
 
     for (const type of adminTypes) {

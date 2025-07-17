@@ -124,38 +124,40 @@ const RequestsTable: React.FC<Props> = ({
                           )}
                         </div>
                       </Table.Cell>
-                      {isAdmin && (
-                        <Table.Cell className="py-2">
-                          {request.approvedBy === null ? (
-                            <div className="d-flex gap-2">
-                              <button
-                                className="btn btn-sm btn-success rounded-md d-flex align-items-center gap-1"
-                                onClick={() =>
-                                  handleApproveReject(request, "approve")
-                                }
-                                title="Approve"
-                              >
-                                <FaCheck />
-                                Approve
-                              </button>
-                              <button
-                                className="btn btn-sm btn-danger text-light rounded-md d-flex align-items-center gap-1"
-                                onClick={() =>
-                                  handleApproveReject(request, "reject")
-                                }
-                                title="Reject"
-                              >
-                                <FaTimes />
-                                Reject
-                              </button>
-                            </div>
-                          ) : request.isApproved ? (
-                            getLeaveStatusBadge(LeaveRequestStatus.APPROVED)
-                          ) : (
-                            getLeaveStatusBadge(LeaveRequestStatus.REJECTED)
-                          )}
-                        </Table.Cell>
-                      )}
+                      <Table.Cell className="py-2">
+                        {isAdmin && request.approvedBy == null ? (
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-success rounded-md d-flex align-items-center gap-1"
+                              onClick={() =>
+                                handleApproveReject(request, "approve")
+                              }
+                              title="Approve"
+                            >
+                              <FaCheck />
+                              Approve
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger text-light rounded-md d-flex align-items-center gap-1"
+                              onClick={() =>
+                                handleApproveReject(request, "reject")
+                              }
+                              title="Reject"
+                            >
+                              <FaTimes />
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          getLeaveStatusBadge(
+                            request.approvedBy == null
+                              ? LeaveRequestStatus.PENDING
+                              : request.isApproved
+                              ? LeaveRequestStatus.APPROVED
+                              : LeaveRequestStatus.REJECTED
+                          )
+                        )}
+                      </Table.Cell>
                     </Table.Row>
                   );
                 })

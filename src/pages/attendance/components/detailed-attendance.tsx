@@ -13,7 +13,10 @@ import {
 import { toast } from "react-toastify";
 import attendanceDashboardService from "../../../services/api-services/attendance-dashboard.service";
 import Avatar from "../../../components/avatar";
-import { UserDashboardData } from "../../../types/attendance-dashboard.types";
+import {
+  AutoAttendanceStatus,
+  UserDashboardData,
+} from "../../../types/attendance-dashboard.types";
 import {
   calculateWorkingHours,
   convertDayNameToInt,
@@ -25,7 +28,9 @@ import { STATUS_ICON_CONFIG } from "../../../utils/icons";
 import Modal from "../../../components/ui/modals";
 import { useAppSelector } from "../../../store/store";
 import { PunchResponse } from "../../../types/punch-data.types";
+import { Spinner } from "../../../components/loading";
 
+const AttendanceStatusForm = lazy(() => import("./attendance-status-form"));
 const ClassesTable = lazy(() => import("./classes-table"));
 const CallsTable = lazy(() => import("./calls-table"));
 const MissPunchesTable = lazy(() => import("./miss-punches-table"));
@@ -49,6 +54,10 @@ const UserDetailedAttendance: React.FC<Props> = ({
   const [month, setMonth] = useState(fromMonth || new Date().getMonth() + 1);
   const [year, setYear] = useState(fromYear || new Date().getFullYear());
   const [showMissPunchForm, setShowMissPunchForm] = useState(false);
+  const [attendanceStatusData, setAttendanceStatusData] = useState<null | {
+    status: AutoAttendanceStatus;
+    id: number;
+  }>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -64,10 +73,8 @@ const UserDetailedAttendance: React.FC<Props> = ({
 
   const currentUser = useAppSelector((s) => s.auth.userData?.user);
   const permissions = currentUser?.permissions || [];
-  const isAdmin =
-    permissions.some((p) =>
-      ["is_admin", "is_team_admin", "is_department_admin"].includes(p)
-    ) || false;
+
+  const isHrAdmin = permissions.some((p) => ["is_hr", "is_admin"].includes(p));
 
   useEffect(() => {
     fetchDashboardData();
@@ -356,19 +363,19 @@ const UserDetailedAttendance: React.FC<Props> = ({
     handleFormClose();
   };
 
+  const onUpdateStatus = (id: number, s: AutoAttendanceStatus) => {
+    if (dashboardData) {
+      const attendance = dashboardData.attendance.map((a) => {
+        if (a.id === id) return { ...a, statusAuto: s, statusManual: s };
+        return a;
+      });
+      setDashboardData({ ...dashboardData, attendance });
+      setAttendanceStatusData(null);
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center py-20">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="text-muted animate-pulse">
-            Loading attendance details...
-          </p>
-        </div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   if (!dashboardData) {
@@ -397,8 +404,22 @@ const UserDetailedAttendance: React.FC<Props> = ({
           <MissPunchForm
             formData={formData}
             setFormData={setFormData}
-            isAdmin={isAdmin}
+            isAdmin={isHrAdmin}
             onSuccess={handleMissPunchSuccess}
+          />
+        </Modal>
+      )}
+      {isHrAdmin && attendanceStatusData && (
+        <Modal
+          title="Update Status"
+          showCloseIcon
+          isOpen={true}
+          onClose={() => setAttendanceStatusData(null)}
+        >
+          <AttendanceStatusForm
+            attendanceId={attendanceStatusData.id}
+            status={attendanceStatusData.status}
+            onSuccess={onUpdateStatus}
           />
         </Modal>
       )}
@@ -615,6 +636,9 @@ const UserDetailedAttendance: React.FC<Props> = ({
                   const dayPunches = dashboardData.punchData.filter(
                     (p) => p.date === day
                   );
+                  const dash = dashboardData.attendance.find(
+                    (p) => p.date === day
+                  );
 
                   const fullStatus = getStatusForDate(day);
                   const statusDisplay = getStatusDisplay(day);
@@ -690,6 +714,14 @@ const UserDetailedAttendance: React.FC<Props> = ({
                         <span
                           title={statusDisplay.title}
                           className={`badge rounded-pill px-3 py-1 ${statusDisplay.badgeClass}`}
+                          onClick={() => {
+                            if (isHrAdmin && dash && fullStatus !== "—") {
+                              setAttendanceStatusData({
+                                id: dash?.id,
+                                status: fullStatus,
+                              });
+                            }
+                          }}
                         >
                           {statusDisplay.code}
                         </span>

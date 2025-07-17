@@ -1,4 +1,5 @@
 import {
+  AutoAttendanceStatus,
   UserAttendanceItem,
   UserDashboardData,
 } from "../../types/attendance-dashboard.types";
@@ -50,6 +51,13 @@ class AttendanceDashboardService extends ApiService {
     }
   ): ApiResponse<boolean> {
     return this.getData(`/${userId}/sync`, { params });
+  }
+
+  updateAttendanceStatus(
+    id: number,
+    data: { status: AutoAttendanceStatus; comment?: string }
+  ) {
+    return this.putData(`-data/${id}`, data);
   }
 }
 

@@ -1,23 +1,17 @@
-export interface CalendarEvent {
-  date: string; // ISO format YYYY-MM-DD
-  title: string;
-  type: "holiday" | "event" | "meeting";
-}
-
-// Extended attendance.types.ts
+import { AutoAttendanceStatus } from "./attendance-dashboard.types";
 
 export interface Punch {
-  id: number; // Missing in original
+  id: number;
   userId: number;
   date: number;
   month: number;
   year: number;
-  time: string; // Changed from hh/mm to match common DB timestamp patterns
+  time: string;
   type: "AUTO" | "MANUAL";
-  isApproved: boolean | null; // Should allow null for pending status
+  isApproved: boolean | null;
   approvedBy?: number | null;
   missPunchReason?: string;
-  createdOn: Date; // From the orderBy clause
+  createdOn: Date;
   comment?: string;
   hh?: number;
   mm?: number;
@@ -25,7 +19,6 @@ export interface Punch {
   userDepartment?: string;
   departmentId?: number | null;
 
-  // From included relations
   user?: {
     name: string;
     userDepartment: {
@@ -37,46 +30,22 @@ export interface Punch {
   };
 }
 
-interface Department {
-  id: number;
-  name: string;
-  isAdmin: boolean;
-}
-
-export interface AttendanceUser {
-  id: number;
-  name: string;
-  department: string; // Comma-separated departments
-  departments: Department[]; // Array of department objects
-  isAdmin: boolean;
-  punchData: Punch[];
-  attendance: AttendanceEntry[];
-  callDetails: []; // Update with proper type if available
-  classDetails: []; // Update with proper type if available
-}
-
-export interface AttendanceEntry {
-  date: number;
-  month: number;
-  year: number;
-  status: string;
-  statusManual?: string;
-  comment?: string;
-}
-
-export interface DashboardData {
-  user: {
-    id: number;
-    name: string;
-    departments: Department[]; // Raw department data from server
-    isAdmin: boolean;
-  };
-  attendance: {
-    status: "P" | "A";
-    statusManual?: string;
-    comment?: string;
-  };
-  punchData: Punch[];
-  callDetails: [];
-  classDetails: [];
-}
+export const ATTENDANCE_STATUS = [
+  "PRESENT",
+  "WEEK_OFF",
+  "HOLIDAY",
+  "ABSENT",
+  "SICK_LEAVE",
+  "CASUAL_LEAVE",
+  "EARNED_LEAVE",
+  "UNPAID_LEAVE",
+  "COMPENSATORY",
+  "FESTIVAL",
+  "ABSENT/2",
+  "SICK_LEAVE/2",
+  "CASUAL_LEAVE/2",
+  "EARNED_LEAVE/2",
+  "UNPAID_LEAVE/2",
+  "COMPENSATORY/2",
+  "FESTIVAL/2",
+] as AutoAttendanceStatus[];

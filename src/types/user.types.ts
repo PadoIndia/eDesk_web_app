@@ -192,4 +192,5 @@ export type TPermission =
   | "is_admin_department"
   | "is_admin_team"
   | "can_create_approve_punches"
-  | "can_manage_department_team";
+  | "can_manage_department_team"
+  | "is_hr";

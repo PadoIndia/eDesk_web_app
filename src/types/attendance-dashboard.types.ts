@@ -86,7 +86,7 @@ export interface UserDashboardData {
   classDetails: ClassData[];
 }
 
-type AutoAttendanceStatus =
+export type AutoAttendanceStatus =
   | "PRESENT"
   | "ABSENT"
   | "HALF_DAY"
