@@ -22,7 +22,9 @@ const HrmSideBar = ({ isOpen, setIsOpen }: Props) => {
   const dispatch = useAppDispatch();
 
   const permissions = currentUser?.permissions;
-  const isAdmin = permissions?.includes("is_admin");
+  const isAdmin = permissions?.some((p) =>
+    ["is_admin", "is_hr", "is_admin_team", "is_admin_department"].includes(p)
+  );
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -68,7 +70,7 @@ const HrmSideBar = ({ isOpen, setIsOpen }: Props) => {
       path: "/",
       icon: RxVideo,
       label: "eVideo",
-      show: true,
+      show: isAdmin,
     },
     {
       path: "/chats",
