@@ -38,8 +38,10 @@ const AttendanceDashboard = () => {
   const permissions = currentUser?.permissions || [];
   const isAdmin =
     permissions.some((p) =>
-      ["is_admin", "is_team_admin", "is_department_admin"].includes(p)
+      ["is_admin", "is_admin_team", "is_admin_department"].includes(p)
     ) || false;
+
+  const isHr = permissions.some((p) => ["is_hr", "is_admin"].includes(p));
 
   const handleApproveReject = (
     request: PunchResponse,
@@ -110,7 +112,7 @@ const AttendanceDashboard = () => {
           <RequestsTable
             filteredRequests={missPunchRequests}
             handleApproveReject={handleApproveReject}
-            isAdmin={isAdmin}
+            isAdmin={isHr}
           />
         )}
       </div>
